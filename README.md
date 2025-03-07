@@ -2,6 +2,17 @@
 
 This program generates all possible legal next-ply moves and the resulting game board configurations for the Abalone game.
 
+## Patch Notes
+### Patch 1.0.1
+- Pushed March 7, 2025 9:06pm ; Wayne Chen
+- Merged Logan's repo with Project repo
+- Added patch notes back
+- Updated gitignore
+### Patch 1.0.0
+- Pushed March 6, 2025 2:25pm ; Sam Holtzman
+- Initial Project Setup
+    -  Added file / directory structure
+
 ## Building the Program
 
 To build the program, run the following command:

@@ -1,0 +1,4 @@
+# Ignore compiled binaries
+abalone
+abalone_generator
+compareBoards
