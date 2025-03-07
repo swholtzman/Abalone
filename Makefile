@@ -1,22 +1,29 @@
-CXX = g++
-CXXFLAGS = -std=c++11 -Wall -Wextra -pedantic
+# Makefile for Abalone project
 
-# Executables
-GENERATOR = abalone_generator
+# Compiler and flags
+CXX      = g++
+CXXFLAGS = -std=c++17 -Wall -Wextra
 
-# Source files
-GENERATOR_SRC = abalone_generator.cpp
+# Target name
+TARGET   = abalone
 
-all: $(GENERATOR)
+# Source and object files
+SRC      = main.cpp Board.cpp
+OBJS     = main.o Board.o
 
-$(GENERATOR): $(GENERATOR_SRC)
-	$(CXX) $(CXXFLAGS) -o $@ $<
+all: $(TARGET)
 
+# Link step: produce the final executable from object files
+$(TARGET): $(OBJS)
+	$(CXX) $(CXXFLAGS) $(OBJS) -o $(TARGET)
+
+# Compile each .cpp into .o
+main.o: main.cpp Board.h
+	$(CXX) $(CXXFLAGS) -c main.cpp
+
+Board.o: Board.cpp Board.h
+	$(CXX) $(CXXFLAGS) -c Board.cpp
+
+# Optional: remove the executable and object files
 clean:
-	rm -f $(GENERATOR)
-
-test: $(GENERATOR)
-	./$(GENERATOR) Test1.input
-	./$(GENERATOR) Test2.input
-	@echo "Test1.move and Test1.board created."
-	@echo "Test2.move and Test2.board created."
+	rm -f $(TARGET) $(OBJS)
