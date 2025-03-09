@@ -1,29 +1,42 @@
-# Makefile for Abalone project
+CC = g++
+CFLAGS = -std=c++17
+DEBUGFLAGS = -DDEBUG
 
-# Compiler and flags
-CXX      = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra
+# Source files
+SRCS = main.cpp Board.cpp
+COMPARE_SRCS = compareBoards.cpp
 
-# Target name
-TARGET   = abalone
+# Output binaries
+TARGET = abalone
+COMPARE_TARGET = compareBoards
 
-# Source and object files
-SRC      = main.cpp Board.cpp
-OBJS     = main.o Board.o
+# Default target
+all: $(TARGET) $(COMPARE_TARGET)
 
-all: $(TARGET)
+# Compile the main program
+$(TARGET): $(SRCS)
+	$(CC) $(CFLAGS) $(SRCS) -o $(TARGET)
 
-# Link step: produce the final executable from object files
-$(TARGET): $(OBJS)
-	$(CXX) $(CXXFLAGS) $(OBJS) -o $(TARGET)
+# Compile the main program with debug messages
+debug:
+	$(CC) $(CFLAGS) $(DEBUGFLAGS) $(SRCS) -o $(TARGET)
 
-# Compile each .cpp into .o
-main.o: main.cpp Board.h
-	$(CXX) $(CXXFLAGS) -c main.cpp
+# Compile the comparison tool
+$(COMPARE_TARGET): $(COMPARE_SRCS)
+	$(CC) $(CFLAGS) $(COMPARE_SRCS) -o $(COMPARE_TARGET)
 
-Board.o: Board.cpp Board.h
-	$(CXX) $(CXXFLAGS) -c Board.cpp
+# Run the main program with a specified input file
+# run:
+# 	./$(TARGET) $(ARGS)
 
-# Optional: remove the executable and object files
+# # Run with debug messages and a specified input file
+# run-debug:
+# 	./$(TARGET) $(ARGS)
+
+# Compare output
+diff:
+	./$(COMPARE_TARGET) Test2.board boards.txt moves.txt
+
+# Clean generated files
 clean:
-	rm -f $(TARGET) $(OBJS)
+	rm -f $(TARGET) $(COMPARE_TARGET)
