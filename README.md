@@ -2,6 +2,12 @@
 Abalone game created to develop an effective AI bot system with heuristics for optimized gameplay strategies.
 
 ## Patch Notes
+### Patch 1.0.3
+- Pushed March 9, 2025 11:36pm ; Wayne Chen
+- Merged Logan's repo with Project repo
+- Added makefile
+- Updated readme with makefile commands
+
 ### Patch 1.0.2
 - Pushed March 9, 2025 1:37am ; Sam Holtzman
 - Added python directory with empty files
@@ -30,19 +36,22 @@ Before attempting to run, you must open your project after connecting to a WSL e
 
 HOW TO RUN:
 
-g++ -std=c++17 main.cpp Board.cpp -o abalone
+WITH MAKE: make abalone
+WITHOUT MAKE: g++ -std=c++17 main.cpp Board.cpp -o abalone
 ./abalone Test1.input  // type out what input file you want to use
 
 
 with DEBUG messages:
 
-g++ -std=c++17 -DDEBUG main.cpp Board.cpp -o abalone
+WITH MAKE: make debug
+WITHOUT MAKE: g++ -std=c++17 -DDEBUG main.cpp Board.cpp -o abalone
 ./abalone Test1.input
 
 
 How to compare the output to the desired output:
 
-g++ -std=c++17 compareBoards.cpp -o compareBoards
+WITH MAKE: make compareBoards
+WITHOUT MAKE: g++ -std=c++17 compareBoards.cpp -o compareBoards
 ./compareBoards Test2.board boards.txt moves.txt
 
 
