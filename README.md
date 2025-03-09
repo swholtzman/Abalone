@@ -1,13 +1,22 @@
-# Abalone State Space Generator
+# Abalone Game
 
-This program generates all possible legal next-ply moves and the resulting game board configurations for the Abalone game.
+This program is a playable Abalone game, with a heuristic algorithm to suggest the best follow-up move options to make.
 
 ## Patch Notes
+### Patch 1.0.2
+- Pushed March 9, 2025 1:37am ; Sam Holtzman
+- Added python directory with empty files
+- Added initial UML diagram (in public directory)
+- Moved C++ items into focussed directory
+    - Suggest to move boards and other non C++ files into "resources" sub-directory inside cpp_directory 
+        - Didnt want to do this incase current structure is necessary
+
 ### Patch 1.0.1
 - Pushed March 7, 2025 9:06pm ; Wayne Chen
 - Merged Logan's repo with Project repo
 - Added patch notes back
 - Updated gitignore
+
 ### Patch 1.0.0
 - Pushed March 6, 2025 2:25pm ; Sam Holtzman
 - Initial Project Setup
