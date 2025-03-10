@@ -2,6 +2,13 @@
 Abalone game created to develop an effective AI bot system with heuristics for optimized gameplay strategies.
 
 ## Patch Notes
+
+### Patch 1.0.4
+- Pushed March 9, 2025 07:55pm ; Wayne Chen
+- Added board_visualizer.cpp
+- Updated makefile with visualizer commands
+- Updated readme with visualizer commands and formatting
+
 ### Patch 1.0.3
 - Pushed March 9, 2025 11:36pm ; Wayne Chen
 - Merged Logan's repo with Project repo
@@ -27,38 +34,54 @@ Abalone game created to develop an effective AI bot system with heuristics for o
 - Initial Project Setup
     -  Added file / directory structure
 
-## Instructions
-
-IMPORTANT:
+# IMPORTANT (WINDOW USERS ONLY):
 
 Before attempting to run, you must open your project after connecting to a WSL environment.
 
+# Instructions
 
-HOW TO RUN:
+## HOW TO RUN:
 
 WITH MAKE: make abalone
-WITHOUT MAKE: g++ -std=c++17 main.cpp Board.cpp -o abalone
+
+WITHOUT MAKE: g++ -std=c++17 main.cpp Board.
+cpp -o abalone
+
 ./abalone Test1.input  // type out what input file you want to use
 
-
-with DEBUG messages:
+## With DEBUG messages:
 
 WITH MAKE: make debug
-WITHOUT MAKE: g++ -std=c++17 -DDEBUG main.cpp Board.cpp -o abalone
+
+WITHOUT MAKE: g++ -std=c++17 -DDEBUG main.
+
+cpp Board.cpp -o abalone
 ./abalone Test1.input
 
-
-How to compare the output to the desired output:
+## How to compare the output to the desired output:
 
 WITH MAKE: make compareBoards
+
 WITHOUT MAKE: g++ -std=c++17 compareBoards.cpp -o compareBoards
+
 ./compareBoards Test2.board boards.txt moves.txt
 
+## How to visualize board states with board_visualizer
 
+WITH MAKE: make board_visualizer.cpp
 
-main.cpp:
+WITHOUT MAKE: g++ -std=c++17 
 
-Command Line Input:
+board_visualizer.cpp -o board_visualizer
+./board_visualizer (initial position input file) (all possible moves file)
+
+e.g. ./board_visualizer standard_start.input boards.txt
+
+# Code Explanations
+
+## main.cpp:
+
+### Command Line Input:
 
 The program starts by checking if an input filename was provided as a command-line argument. If not, it prints a usage message and exits. This allows the user to specify which file contains the board configuration instead of having it hardcoded.
 Reading and Cleaning the Input File:
@@ -69,70 +92,72 @@ Only non-empty lines (after trimming) are stored in a vector. This step removes 
 Creating a Temporary File:
 
 The cleaned (non-empty) lines are then written to a temporary file called temp.input. This temporary file is used to ensure that the board-loading function only sees the valid, non-empty lines.
-Loading the Board:
+
+### Loading the Board:
 
 A Board object is created, and the board configuration is loaded from the temporary file using the loadFromInputFile method.
+
 The first line of the input determines which side (BLACK or WHITE) is next to move, and the second line contains the positions of the marbles.
 Generating Legal Moves:
 
 The program calls generateMoves on the Board object, passing in the side that is next to move.
 This function computes all legal moves based on the current board state and returns them as a vector of Move objects.
-Writing Moves and Resulting Boards to Output Files:
+
+### Writing Moves and Resulting Boards to Output Files:
 
 For each legal move, the program does the following:
 It converts the move into a human-readable notation (using moveToNotation) and writes it to a file name moves.txt.
+
 It creates a copy of the board, applies the move to that copy, and then writes the resulting board configuration (as a string of occupied cell notations) to a file named boards.txt.
 Program Termination:
 
 After processing all moves, the program exits, having produced two output files: one listing the move notations and another showing the resulting board configurations for each move.
 
-
-
-
-
-Board.cpp
+## Board.cpp
 
 Board.cpp implements all the functionality declared in Board.h. It handles the core logic for representing and manipulating the Abalone board. The file is organized into several logical sections:
 
-Debugging Support
+### Debugging Support
+
 A debug macro (DEBUG_PRINT) is defined at the top. When the preprocessor symbol DEBUG is defined, calls to DEBUG_PRINT(...) output detailed diagnostic messages to the console. This lets you easily toggle verbose logging without changing the main logic.
 
-Helper Functions
+### Helper Functions
 
 occupantToString: 
 Converts an occupant (EMPTY, BLACK, WHITE) to a human‑readable string.
 trim (static inline): Trims whitespace from a string; used when reading input.
 
-
-Direction and Opposite Calculation
+### Direction and Opposite Calculation
 
 The file defines the six possible movement directions as pairs of offsets (e.g. West is (-1, 0), East is (+1, 0), etc.) in the order matching the game’s directions. It also defines an array of “opposite” directions so that, for any given direction, you can quickly look up its reverse.
 
+### Move Attempt and Generation
 
-
-Move Attempt and Generation
-
-tryMove: 
+#### tryMove: 
 
 This function tries to perform a move (given a group of marble indices and a direction) on a temporary copy of the board. It prints debugging output (if enabled) showing the candidate group, the alignment check (if the group is aligned, and what its aligned direction is), and then attempts to apply the move. If any errors occur (illegal move conditions), it catches them and returns false. This helps filter out illegal moves while logging details.
 generateColumnGroups: This function scans the board to build “column groups” of marbles (groups of 1–3 marbles that are contiguous in a given direction). It prints debug messages for each candidate column group and then returns a set of unique groups.
 
+#### dfsGroup: 
 
-dfsGroup: 
 A recursive depth-first search is used to collect connected groups of marbles. As it explores neighboring cells (based on the board’s neighbor table), it logs each step and builds candidate groups of marbles.
 
-isGroupAligned: 
+#### isGroupAligned: 
+
 This checks if a candidate group is “aligned” (i.e. its marbles are collinear in one of the allowed directions). It uses the board’s coordinate mapping and direction offsets. If a group is aligned, it also determines the corresponding direction. Debug messages help indicate which groups pass or fail this check.
 
+#### canonicalizeGroup: 
 
-canonicalizeGroup: 
 This helper sorts a group into a canonical order based on board coordinates. This is used to eliminate duplicate candidate groups when generating moves.
 
-generateMoves: 
-This function brings together candidate groups from both the DFS search and column grouping. It deduplicates the candidate groups (using their canonical string representations) and then iterates over every candidate group and every possible direction. For each combination it calls tryMove and collects the moves that succeed. Debug messages log accepted groups (and specially flag candidate groups that might lead to pushes into the B‑row, if applicable) as well as the total count of legal moves generated.
-Move Application (applyMove) and Support Functions
+#### generateMoves:
 
-applyMove: 
+This function brings together candidate groups from both the DFS search and column grouping. It deduplicates the candidate groups (using their canonical string representations) and then iterates over every candidate group and every possible direction. For each combination it calls tryMove and collects the moves that succeed. Debug messages log accepted groups (and specially flag candidate groups that might lead to pushes into the B‑row, if applicable) as well as the total count of legal moves generated.
+
+### Move Application (applyMove) and Support Functions
+
+#### applyMove:
+
 This is one of the most critical functions. It takes a Move (which contains a list of marble indices, a direction, and a flag indicating whether it’s an inline move or a side-step) and updates the board state accordingly.
 For inline moves (which may involve pushing opponent marbles), it:
 Determines the “front” marble (the one furthest in the move’s direction, using getFrontCell).
@@ -141,28 +166,32 @@ If the destination is occupied by an opponent, it enters a push loop to count ho
 It then moves the opponent marbles (or pushes them off the board if necessary) and finally moves the moving group’s marbles in the correct order.
 For side-step moves, it simply moves each marble to its adjacent neighbor in the given direction after verifying that the target cells are empty.
 
-getFrontCell: 
+#### getFrontCell: 
+
 Given a group of marbles and a direction, this function calculates which marble is the “front” by computing a dot product of each marble’s coordinate with the move’s direction offset. The marble with the highest score (i.e. furthest in that direction) is returned.
 
-moveToNotation: 
+#### moveToNotation: 
+
 Converts a Move into a human‑readable string notation (for example, “(b, C5, D5) i → NW”).
 toBoardString & indexToNotation: These functions convert the board state into a compact string representation (listing cell notations with occupant codes) and convert a cell index to its board notation, respectively.
-Hardcoded Layouts and Input Loading
+
+### Hardcoded Layouts and Input Loading
 
 The file implements functions to initialize the board in different hardcoded layouts (e.g., Standard, Belgian Daisy, German Daisy) by placing marbles at specific cell notations.
 loadFromInputFile: Reads an input file (with two lines: the first line indicating which color moves next, and the second listing occupied cells with their occupant letters) and updates the board’s state accordingly.
-setOccupant: Sets the occupant for a given cell by its notation.
 
+#### setOccupant:
+Sets the occupant for a given cell by its notation.
 
-Mapping and Neighbors
+### Mapping and Neighbors
 
 The private section includes functions and static variables that set up a coordinate mapping between board coordinates (e.g., (m, y)) and cell indices.
 initMapping: Builds a mapping from coordinates to indices and vice versa.
 
-
-initNeighbors: 
+#### initNeighbors: 
 Using the mapping, this function precomputes, for each cell, its neighbor in every one of the six allowed directions.
-Summary
+
+## Summary
 
 Overall, Board.cpp provides all the internal logic to:
 

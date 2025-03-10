@@ -5,13 +5,15 @@ DEBUGFLAGS = -DDEBUG
 # Source files
 SRCS = main.cpp Board.cpp
 COMPARE_SRCS = compareBoards.cpp
+VISUALIZER_SRC = board_visualizer.cpp
 
 # Output binaries
 TARGET = abalone
 COMPARE_TARGET = compareBoards
+VISUALIZER_TARGET = board_visualizer
 
 # Default target
-all: $(TARGET) $(COMPARE_TARGET)
+all: $(TARGET) $(COMPARE_TARGET) $(VISUALIZER_TARGET)
 
 # Compile the main program
 $(TARGET): $(SRCS)
@@ -24,6 +26,18 @@ debug:
 # Compile the comparison tool
 $(COMPARE_TARGET): $(COMPARE_SRCS)
 	$(CC) $(CFLAGS) $(COMPARE_SRCS) -o $(COMPARE_TARGET)
+
+# Compile the visualizer program
+$(VISUALIZER_TARGET): $(VISUALIZER_SRC)
+	$(CC) $(CFLAGS) $(VISUALIZER_SRC) -o $(VISUALIZER_TARGET)
+
+# Run the visualizer with custom input files
+visualize:
+	./$(VISUALIZER_TARGET) $(word 1,$(MAKECMDGOALS)) $(word 2,$(MAKECMDGOALS))
+
+# Prevent Make from treating the arguments as targets
+%:
+	@:
 
 # Run the main program with a specified input file
 # run:
