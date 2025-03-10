@@ -4,7 +4,7 @@ Abalone game created to develop an effective AI bot system with heuristics for o
 ## Patch Notes
 
 ### Patch 1.0.4
-- Pushed March 9, 2025 07:20pm ; Wayne Chen
+- Pushed March 9, 2025 07:55pm ; Wayne Chen
 - Added board_visualizer.cpp
 - Updated makefile with visualizer commands
 - Updated readme with visualizer commands
