@@ -1,44 +1,80 @@
-(b, B1, A1) i → NW
-(b, C3, B2, A1) i → NE
-(b, B2, A2) i → NW
-(b, C4, B3, A2) i → NE
-(b, C3, B3, A3) i → NW
-(b, C5, B4, A3) i → NE
-(b, C4, B4, A4) i → NW
-(b, B5, A4) i → NE
-(b, C5, B5, A5) i → NW
-(b, B6, A5) i → NE
-(b, B1) s → NW
-(b, B1) s → NE
-(b, B2, B1) s → NW
-(b, B2) s → NW
-(b, C3, B2) s → NW
+(b, B1) s → SE
+(b, B2, B1) i → E
+(b, B2, B1) s → SE
+(b, C1, B1) i → NW
+(b, C1, B1) i → SE
+(b, D3, C2, B1) i → NE
+(b, B2) s → E
+(b, B2) s → SW
+(b, B2) s → SE
+(b, C2, B2) i → SE
+(b, D2, C2, B2) i → NW
+(b, D2, C2, B2) i → SE
+(b, C3, B2) s → E
 (b, C3, B2) i → NE
-(b, C3, B3) i → NW
-(b, C4, B3) i → NE
-(b, C4, B4) i → NW
-(b, C5, B4) i → NE
-(b, B5) s → NE
-(b, B6, B5) s → NE
-(b, C5, B5) i → NW
-(b, C5, B5) s → NE
-(b, B6) s → NW
-(b, B6) s → NE
-(b, C3) s → W
-(b, C3) s → NW
+(b, C3, B2) i → SW
+(b, C3, B2) s → SE
+(b, C1) s → NW
+(b, C3, C2, C1) i → E
+(b, D2, C1) s → NW
+(b, D2, C1) i → NE
+(b, C3, C2) i → E
+(b, D2, C2) i → NW
+(b, D3, C2) i → NE
+(b, C3) s → E
 (b, C3) s → NE
-(b, C4, C3) i → W
-(b, C4, C3) s → NW
-(b, C4, C3) s → NE
-(b, C5, C4, C3) i → W
-(b, C5, C4, C3) i → E
-(b, C5, C4, C3) s → NW
-(b, C5, C4, C3) s → NE
-(b, C4) s → NW
-(b, C4) s → NE
-(b, C5, C4) i → E
-(b, C5, C4) s → NW
-(b, C5, C4) s → NE
-(b, C5) s → E
-(b, C5) s → NW
-(b, C5) s → NE
+(b, C3) s → SE
+(b, D3, C3) s → E
+(b, D3, C3) i → NW
+(b, D3, C3) s → NE
+(b, D3, C3) i → SE
+(b, D2) s → W
+(b, D2) s → NW
+(b, D2) s → NE
+(b, D3, D2) i → W
+(b, D3, D2) i → E
+(b, D3, D2) s → NW
+(b, D3, D2) s → NE
+(b, D3) s → E
+(b, D3) s → NW
+(b, D3) s → NE
+(b, F7) s → W
+(b, F7) s → SW
+(b, F7) s → SE
+(b, F8, F7) i → W
+(b, F8, F7) i → E
+(b, F8, F7) s → SW
+(b, F8, F7) s → SE
+(b, G7, F7) s → W
+(b, G7, F7) i → NW
+(b, G7, F7) s → SW
+(b, G7, F7) i → SE
+(b, G8, F7) i → SW
+(b, H9, G8, F7) i → SW
+(b, F8) s → E
+(b, F8) s → SW
+(b, F8) s → SE
+(b, G8, F8) i → SE
+(b, H8, G8, F8) i → NW
+(b, H8, G8, F8) i → SE
+(b, G9, F8) i → SW
+(b, G9, F8) s → SE
+(b, G7) s → W
+(b, G7) s → NW
+(b, G7) s → SW
+(b, G8, G7) i → W
+(b, G9, G8, G7) i → W
+(b, H8, G7) s → W
+(b, H8, G7) s → NW
+(b, H8, G7) i → NE
+(b, H8, G7) i → SW
+(b, H8, G8) i → NW
+(b, G9) s → SE
+(b, H9, G9) i → NW
+(b, H9, G9) i → SE
+(b, H8) s → W
+(b, H8) s → NW
+(b, H8) s → NE
+(b, H9, H8) i → W
+(b, H9, H8) s → NW
+(b, H9) s → NW

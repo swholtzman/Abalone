@@ -13,14 +13,16 @@
 //---------------------------------------------------------------------
 // Debug macro: if DEBUG is defined, DEBUG_PRINT prints; otherwise it does nothing.
 #ifdef DEBUG
-#define DEBUG_PRINT(x) std::cout << x
+#define DEBUG_PRINT(x) cout << x
 #else
 #define DEBUG_PRINT(x)
 #endif
 //---------------------------------------------------------------------
 
+using namespace std;
+
 // Helper: Convert occupant enum to a string.
-static std::string occupantToString(Occupant occ) {
+static string occupantToString(Occupant occ) {
     switch (occ) {
     case Occupant::EMPTY: return "EMPTY";
     case Occupant::BLACK: return "BLACK";
@@ -30,7 +32,7 @@ static std::string occupantToString(Occupant occ) {
 }
 
 // Directions in (dm, dy) form, matching your doc
-const std::array<std::pair<int, int>, Board::NUM_DIRECTIONS> Board::DIRECTION_OFFSETS = { {
+const array<pair<int, int>, Board::NUM_DIRECTIONS> Board::DIRECTION_OFFSETS = { {
     {-1,  0}, // W
     {+1,  0}, // E
     { 0, +1}, // NW
@@ -39,9 +41,9 @@ const std::array<std::pair<int, int>, Board::NUM_DIRECTIONS> Board::DIRECTION_OF
     { 0, -1}  // SE
 } };
 
-static const std::array<int, Board::NUM_DIRECTIONS> OPPOSITES = { 1, 0, 5, 4, 3, 2 };
+static const array<int, Board::NUM_DIRECTIONS> OPPOSITES = { 1, 0, 5, 4, 3, 2 };
 
-bool Board::tryMove(const std::vector<int>& group, int direction, Move& move) const {
+bool Board::tryMove(const vector<int>& group, int direction, Move& move) const {
     DEBUG_PRINT("Trying move for group: ");
     for (int idx : group)
         DEBUG_PRINT(indexToNotation(idx) << " ");
@@ -66,7 +68,7 @@ bool Board::tryMove(const std::vector<int>& group, int direction, Move& move) co
     try {
         temp.applyMove(move);
     }
-    catch (const std::runtime_error& e) {
+    catch (const runtime_error& e) {
         DEBUG_PRINT("Move failed: " << e.what() << "\n");
         return false;
     }
@@ -77,8 +79,8 @@ bool Board::tryMove(const std::vector<int>& group, int direction, Move& move) co
     return true;
 }
 
-std::set<std::vector<int>> Board::generateColumnGroups(Occupant side) const {
-    std::set<std::vector<int>> groups;
+set<vector<int>> Board::generateColumnGroups(Occupant side) const {
+    set<vector<int>> groups;
     for (int i = 0; i < NUM_CELLS; i++) {
         if (occupant[i] != side)
             continue;
@@ -87,7 +89,7 @@ std::set<std::vector<int>> Board::generateColumnGroups(Occupant side) const {
             int behind = neighbors[i][opp];
             if (behind >= 0 && occupant[behind] == side)
                 continue;
-            std::vector<int> col;
+            vector<int> col;
             col.push_back(i);
             int current = i;
             while (col.size() < 3) {
@@ -105,7 +107,7 @@ std::set<std::vector<int>> Board::generateColumnGroups(Occupant side) const {
                 DEBUG_PRINT(indexToNotation(idx) << " ");
             DEBUG_PRINT("\n");
             for (size_t s = 1; s <= col.size(); s++) {
-                std::vector<int> group(col.begin(), col.begin() + s);
+                vector<int> group(col.begin(), col.begin() + s);
                 groups.insert(group);
             }
         }
@@ -113,7 +115,7 @@ std::set<std::vector<int>> Board::generateColumnGroups(Occupant side) const {
     return groups;
 }
 
-void Board::dfsGroup(int current, Occupant side, std::vector<int>& group, std::set<std::vector<int>>& result) const {
+void Board::dfsGroup(int current, Occupant side, vector<int>& group, set<vector<int>>& result) const {
     DEBUG_PRINT("DFS at " << indexToNotation(current) << " with group: ");
     for (int idx : group)
         DEBUG_PRINT(indexToNotation(idx) << " ");
@@ -125,7 +127,7 @@ void Board::dfsGroup(int current, Occupant side, std::vector<int>& group, std::s
     for (int d = 0; d < NUM_DIRECTIONS; d++) {
         int n = neighbors[current][d];
         if (n >= 0 && occupant[n] == side) {
-            if (std::find(group.begin(), group.end(), n) == group.end()) {
+            if (find(group.begin(), group.end(), n) == group.end()) {
                 group.push_back(n);
                 dfsGroup(n, side, group, result);
                 group.pop_back();
@@ -138,55 +140,96 @@ void Board::dfsGroup(int current, Occupant side, std::vector<int>& group, std::s
     }
 }
 
-bool Board::isGroupAligned(const std::vector<int>& group, int& alignedDirection) const {
+// Constant-time implementation of isGroupAligned (O(1) for 2 marbles, O(1) for 3 marbles)
+bool Board::isGroupAligned(const vector<int>& group, int& alignedDirection) const {
     if (group.size() < 2)
         return false;
-    std::vector<int> sortedGroup = group;
-    std::sort(sortedGroup.begin(), sortedGroup.end(), [this](int a, int b) {
-        auto ca = s_indexToCoord[a];
-        auto cb = s_indexToCoord[b];
-        return (ca.second < cb.second) || (ca.second == cb.second && ca.first < cb.first);
-        });
-    auto coord0 = s_indexToCoord[sortedGroup[0]];
-    auto coord1 = s_indexToCoord[sortedGroup[1]];
-    int dx = coord1.first - coord0.first;
-    int dy = coord1.second - coord0.second;
-    if (dx == 0 && dy == 0)
-        return false;
-    for (int d = 0; d < NUM_DIRECTIONS; d++) {
-        auto offset = DIRECTION_OFFSETS[d];
-        if ((offset.first != 0 && dx % offset.first == 0 &&
-            dx / offset.first >= 1 && dy == (dx / offset.first) * offset.second) ||
-            (offset.first == 0 && offset.second != 0 && dy % offset.second == 0 &&
-                dy / offset.second >= 1 && dx == 0)) {
-            bool aligned = true;
-            for (size_t i = 2; i < sortedGroup.size(); i++) {
-                auto coord = s_indexToCoord[sortedGroup[i]];
-                int adx = coord.first - coord0.first;
-                int ady = coord.second - coord0.second;
-                if (offset.first != 0) {
-                    if (adx % offset.first != 0) { aligned = false; break; }
-                    int k = adx / offset.first;
-                    if (k < 1 || ady != k * offset.second) { aligned = false; break; }
-                }
-                else {
-                    if (ady % offset.second != 0) { aligned = false; break; }
-                    int k = ady / offset.second;
-                    if (k < 1 || adx != 0) { aligned = false; break; }
-                }
-            }
-            if (aligned) {
+    
+    // If 2 marbles, simply check if they're neighbors in any direction
+    if (group.size() == 2) {
+        for (int d = 0; d < NUM_DIRECTIONS; d++) {
+            if (neighbors[group[0]][d] == group[1] || 
+                neighbors[group[1]][d] == group[0]) {
                 alignedDirection = d;
                 return true;
             }
         }
+        return false;
     }
+    
+    // For 3 marbles, check if they form a line
+    if (group.size() == 3) {
+        for (int d = 0; d < NUM_DIRECTIONS; d++) {
+            // Check if any marble is connected to both others in this direction
+            for (int i = 0; i < 3; i++) {
+                int a = group[i];
+                int b = neighbors[a][d];
+                if (b >= 0 && 
+                    (b == group[(i+1)%3] || b == group[(i+2)%3])) {
+                    int c = neighbors[b][d];
+                    if (c >= 0 && 
+                        (c == group[(i+1)%3] || c == group[(i+2)%3])) {
+                        alignedDirection = d;
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+    
     return false;
 }
 
-std::vector<int> Board::canonicalizeGroup(const std::vector<int>& group) {
-    std::vector<int> canon = group;
-    std::sort(canon.begin(), canon.end(), [](int a, int b) {
+// O(n log n) implementation of isGroupAligned
+// bool Board::isGroupAligned(const vector<int>& group, int& alignedDirection) const {
+//     if (group.size() < 2)
+//         return false;
+//     vector<int> sortedGroup = group;
+//     sort(sortedGroup.begin(), sortedGroup.end(), [this](int a, int b) {
+//         auto ca = s_indexToCoord[a];
+//         auto cb = s_indexToCoord[b];
+//         return (ca.second < cb.second) || (ca.second == cb.second && ca.first < cb.first);
+//         });
+//     auto coord0 = s_indexToCoord[sortedGroup[0]];
+//     auto coord1 = s_indexToCoord[sortedGroup[1]];
+//     int dx = coord1.first - coord0.first;
+//     int dy = coord1.second - coord0.second;
+//     if (dx == 0 && dy == 0)
+//         return false;
+//     for (int d = 0; d < NUM_DIRECTIONS; d++) {
+//         auto offset = DIRECTION_OFFSETS[d];
+//         if ((offset.first != 0 && dx % offset.first == 0 &&
+//             dx / offset.first >= 1 && dy == (dx / offset.first) * offset.second) ||
+//             (offset.first == 0 && offset.second != 0 && dy % offset.second == 0 &&
+//                 dy / offset.second >= 1 && dx == 0)) {
+//             bool aligned = true;
+//             for (size_t i = 2; i < sortedGroup.size(); i++) {
+//                 auto coord = s_indexToCoord[sortedGroup[i]];
+//                 int adx = coord.first - coord0.first;
+//                 int ady = coord.second - coord0.second;
+//                 if (offset.first != 0) {
+//                     if (adx % offset.first != 0) { aligned = false; break; }
+//                     int k = adx / offset.first;
+//                     if (k < 1 || ady != k * offset.second) { aligned = false; break; }
+//                 }
+//                 else {
+//                     if (ady % offset.second != 0) { aligned = false; break; }
+//                     int k = ady / offset.second;
+//                     if (k < 1 || adx != 0) { aligned = false; break; }
+//                 }
+//             }
+//             if (aligned) {
+//                 alignedDirection = d;
+//                 return true;
+//             }
+//         }
+//     }
+//     return false;
+// }
+
+vector<int> Board::canonicalizeGroup(const vector<int>& group) {
+    vector<int> canon = group;
+    sort(canon.begin(), canon.end(), [](int a, int b) {
         auto ca = s_indexToCoord[a];
         auto cb = s_indexToCoord[b];
         return (ca.second < cb.second) || (ca.second == cb.second && ca.first < cb.first);
@@ -195,18 +238,18 @@ std::vector<int> Board::canonicalizeGroup(const std::vector<int>& group) {
 }
 
 // New version of generateMoves that uses canonical groups to eliminate duplicates
-std::vector<Move> Board::generateMoves(Occupant side) const {
-    std::vector<Move> moves;
-    std::set<std::string> uniqueGroupKeys;
-    std::vector<std::vector<int>> candidateGroups;
+vector<Move> Board::generateMoves(Occupant side) const {
+    vector<Move> moves;
+    set<string> uniqueGroupKeys;
+    vector<vector<int>> candidateGroups;
 
     // --- Generate candidate groups via DFS ---
     {
-        std::set<std::vector<int>> dfsGroups;
+        set<vector<int>> dfsGroups;
         for (int i = 0; i < NUM_CELLS; i++) {
             if (occupant[i] != side)
                 continue;
-            std::vector<int> group = { i };
+            vector<int> group = { i };
             dfsGroup(i, side, group, dfsGroups);
         }
         DEBUG_PRINT("DFS groups for side " << (side == Occupant::BLACK ? "BLACK" : "WHITE") << ":\n");
@@ -219,9 +262,9 @@ std::vector<Move> Board::generateMoves(Occupant side) const {
             // Only consider single marbles or aligned groups
             if (g.size() == 1 || isGroupAligned(g, dummy)) {
                 auto canon = canonicalizeGroup(g);
-                std::string key;
+                string key;
                 for (int idx : canon) {
-                    key += std::to_string(idx) + ",";
+                    key += to_string(idx) + ",";
                 }
                 if (uniqueGroupKeys.insert(key).second) {
                     candidateGroups.push_back(canon);
@@ -265,9 +308,9 @@ std::vector<Move> Board::generateMoves(Occupant side) const {
                 DEBUG_PRINT(indexToNotation(idx) << " ");
             DEBUG_PRINT("\n");
             auto canon = canonicalizeGroup(g);
-            std::string key;
+            string key;
             for (int idx : canon) {
-                key += std::to_string(idx) + ",";
+                key += to_string(idx) + ",";
             }
             if (uniqueGroupKeys.insert(key).second) {
                 candidateGroups.push_back(canon);
@@ -294,19 +337,19 @@ std::vector<Move> Board::generateMoves(Occupant side) const {
     return moves;
 }
 
-static inline std::string trim(const std::string& s) {
+static inline string trim(const string& s) {
     size_t start = 0;
-    while (start < s.size() && std::isspace(static_cast<unsigned char>(s[start])))
+    while (start < s.size() && isspace(static_cast<unsigned char>(s[start])))
         start++;
     size_t end = s.size();
-    while (end > start && std::isspace(static_cast<unsigned char>(s[end - 1])))
+    while (end > start && isspace(static_cast<unsigned char>(s[end - 1])))
         end--;
     return s.substr(start, end - start);
 }
 
 void Board::applyMove(const Move& m) {
     if (m.marbleIndices.empty()) {
-        throw std::runtime_error("No marbles in move.");
+        throw runtime_error("No marbles in move.");
     }
     int d = m.direction;
     static const char* DIRS[] = { "W", "E", "NW", "NE", "SW", "SE" };
@@ -341,14 +384,14 @@ void Board::applyMove(const Move& m) {
                 DEBUG_PRINT(" (occupant: " << occupantToString(occupant[cell]) << ")");
             DEBUG_PRINT("\n");
             if (oppCount >= m.marbleIndices.size()) {
-                throw std::runtime_error("Illegal move: cannot push, opponent group too large.");
+                throw runtime_error("Illegal move: cannot push, opponent group too large.");
             }
             if (cell >= 0 && occupant[cell] != Occupant::EMPTY) {
-                throw std::runtime_error("Illegal move: push blocked, destination not empty.");
+                throw runtime_error("Illegal move: push blocked, destination not empty.");
             }
             DEBUG_PRINT("  Push detected: pushing " << oppCount
                 << " opponent marble" << (oppCount > 1 ? "s" : "") << ".\n");
-            std::vector<int> chain;
+            vector<int> chain;
             cell = dest;
             for (int i = 0; i < oppCount; i++) {
                 chain.push_back(cell);
@@ -364,7 +407,7 @@ void Board::applyMove(const Move& m) {
                 }
                 else {
                     if (occupant[to] != Occupant::EMPTY)
-                        throw std::runtime_error("Illegal move: push blocked while moving opponent marbles.");
+                        throw runtime_error("Illegal move: push blocked while moving opponent marbles.");
                     occupant[to] = occupant[from];
                     occupant[from] = Occupant::EMPTY;
                     DEBUG_PRINT("    Marble at " << indexToNotation(from)
@@ -376,8 +419,8 @@ void Board::applyMove(const Move& m) {
         // Now, we need to move our own marbles.
         // Sort the moving group by dot-product with the move offset so that the marble furthest in the direction is last.
         auto offset = DIRECTION_OFFSETS[d];
-        std::vector<int> sortedGroup = m.marbleIndices;
-        std::sort(sortedGroup.begin(), sortedGroup.end(), [&](int a, int b) {
+        vector<int> sortedGroup = m.marbleIndices;
+        sort(sortedGroup.begin(), sortedGroup.end(), [&](int a, int b) {
             auto ca = s_indexToCoord[a];
             auto cb = s_indexToCoord[b];
             int scoreA = offset.first * ca.first + offset.second * ca.second;
@@ -392,10 +435,10 @@ void Board::applyMove(const Move& m) {
             DEBUG_PRINT("  Moving " << indexToNotation(idx) << " to "
                 << (target >= 0 ? indexToNotation(target) : "off-board") << "\n");
             if (target < 0) {
-                throw std::runtime_error("Illegal move: marble would move off-board.");
+                throw runtime_error("Illegal move: marble would move off-board.");
             }
             if (occupant[target] != Occupant::EMPTY) {
-                throw std::runtime_error("Illegal move: destination cell is not empty for inline move.");
+                throw runtime_error("Illegal move: destination cell is not empty for inline move.");
             }
             occupant[target] = occupant[idx];
             occupant[idx] = Occupant::EMPTY;
@@ -407,10 +450,10 @@ void Board::applyMove(const Move& m) {
             DEBUG_PRINT("  Side-stepping " << indexToNotation(idx) << " to "
                 << (target >= 0 ? indexToNotation(target) : "off-board") << "\n");
             if (target < 0) {
-                throw std::runtime_error("Illegal move: side-step moves off-board.");
+                throw runtime_error("Illegal move: side-step moves off-board.");
             }
             if (occupant[target] != Occupant::EMPTY) {
-                throw std::runtime_error("Illegal move: destination cell is not empty for side-step.");
+                throw runtime_error("Illegal move: destination cell is not empty for side-step.");
             }
             occupant[target] = occupant[idx];
             occupant[idx] = Occupant::EMPTY;
@@ -418,10 +461,10 @@ void Board::applyMove(const Move& m) {
     }
 }
 
-int Board::getFrontCell(const std::vector<int>& group, int direction) const {
+int Board::getFrontCell(const vector<int>& group, int direction) const {
     auto offset = DIRECTION_OFFSETS[direction];
     int bestIdx = group.front();
-    int bestScore = std::numeric_limits<int>::min();
+    int bestScore = numeric_limits<int>::min();
     for (int idx : group) {
         auto coord = s_indexToCoord[idx];  // (m, y)
         int score = offset.first * coord.first + offset.second * coord.second;
@@ -433,14 +476,14 @@ int Board::getFrontCell(const std::vector<int>& group, int direction) const {
     return bestIdx;
 }
 
-std::string Board::moveToNotation(const Move& m, Occupant side) {
-    std::string notation;
+string Board::moveToNotation(const Move& m, Occupant side) {
+    string notation;
     char teamChar = (side == Occupant::BLACK ? 'b' : 'w');
-    std::vector<std::string> cellNotations;
+    vector<string> cellNotations;
     for (int idx : m.marbleIndices) {
         cellNotations.push_back(indexToNotation(idx));
     }
-    std::sort(cellNotations.begin(), cellNotations.end(), std::greater<std::string>());
+    sort(cellNotations.begin(), cellNotations.end(), greater<string>());
     notation = "(";
     notation.push_back(teamChar);
     notation += ", ";
@@ -457,8 +500,8 @@ std::string Board::moveToNotation(const Move& m, Occupant side) {
     return notation;
 }
 
-std::string Board::toBoardString() const {
-    std::string result;
+string Board::toBoardString() const {
+    string result;
     bool first = true;
     for (int i = 0; i < NUM_CELLS; i++) {
         if (occupant[i] == Occupant::BLACK || occupant[i] == Occupant::WHITE) {
@@ -472,12 +515,12 @@ std::string Board::toBoardString() const {
     return result;
 }
 
-std::string Board::indexToNotation(int idx) {
+string Board::indexToNotation(int idx) {
     auto [m, y] = s_indexToCoord[idx];
     char rowLetter = char('A' + (y - 1));
-    std::string notation;
+    string notation;
     notation.push_back(rowLetter);
-    notation += std::to_string(m);
+    notation += to_string(m);
     return notation;
 }
 
@@ -485,7 +528,7 @@ std::string Board::indexToNotation(int idx) {
 
 void Board::initStandardLayout() {
     occupant.fill(Occupant::EMPTY);
-    std::vector<std::string> blackPositions = {
+    vector<string> blackPositions = {
         "A4", "A5",
         "B4", "B5", "B6",
         "C4", "C5", "C6", "C7",
@@ -495,7 +538,7 @@ void Board::initStandardLayout() {
     for (auto& cell : blackPositions) {
         setOccupant(cell, Occupant::BLACK);
     }
-    std::vector<std::string> whitePositions = {
+    vector<string> whitePositions = {
         "E4", "F4", "F5", "F6", "F7",
         "G3", "G4", "G5", "G6", "G7",
         "H4", "H5", "H6",
@@ -508,13 +551,13 @@ void Board::initStandardLayout() {
 
 void Board::initBelgianDaisyLayout() {
     occupant.fill(Occupant::EMPTY);
-    std::vector<std::string> blackPositions = {
+    vector<string> blackPositions = {
         "C5","C6","D4","D7","E4","E7","F4","F7","G5","G6"
     };
     for (auto& cell : blackPositions) {
         setOccupant(cell, Occupant::BLACK);
     }
-    std::vector<std::string> whitePositions = {
+    vector<string> whitePositions = {
         "C4","D3","E3","F3","G4","G7","D8","E8","F8","G8"
     };
     for (auto& cell : whitePositions) {
@@ -524,13 +567,13 @@ void Board::initBelgianDaisyLayout() {
 
 void Board::initGermanDaisyLayout() {
     occupant.fill(Occupant::EMPTY);
-    std::vector<std::string> blackPositions = {
+    vector<string> blackPositions = {
         "B4","C4","D5","E5","F5","G5","H6"
     };
     for (auto& cell : blackPositions) {
         setOccupant(cell, Occupant::BLACK);
     }
-    std::vector<std::string> whitePositions = {
+    vector<string> whitePositions = {
         "B5","C5","D4","E4","F4","G4","H5"
     };
     for (auto& cell : whitePositions) {
@@ -540,20 +583,20 @@ void Board::initGermanDaisyLayout() {
 
 //========================== Loading from Input File ==========================//
 
-bool Board::loadFromInputFile(const std::string& filename) {
+bool Board::loadFromInputFile(const string& filename) {
     occupant.fill(Occupant::EMPTY);
-    std::ifstream fin(filename);
+    ifstream fin(filename);
     if (!fin.is_open()) {
-        std::cerr << "Error: could not open file: " << filename << "\n";
+        cerr << "Error: could not open file: " << filename << "\n";
         return false;
     }
-    std::string line;
-    if (!std::getline(fin, line)) {
-        std::cerr << "Error: file is missing the first line.\n";
+    string line;
+    if (!getline(fin, line)) {
+        cerr << "Error: file is missing the first line.\n";
         return false;
     }
     if (line.size() < 1) {
-        std::cerr << "Error: first line is empty.\n";
+        cerr << "Error: first line is empty.\n";
         return false;
     }
     char nextColorChar = line[0];
@@ -564,23 +607,23 @@ bool Board::loadFromInputFile(const std::string& filename) {
         nextToMove = Occupant::WHITE;
     }
     else {
-        std::cerr << "Error: first line must be 'b' or 'w'. Found: " << line << "\n";
+        cerr << "Error: first line must be 'b' or 'w'. Found: " << line << "\n";
         return false;
     }
-    if (!std::getline(fin, line)) {
-        std::cerr << "Error: file is missing the second line.\n";
+    if (!getline(fin, line)) {
+        cerr << "Error: file is missing the second line.\n";
         return false;
     }
-    std::stringstream ss(line);
-    std::string token;
-    while (std::getline(ss, token, ',')) {
+    stringstream ss(line);
+    string token;
+    while (getline(ss, token, ',')) {
         if (token.empty()) continue;
         char c = token.back();
         Occupant who;
         if (c == 'b' || c == 'B') who = Occupant::BLACK;
         else if (c == 'w' || c == 'W') who = Occupant::WHITE;
         else {
-            std::cerr << "Warning: token '" << token << "' does not end in b/w. Skipping.\n";
+            cerr << "Warning: token '" << token << "' does not end in b/w. Skipping.\n";
             continue;
         }
         token.pop_back();
@@ -592,21 +635,21 @@ bool Board::loadFromInputFile(const std::string& filename) {
 
 //========================== setOccupant & Utility ==========================//
 
-void Board::setOccupant(const std::string& notation, Occupant who) {
+void Board::setOccupant(const string& notation, Occupant who) {
     int idx = notationToIndex(notation);
     if (idx >= 0) {
         occupant[idx] = who;
     }
     else {
-        std::cerr << "Warning: invalid cell notation '" << notation << "'\n";
+        cerr << "Warning: invalid cell notation '" << notation << "'\n";
     }
 }
 
 //========================== Mapping, Neighbors, etc. ==========================//
 
 bool Board::s_mappingInitialized = false;
-std::unordered_map<long long, int> Board::s_coordToIndex;
-std::array<std::pair<int, int>, Board::NUM_CELLS> Board::s_indexToCoord;
+unordered_map<long long, int> Board::s_coordToIndex;
+array<pair<int, int>, Board::NUM_CELLS> Board::s_indexToCoord;
 
 static long long packCoord(int m, int y) {
     return (static_cast<long long>(m) << 32) ^ (static_cast<long long>(y) & 0xffffffff);
@@ -640,7 +683,7 @@ void Board::initMapping() {
         }
     }
     if (idx != NUM_CELLS) {
-        throw std::runtime_error("Did not fill exactly 61 cells! Check your loops!");
+        throw runtime_error("Did not fill exactly 61 cells! Check your loops!");
     }
 }
 
@@ -671,18 +714,18 @@ void Board::initNeighbors() {
     }
 }
 
-int Board::notationToIndex(const std::string& notation) {
+int Board::notationToIndex(const string& notation) {
     if (notation.size() < 2 || notation.size() > 3) {
         return -1;
     }
-    char letter = std::toupper(notation[0]);
+    char letter = toupper(notation[0]);
     int y = (letter - 'A') + 1;
     if (y < 1 || y > 9) {
         return -1;
     }
     int m = 0;
     try {
-        m = std::stoi(notation.substr(1));
+        m = stoi(notation.substr(1));
     }
     catch (...) {
         return -1;
