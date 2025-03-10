@@ -43,26 +43,38 @@ Before attempting to run, you must open your project after connecting to a WSL e
 ## HOW TO RUN:
 
 WITH MAKE: make abalone
-WITHOUT MAKE: g++ -std=c++17 main.cpp Board.cpp -o abalone
+
+WITHOUT MAKE: g++ -std=c++17 main.cpp Board.
+cpp -o abalone
+
 ./abalone Test1.input  // type out what input file you want to use
 
 ## With DEBUG messages:
 
 WITH MAKE: make debug
-WITHOUT MAKE: g++ -std=c++17 -DDEBUG main.cpp Board.cpp -o abalone
+
+WITHOUT MAKE: g++ -std=c++17 -DDEBUG main.
+
+cpp Board.cpp -o abalone
 ./abalone Test1.input
 
 ## How to compare the output to the desired output:
 
 WITH MAKE: make compareBoards
+
 WITHOUT MAKE: g++ -std=c++17 compareBoards.cpp -o compareBoards
+
 ./compareBoards Test2.board boards.txt moves.txt
 
 ## How to visualize board states with board_visualizer
 
 WITH MAKE: make board_visualizer.cpp
-WITHOUT MAKE: g++ -std=c++17 board_visualizer.cpp -o board_visualizer
+
+WITHOUT MAKE: g++ -std=c++17 
+
+board_visualizer.cpp -o board_visualizer
 ./board_visualizer (initial position input file) (all possible moves file)
+
 e.g. ./board_visualizer standard_start.input boards.txt
 
 # Code Explanations
