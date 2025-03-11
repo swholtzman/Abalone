@@ -1,10 +1,10 @@
 #include "Board.h"
 #include <iostream>
 #include <fstream>
-#include <sstream>
 #include <vector>
 #include <string>
 #include <cctype>
+#include <chrono> // Add this for timing functionality
 
 // Helper: Trim whitespace from the beginning and end of a string.
 std::string trim(const std::string& s) {
@@ -23,16 +23,16 @@ int main(int argc, char* argv[]) {
         std::cerr << "Usage: " << argv[0] << " <input_file>\n";
         return 1;
     }
-
+    
     std::string inputFilename = argv[1];
-
+    
     // Open the original input file.
     std::ifstream fin(inputFilename);
     if (!fin.is_open()) {
         std::cerr << "Error: could not open file: " << inputFilename << "\n";
         return 1;
     }
-
+    
     // Read all non-empty lines (after trimming) into a vector.
     std::vector<std::string> nonEmptyLines;
     std::string line;
@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
         }
     }
     fin.close();
-
+    
     // Write these non-empty lines to a temporary file.
     std::ofstream tempOut("temp.input");
     if (!tempOut.is_open()) {
@@ -54,34 +54,47 @@ int main(int argc, char* argv[]) {
         tempOut << l << "\n";
     }
     tempOut.close();
-
+    
     // Now load from the temporary file.
     Board board;
     if (!board.loadFromInputFile("temp.input")) {
         std::cerr << "Error loading board from temp.input\n";
         return 1;
     }
-
+    
+    // Start timing
+    auto start = std::chrono::high_resolution_clock::now();
+    
     // Generate moves using board.nextToMove from the file.
     auto moves = board.generateMoves(board.nextToMove);
-
+    
+    // End timing
+    auto end = std::chrono::high_resolution_clock::now();
+    
+    // Calculate duration
+    std::chrono::duration<double, std::milli> duration = end - start;
+    
+    // Output the timing information
+    std::cout << "Time to generate all moves: " << duration.count() << " milliseconds\n";
+    std::cout << "Number of moves generated: " << moves.size() << "\n";
+    
     std::ofstream movesFile("moves.txt");
     std::ofstream boardsFile("boards.txt");
-
+    
     // For each move:
     for (auto& m : moves) {
         // Write the move in document notation.
         std::string moveNotation = Board::moveToNotation(m, board.nextToMove);
         movesFile << moveNotation << "\n";
-
+        
         // Create a copy and apply the move.
         Board copy = board;
         copy.applyMove(m);
-
+        
         // Write the board state.
         std::string occupantStr = copy.toBoardString();
         boardsFile << occupantStr << "\n";
     }
-
+    
     return 0;
 }
