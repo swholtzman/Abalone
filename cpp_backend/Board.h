@@ -149,7 +149,11 @@ private:
     void dfsGroup(int current, Occupant side, std::vector<int>& group,
         std::set<std::vector<int>>& result) const;
 
+    void scanCoordinateSet(const std::vector<std::vector<std::pair<int, int>>>& coordinateSet,
+                              Occupant side, std::set<std::vector<int>>& groupSet, int d, bool isHorizontal) const;
+
     std::set<std::vector<int>> generateParallelGroups(Occupant side) const;
+
 
     // Checks if all marbles in 'group' are collinear in one of the allowed directions.
     // If so, sets 'alignedDirection' (0..5) to that direction and returns true;

@@ -163,81 +163,143 @@ set<vector<int>> Board::generateColumnGroups(Occupant side) const {
 
 std::mutex groupMutex;  // Mutex to ensure thread safety when modifying shared data
 
-/**
- * @brief Scans for groups of contiguous marbles in a given direction.
- *
- * This function runs in parallel threads for efficient scanning.
- *
- * @param board The current board state.
- * @param direction The direction in which to scan for groups.
- * @param side The occupant (Black or White) whose groups we are detecting.
- * @param groupSet A shared set to store unique groups found.
- */
-void scanDirection(const Board& board, int direction, Occupant side, std::set<std::vector<int>>& groupSet) {
-    std::set<std::vector<int>> localGroups;  // Local set to collect groups before merging
-
-    // Iterate through all board cells
-    for (int startRow = 0; startRow < Board::NUM_CELLS; startRow++) {
-        if (board.occupant[startRow] != side) continue;  // Skip empty cells or opponent's marbles
-
-        std::vector<int> group;  // Stores detected marble group
-        int current = startRow;  // Start scanning from this cell
-
-        // Traverse in the given direction until max group size of 3 is reached
-        while (group.size() < 3) {
-            int next = board.neighbors[current][direction];  // Find next cell in the same direction
-            if (next >= 0 && board.occupant[next] == side) { // Ensure next cell is occupied by the same side
-                group.push_back(next);
-                current = next;  // Move to the next cell
-            } else {
-                break;  // Stop if we reach an empty cell or an opponent's marble
-            }
-        }
-
-        // Store detected groups: Single, binary, and tertiary groups
-        if (!group.empty()) {
-            std::lock_guard<std::mutex> lock(groupMutex);  // Ensure safe access to shared resource
-            groupSet.insert(group);
-
-            if (group.size() >= 2) {
-                groupSet.insert(std::vector<int>(group.begin(), group.begin() + 2));  // Add binary group
-            }
-
-            if (group.size() == 3) {
-                groupSet.insert(std::vector<int>(group.begin(), group.begin() + 3));  // Add tertiary group
-            }
-        }
-    }
+static long long packCoord(int m, int y) {
+    return (static_cast<long long>(m) << 32) ^ (static_cast<long long>(y) & 0xffffffff);
 }
 
-/**
- * @brief Generates all possible groups using multi-threading for efficiency.
- *
- * This function spawns multiple threads to scan in three primary directions simultaneously.
- *
- * @param side The occupant (Black or White) for whom to generate groups.
- * @return A set of unique groups of size 1, 2, or 3.
- */
-std::set<std::vector<int>> Board::generateParallelGroups(Occupant side) const {
-    std::set<std::vector<int>> groups;  // Shared set to store unique groups
+// ========================== Coordinate Definitions ========================== //
+// Each vector represents a set of rows for scanning (hexagonal board structure)
 
-    // Define primary movement directions (each thread scans one type of group)
-    std::vector<int> primaryDirections = {0, 2, 4}; // Example: W, NW, SW
+const std::vector<std::vector<std::pair<int, int>>> HorizontalCoordinates = {
+    {{1,1}, {2,1}, {3,1}, {4,1}, {5,1}},  // Row from (1,1) to (5,1)
+    {{1,2}, {2,2}, {3,2}, {4,2}, {5,2}, {6,2}},  // Row from (1,2) to (6,2)
+    {{1,3}, {2,3}, {3,3}, {4,3}, {5,3}, {6,3}, {7,3}},  // Row from (1,3) to (7,3)
+    {{1,4}, {2,4}, {3,4}, {4,4}, {5,4}, {6,4}, {7,4}, {8,4}},  // Row from (1,4) to (8,4)
+    {{1,5}, {2,5}, {3,5}, {4,5}, {5,5}, {6,5}, {7,5}, {8,5}, {9,5}},  // Row from (1,5) to (9,5)
+    {{2,6}, {3,6}, {4,6}, {5,6}, {6,6}, {7,6}, {8,6}, {9,6}},  // Row from (2,6) to (9,6)
+    {{3,7}, {4,7}, {5,7}, {6,7}, {7,7}, {8,7}, {9,7}},  // Row from (3,7) to (9,7)
+    {{4,8}, {5,8}, {6,8}, {7,8}, {8,8}, {9,8}},  // Row from (4,8) to (9,8)
+    {{5,9}, {6,9}, {7,9}, {8,9}, {9,9}}  // Row from (5,9) to (9,9)
+};
 
-    std::vector<std::thread> threads;  // Stores active threads
+const std::vector<std::vector<std::pair<int, int>>> NorthEasternCoordinates = {
+    {{1,5}, {2,6}, {3,7}, {4,8}, {5,9}},  // (1,5) to (5,9)
+    {{1,4}, {2,5}, {3,6}, {4,7}, {5,8}, {6,9}},  // (1,4) to (6,9)
+    {{1,3}, {2,4}, {3,5}, {4,6}, {5,7}, {6,8}, {7,9}},  // (1,3) to (7,9)
+    {{1,2}, {2,3}, {3,4}, {4,5}, {5,6}, {6,7}, {7,8}, {8,9}},  // (1,2) to (8,9)
+    {{1,1}, {2,2}, {3,3}, {4,4}, {5,5}, {6,6}, {7,7}, {8,8}, {9,9}},  // (1,1) to (9,9)
+    {{2,1}, {3,2}, {4,3}, {5,4}, {6,5}, {7,6}, {8,7}, {9,8}},  // (2,1) to (9,8)
+    {{3,1}, {4,2}, {5,3}, {6,4}, {7,5}, {8,6}, {9,7}},  // (3,1) to (9,7)
+    {{4,1}, {5,2}, {6,3}, {7,4}, {8,5}, {9,6}},  // (4,1) to (9,6)
+    {{5,1}, {6,2}, {7,3}, {8,4}, {9,5}}  // (5,1) to (9,5)
+};
 
-    // Launch a thread for each primary direction
-    for (int dir : primaryDirections) {
-        threads.emplace_back(scanDirection, std::ref(*this), dir, side, std::ref(groups));
+const std::vector<std::vector<std::pair<int, int>>> NorthWesternCoordinates = {
+    {{9,5}, {9,6}, {9,7}, {9,8}, {9,9}},  // (9,5) to (9,9)
+    {{8,4}, {8,5}, {8,6}, {8,7}, {8,8}, {8,9}},  // (8,4) to (8,9)
+    {{7,3}, {7,4}, {7,5}, {7,6}, {7,7}, {7,8}, {7,9}},  // (7,3) to (7,9)
+    {{6,2}, {6,3}, {6,4}, {6,5}, {6,6}, {6,7}, {6,8}, {6,9}},  // (6,2) to (6,9)
+    {{5,1}, {5,2}, {5,3}, {5,4}, {5,5}, {5,6}, {5,7}, {5,8}, {5,9}},  // (5,1) to (5,9)
+    {{4,1}, {4,2}, {4,3}, {4,4}, {4,5}, {4,6}, {4,7}, {4,8}},  // (4,1) to (4,8)
+    {{3,1}, {3,2}, {3,3}, {3,4}, {3,5}, {3,6}, {3,7}},  // (3,1) to (3,7)
+    {{2,1}, {2,2}, {2,3}, {2,4}, {2,5}, {2,6}},  // (2,1) to (2,6)
+    {{1,1}, {1,2}, {1,3}, {1,4}, {1,5}}  // (1,1) to (1,5)
+};
+
+
+// ========================== Group Detection Function ========================== //
+void Board::scanCoordinateSet(const std::vector<std::vector<std::pair<int, int>>>& coordinateSet,
+                              Occupant side, std::set<std::vector<int>>& groupSet, int d, bool isHorizontal) const {
+    std::set<std::vector<int>> localGroups;  // Local storage to minimize locking
+
+    for (const auto& row : coordinateSet) {
+        std::vector<int> rowIndices;
+
+        // Convert coordinate pairs to board indices
+        for (const auto& coord : row) {
+            int m = coord.first, y = coord.second;
+            long long key = packCoord(m, y);
+
+            auto it = s_coordToIndex.find(key);
+            if (it != s_coordToIndex.end()) {
+                int idx = it->second;
+                if (occupant[idx] == side) {
+                    rowIndices.push_back(idx);
+                }
+            }
+        }
+
+        // Extract single, binary, and tertiary groups
+        for (size_t i = 0; i < rowIndices.size(); ++i) {
+            std::vector<int> group = { rowIndices[i] };
+
+            // ✅ Only add single-marble groups for Horizontal scanning
+            if (isHorizontal) {
+                localGroups.insert(group);
+            }
+
+            // ✅ Ensure `rowIndices[i]` is actually adjacent to `rowIndices[i+1]`
+            if (i + 1 < rowIndices.size()) {
+                if (neighbors[rowIndices[i]][d] != -1 &&
+                    neighbors[rowIndices[i]][d] == rowIndices[i + 1]) {
+                    group.push_back(rowIndices[i + 1]);
+                    localGroups.insert(group);
+                } else {
+                    continue;
+                }
+            }
+
+            // ✅ Ensure `rowIndices[i] → rowIndices[i+1] → rowIndices[i+2]` are all adjacent
+            if (i + 2 < rowIndices.size()) {
+                if (neighbors[rowIndices[i]][d] != -1 &&
+                    neighbors[rowIndices[i]][d] == rowIndices[i + 1] &&
+                    neighbors[rowIndices[i + 1]][d] != -1 &&
+                    neighbors[rowIndices[i + 1]][d] == rowIndices[i + 2]) {
+                    group.push_back(rowIndices[i + 2]);
+                    localGroups.insert(group);
+                }
+            }
+        }
     }
 
-    // Wait for all threads to complete execution
+    // Merge results safely
+    std::lock_guard<std::mutex> lock(groupMutex);
+    groupSet.insert(localGroups.begin(), localGroups.end());
+}
+
+// ========================== Parallel Group Generation ========================== //
+std::set<std::vector<int>> Board::generateParallelGroups(Occupant side) const {
+    std::set<std::vector<int>> groups;
+    std::vector<std::thread> threads;
+
+    int eastDirectionIdx = 1;
+    int northEastDirectionIdx = 3;
+    int northWestDirectionIdx = 2;
+
+    // ✅ Pass `true` for `isHorizontal` when scanning HorizontalCoordinates
+    threads.emplace_back([this, &groups, side, eastDirectionIdx]() {
+        scanCoordinateSet(HorizontalCoordinates, side, groups, eastDirectionIdx, true);
+    });
+
+    // ✅ Pass `false` for `isHorizontal` when scanning other directions
+    threads.emplace_back([this, &groups, side, northEastDirectionIdx]() {
+        scanCoordinateSet(NorthEasternCoordinates, side, groups, northEastDirectionIdx, false);
+    });
+
+    threads.emplace_back([this, &groups, side, northWestDirectionIdx]() {
+        scanCoordinateSet(NorthWesternCoordinates, side, groups, northWestDirectionIdx, false);
+    });
+
     for (auto& t : threads) {
         t.join();
     }
 
     return groups;
 }
+
+
+
+
 
 
 // Constant-time implementation of isGroupAligned (O(1) for 2 marbles, O(1) for 3 marbles)
@@ -780,9 +842,9 @@ bool Board::s_mappingInitialized = false;
 unordered_map<long long, int> Board::s_coordToIndex;
 array<pair<int, int>, Board::NUM_CELLS> Board::s_indexToCoord;
 
-static long long packCoord(int m, int y) {
-    return (static_cast<long long>(m) << 32) ^ (static_cast<long long>(y) & 0xffffffff);
-}
+// static long long packCoord(int m, int y) {
+//     return (static_cast<long long>(m) << 32) ^ (static_cast<long long>(y) & 0xffffffff);
+// }
 
 void Board::initMapping() {
     if (s_mappingInitialized) return;
