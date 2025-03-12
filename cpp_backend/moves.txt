@@ -1,80 +1,13 @@
-(b, B1) s → SE
-(b, B2, B1) i → E
-(b, B2, B1) s → SE
-(b, C1, B1) i → NW
-(b, C1, B1) i → SE
-(b, D3, C2, B1) i → NE
-(b, B2) s → E
-(b, B2) s → SW
-(b, B2) s → SE
-(b, C2, B2) i → SE
-(b, D2, C2, B2) i → NW
-(b, D2, C2, B2) i → SE
-(b, C3, B2) s → E
-(b, C3, B2) i → NE
-(b, C3, B2) i → SW
-(b, C3, B2) s → SE
-(b, C1) s → NW
-(b, C3, C2, C1) i → E
-(b, D2, C1) s → NW
-(b, D2, C1) i → NE
-(b, C3, C2) i → E
-(b, D2, C2) i → NW
-(b, D3, C2) i → NE
-(b, C3) s → E
-(b, C3) s → NE
-(b, C3) s → SE
-(b, D3, C3) s → E
-(b, D3, C3) i → NW
-(b, D3, C3) s → NE
-(b, D3, C3) i → SE
-(b, D2) s → W
-(b, D2) s → NW
-(b, D2) s → NE
-(b, D3, D2) i → W
-(b, D3, D2) i → E
-(b, D3, D2) s → NW
-(b, D3, D2) s → NE
-(b, D3) s → E
-(b, D3) s → NW
-(b, D3) s → NE
-(b, F7) s → W
-(b, F7) s → SW
-(b, F7) s → SE
-(b, F8, F7) i → W
-(b, F8, F7) i → E
-(b, F8, F7) s → SW
-(b, F8, F7) s → SE
-(b, G7, F7) s → W
-(b, G7, F7) i → NW
-(b, G7, F7) s → SW
-(b, G7, F7) i → SE
-(b, G8, F7) i → SW
-(b, H9, G8, F7) i → SW
-(b, F8) s → E
-(b, F8) s → SW
-(b, F8) s → SE
-(b, G8, F8) i → SE
-(b, H8, G8, F8) i → NW
-(b, H8, G8, F8) i → SE
-(b, G9, F8) i → SW
-(b, G9, F8) s → SE
-(b, G7) s → W
-(b, G7) s → NW
-(b, G7) s → SW
-(b, G8, G7) i → W
-(b, G9, G8, G7) i → W
-(b, H8, G7) s → W
-(b, H8, G7) s → NW
-(b, H8, G7) i → NE
-(b, H8, G7) i → SW
-(b, H8, G8) i → NW
-(b, G9) s → SE
-(b, H9, G9) i → NW
-(b, H9, G9) i → SE
-(b, H8) s → W
-(b, H8) s → NW
-(b, H8) s → NE
-(b, H9, H8) i → W
-(b, H9, H8) s → NW
-(b, H9) s → NW
+(b, F5, E5, D5) i → NW
+(b, E4) s → W
+(b, E5, E4) i → W
+(b, F5, E5) i → NW
+(b, E6, D5) i → SW
+(b, F5, E4) i → SW
+(b, F6, F5) i → W
+(b, H6, G6, F6) i → NW
+(b, F7, F6, F5) i → W
+(b, H6, G6) i → NW
+(b, H6) s → W
+(b, H6) s → NW
+(b, H6) s → NE

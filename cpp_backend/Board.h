@@ -53,6 +53,7 @@ public:
     // direction d (or -1 if none exists).
     std::array<std::array<int, NUM_DIRECTIONS>, NUM_CELLS> neighbors;
 
+
     //--------------------------------------------------------------------------
     // Public Methods and Constructors
     //--------------------------------------------------------------------------
@@ -73,6 +74,8 @@ public:
 
     // Generate candidate column groups for the given side.
     std::set<std::vector<int>> generateColumnGroups(Occupant side) const;
+
+
 
     // Generate all legal moves for a given side.
     std::vector<Move> generateMoves(Occupant side) const;
@@ -145,6 +148,8 @@ private:
     // are inserted into 'result'.
     void dfsGroup(int current, Occupant side, std::vector<int>& group,
         std::set<std::vector<int>>& result) const;
+
+    std::set<std::vector<int>> generateParallelGroups(Occupant side) const;
 
     // Checks if all marbles in 'group' are collinear in one of the allowed directions.
     // If so, sets 'alignedDirection' (0..5) to that direction and returns true;
