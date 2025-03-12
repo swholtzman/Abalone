@@ -10,6 +10,8 @@
 #include <unordered_set>
 #include <limits>
 
+
+// TEst commit
 //---------------------------------------------------------------------
 // Debug macro: if DEBUG is defined, DEBUG_PRINT prints; otherwise it does nothing.
 #ifdef DEBUG
@@ -144,11 +146,11 @@ void Board::dfsGroup(int current, Occupant side, vector<int>& group, set<vector<
 bool Board::isGroupAligned(const vector<int>& group, int& alignedDirection) const {
     if (group.size() < 2)
         return false;
-    
+
     // If 2 marbles, simply check if they're neighbors in any direction
     if (group.size() == 2) {
         for (int d = 0; d < NUM_DIRECTIONS; d++) {
-            if (neighbors[group[0]][d] == group[1] || 
+            if (neighbors[group[0]][d] == group[1] ||
                 neighbors[group[1]][d] == group[0]) {
                 alignedDirection = d;
                 return true;
@@ -156,7 +158,7 @@ bool Board::isGroupAligned(const vector<int>& group, int& alignedDirection) cons
         }
         return false;
     }
-    
+
     // For 3 marbles, check if they form a line
     if (group.size() == 3) {
         for (int d = 0; d < NUM_DIRECTIONS; d++) {
@@ -164,10 +166,10 @@ bool Board::isGroupAligned(const vector<int>& group, int& alignedDirection) cons
             for (int i = 0; i < 3; i++) {
                 int a = group[i];
                 int b = neighbors[a][d];
-                if (b >= 0 && 
+                if (b >= 0 &&
                     (b == group[(i+1)%3] || b == group[(i+2)%3])) {
                     int c = neighbors[b][d];
-                    if (c >= 0 && 
+                    if (c >= 0 &&
                         (c == group[(i+1)%3] || c == group[(i+2)%3])) {
                         alignedDirection = d;
                         return true;
@@ -176,7 +178,7 @@ bool Board::isGroupAligned(const vector<int>& group, int& alignedDirection) cons
             }
         }
     }
-    
+
     return false;
 }
 
