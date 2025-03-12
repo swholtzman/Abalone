@@ -3,6 +3,12 @@ Abalone game created to develop an effective AI bot system with heuristics for o
 
 ## Patch Notes
 
+### Patch 1.0.6
+- Pushed March 12, 2025 4:00pm ; Wayne Chen
+- Updated cpp files to use namespace
+- Renamed the output files in main.cpp
+- Updated readme file
+
 ### Patch 1.0.5
 - Pushed March 11, 2025 11:10am ; Wayne Chen
 - Added a timer in main.cpp
@@ -59,12 +65,11 @@ cpp -o abalone
 
 WITH MAKE: make debug
 
-WITHOUT MAKE: g++ -std=c++17 -DDEBUG main.
+WITHOUT MAKE: g++ -std=c++17 -DDEBUG main.cpp Board.cpp -o abalone
 
-cpp Board.cpp -o abalone
 ./abalone Test1.input
 
-## How to compare the output to the desired output:
+## How to compare the output to the desired output (The output files used to be "boards.txt" and "moves.txt")
 
 WITH MAKE: make compareBoards
 
@@ -76,9 +81,8 @@ WITHOUT MAKE: g++ -std=c++17 compareBoards.cpp -o compareBoards
 
 WITH MAKE: make board_visualizer.cpp
 
-WITHOUT MAKE: g++ -std=c++17 
+WITHOUT MAKE: g++ -std=c++17 board_visualizer.cpp -o board_visualizer
 
-board_visualizer.cpp -o board_visualizer
 ./board_visualizer (initial position input file) (all possible moves file)
 
 e.g. ./board_visualizer standard_start.input boards.txt
