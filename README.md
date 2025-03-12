@@ -59,12 +59,11 @@ cpp -o abalone
 
 WITH MAKE: make debug
 
-WITHOUT MAKE: g++ -std=c++17 -DDEBUG main.
+WITHOUT MAKE: g++ -std=c++17 -DDEBUG main.cpp Board.cpp -o abalone
 
-cpp Board.cpp -o abalone
 ./abalone Test1.input
 
-## How to compare the output to the desired output:
+## How to compare the output to the desired output (The output files used to be "boards.txt" and "moves.txt")
 
 WITH MAKE: make compareBoards
 
@@ -76,9 +75,8 @@ WITHOUT MAKE: g++ -std=c++17 compareBoards.cpp -o compareBoards
 
 WITH MAKE: make board_visualizer.cpp
 
-WITHOUT MAKE: g++ -std=c++17 
+WITHOUT MAKE: g++ -std=c++17 board_visualizer.cpp -o board_visualizer
 
-board_visualizer.cpp -o board_visualizer
 ./board_visualizer (initial position input file) (all possible moves file)
 
 e.g. ./board_visualizer standard_start.input boards.txt
