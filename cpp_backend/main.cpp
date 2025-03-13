@@ -79,7 +79,6 @@ int main(int argc, char* argv[]) {
     
     // Output the timing information
     cout << "Time to generate all moves: " << duration.count()/1000 << " seconds\n";
-    cout << "Number of moves generated: " << moves.size() << "\n";
 
     size_t pos = inputFilename.find("."); // Find the first dot
 
@@ -87,6 +86,8 @@ int main(int argc, char* argv[]) {
     
     ofstream movesFile(baseName + ".move");
     ofstream boardsFile(baseName + ".board");
+
+    ofstream boardTxtFile("boards.txt");
     
     // For each move:
     for (auto& m : moves) {
@@ -101,7 +102,17 @@ int main(int argc, char* argv[]) {
         // Write the board state.
         string occupantStr = copy.toBoardString();
         boardsFile << occupantStr << "\n";
+
+        // Write the board state to a text file.
+        boardTxtFile << occupantStr << "\n";
     }
+
+    cout << "Number of moves generated: " << moves.size() << "\n";
+
+    // Close the files.
+    movesFile.close();
+    boardsFile.close();
+    boardTxtFile.close();
     
     return 0;
 }

@@ -69,13 +69,13 @@ WITHOUT MAKE: g++ -std=c++17 -DDEBUG main.cpp Board.cpp -o abalone
 
 ./abalone Test1.input
 
-## How to compare the output to the desired output (The output files used to be "boards.txt" and "moves.txt")
+## How to compare the output to the desired output
 
 WITH MAKE: make compareBoards
 
 WITHOUT MAKE: g++ -std=c++17 compareBoards.cpp -o compareBoards
 
-./compareBoards Test2.board boards.txt moves.txt
+./compareBoards Test2.board boards.txt Test2.move
 
 ## How to visualize board states with board_visualizer
 

@@ -299,28 +299,28 @@ vector<Move> Board::generateMoves(Occupant side) const {
     }
 
     // --- Generate candidate groups via column grouping ---
-    {
-        auto colGroups = generateColumnGroups(side);
-        DEBUG_PRINT("Column groups for side " << (side == Occupant::BLACK ? "BLACK" : "WHITE") << ":\n");
-        for (const auto& g : colGroups) {
-            DEBUG_PRINT("Column Group: ");
-            for (int idx : g)
-                DEBUG_PRINT(indexToNotation(idx) << " ");
-            DEBUG_PRINT("\n");
-            auto canon = canonicalizeGroup(g);
-            string key;
-            for (int idx : canon) {
-                key += to_string(idx) + ",";
-            }
-            if (uniqueGroupKeys.insert(key).second) {
-                candidateGroups.push_back(canon);
-                DEBUG_PRINT("Accepted column group key: " << key << "\n");
-            }
-            else {
-                DEBUG_PRINT("Duplicate column group key: " << key << "\n");
-            }
-        }
-    }
+    // {
+    //     auto colGroups = generateColumnGroups(side);
+    //     DEBUG_PRINT("Column groups for side " << (side == Occupant::BLACK ? "BLACK" : "WHITE") << ":\n");
+    //     for (const auto& g : colGroups) {
+    //         DEBUG_PRINT("Column Group: ");
+    //         for (int idx : g)
+    //             DEBUG_PRINT(indexToNotation(idx) << " ");
+    //         DEBUG_PRINT("\n");
+    //         auto canon = canonicalizeGroup(g);
+    //         string key;
+    //         for (int idx : canon) {
+    //             key += to_string(idx) + ",";
+    //         }
+    //         if (uniqueGroupKeys.insert(key).second) {
+    //             candidateGroups.push_back(canon);
+    //             DEBUG_PRINT("Accepted column group key: " << key << "\n");
+    //         }
+    //         else {
+    //             DEBUG_PRINT("Duplicate column group key: " << key << "\n");
+    //         }
+    //     }
+    // }
 
     DEBUG_PRINT("Total candidate groups after deduplication: " << candidateGroups.size() << "\n");
 
