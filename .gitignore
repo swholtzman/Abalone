@@ -1,0 +1,6 @@
+# Ignore compiled binaries
+abalone
+abalone_generator
+compareBoards
+board_visualizer
+visualizer_output.txt
