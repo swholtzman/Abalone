@@ -3,6 +3,10 @@ Abalone game created to develop an effective AI bot system with heuristics for o
 
 ## Patch Notes
 
+### Patch 1.0.7
+- Pushed March 13, 2025 11:15pm ; Wayne Chen
+- Updated the code for reading input file in main.cpp
+
 ### Patch 1.0.6
 - Pushed March 12, 2025 4:00pm ; Wayne Chen
 - Updated cpp files to use namespace
