@@ -7,10 +7,13 @@
 #include <vector>
 #include <set>
 #include <algorithm>
+#include <unordered_set>
 
 //------------------------------------------------------------------------------
 // Occupant and Move Structures
 //------------------------------------------------------------------------------
+
+struct VectorHash;
 
 // Simple occupant type: empty, black, or white.
 enum class Occupant {
@@ -74,7 +77,6 @@ public:
 
     // Generate candidate column groups for the given side.
     std::set<std::vector<int>> generateColumnGroups(Occupant side) const;
-
 
 
     // Generate all legal moves for a given side.
@@ -152,8 +154,17 @@ private:
     void scanCoordinateSet(const std::vector<std::vector<std::pair<int, int>>>& coordinateSet,
                               Occupant side, std::set<std::vector<int>>& groupSet, int d, bool isHorizontal) const;
 
-    std::set<std::vector<int>> generateParallelGroups(Occupant side) const;
 
+    void scanHorizontal(const std::vector<std::vector<std::pair<int, int>>> &coordinateSet, Occupant side, int d,
+                        std::set<std::vector<int>> &groups) const;
+
+    void scanNorthEast(const std::vector<std::vector<std::pair<int, int>>> &coordinateSet, Occupant side, int d,
+                       std::set<std::vector<int>> &groups) const;
+
+    void scanNorthWest(const std::vector<std::vector<std::pair<int, int>>> &coordinateSet, Occupant side, int d,
+                       std::set<std::vector<int>> &groups) const;
+
+    std::set<std::vector<int>> generateGroups(Occupant side) const;
 
     // Checks if all marbles in 'group' are collinear in one of the allowed directions.
     // If so, sets 'alignedDirection' (0..5) to that direction and returns true;

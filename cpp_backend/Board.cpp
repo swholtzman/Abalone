@@ -170,7 +170,7 @@ static long long packCoord(int m, int y) {
 // ========================== Coordinate Definitions ========================== //
 // Each vector represents a set of rows for scanning (hexagonal board structure)
 
-const std::vector<std::vector<std::pair<int, int>>> HorizontalCoordinates = {
+const std::vector<std::vector<std::pair<int, int>>> HorizontalEasternCoordinates = {
     {{1,1}, {2,1}, {3,1}, {4,1}, {5,1}},  // Row from (1,1) to (5,1)
     {{1,2}, {2,2}, {3,2}, {4,2}, {5,2}, {6,2}},  // Row from (1,2) to (6,2)
     {{1,3}, {2,3}, {3,3}, {4,3}, {5,3}, {6,3}, {7,3}},  // Row from (1,3) to (7,3)
@@ -181,6 +181,8 @@ const std::vector<std::vector<std::pair<int, int>>> HorizontalCoordinates = {
     {{4,8}, {5,8}, {6,8}, {7,8}, {8,8}, {9,8}},  // Row from (4,8) to (9,8)
     {{5,9}, {6,9}, {7,9}, {8,9}, {9,9}}  // Row from (5,9) to (9,9)
 };
+
+
 
 const std::vector<std::vector<std::pair<int, int>>> NorthEasternCoordinates = {
     {{1,5}, {2,6}, {3,7}, {4,8}, {5,9}},  // (1,5) to (5,9)
@@ -193,6 +195,7 @@ const std::vector<std::vector<std::pair<int, int>>> NorthEasternCoordinates = {
     {{4,1}, {5,2}, {6,3}, {7,4}, {8,5}, {9,6}},  // (4,1) to (9,6)
     {{5,1}, {6,2}, {7,3}, {8,4}, {9,5}}  // (5,1) to (9,5)
 };
+
 
 const std::vector<std::vector<std::pair<int, int>>> NorthWesternCoordinates = {
     {{9,5}, {9,6}, {9,7}, {9,8}, {9,9}},  // (9,5) to (9,9)
@@ -207,19 +210,41 @@ const std::vector<std::vector<std::pair<int, int>>> NorthWesternCoordinates = {
 };
 
 
-// ========================== Group Detection Function ========================== //
-void Board::scanCoordinateSet(const std::vector<std::vector<std::pair<int, int>>>& coordinateSet,
-                              Occupant side, std::set<std::vector<int>>& groupSet, int d, bool isHorizontal) const {
-    std::set<std::vector<int>> localGroups;  // Local storage to minimize locking
+
+
+
+#include <thread>
+#include <future>
+#include <set>
+#include <vector>
+#include <iostream>
+
+// ========================== Group Detection Functions ========================== //
+
+#include <thread>
+#include <future>
+#include <set>
+#include <vector>
+#include <iostream>
+
+#include <thread>
+#include <future>
+#include <set>
+#include <vector>
+#include <iostream>
+
+// ========================== Group Detection Functions ========================== //
+void Board::scanHorizontal(
+    const std::vector<std::vector<std::pair<int, int>>>& coordinateSet,
+    Occupant side, int d, std::set<std::vector<int>>& groups) const {
+
+    short number_of_marbels_processed = 0;
 
     for (const auto& row : coordinateSet) {
         std::vector<int> rowIndices;
 
-        // Convert coordinate pairs to board indices
         for (const auto& coord : row) {
-            int m = coord.first, y = coord.second;
-            long long key = packCoord(m, y);
-
+            long long key = packCoord(coord.first, coord.second);
             auto it = s_coordToIndex.find(key);
             if (it != s_coordToIndex.end()) {
                 int idx = it->second;
@@ -229,74 +254,287 @@ void Board::scanCoordinateSet(const std::vector<std::vector<std::pair<int, int>>
             }
         }
 
-        // Extract single, binary, and tertiary groups
+
         for (size_t i = 0; i < rowIndices.size(); ++i) {
+            if (number_of_marbels_processed > 10) {
+                return;
+            }
+
+
             std::vector<int> group = { rowIndices[i] };
+            number_of_marbels_processed++;
+            groups.insert(group);
 
-            // ✅ Only add single-marble groups for Horizontal scanning
-            if (isHorizontal) {
-                localGroups.insert(group);
+            if (i + 1 < rowIndices.size() && neighbors[rowIndices[i]][d] == rowIndices[i + 1]) {
+                group.push_back(rowIndices[i + 1]);
+                groups.insert(group);
             }
 
-            // ✅ Ensure `rowIndices[i]` is actually adjacent to `rowIndices[i+1]`
-            if (i + 1 < rowIndices.size()) {
-                if (neighbors[rowIndices[i]][d] != -1 &&
-                    neighbors[rowIndices[i]][d] == rowIndices[i + 1]) {
-                    group.push_back(rowIndices[i + 1]);
-                    localGroups.insert(group);
-                } else {
-                    continue;
-                }
-            }
-
-            // ✅ Ensure `rowIndices[i] → rowIndices[i+1] → rowIndices[i+2]` are all adjacent
-            if (i + 2 < rowIndices.size()) {
-                if (neighbors[rowIndices[i]][d] != -1 &&
-                    neighbors[rowIndices[i]][d] == rowIndices[i + 1] &&
-                    neighbors[rowIndices[i + 1]][d] != -1 &&
-                    neighbors[rowIndices[i + 1]][d] == rowIndices[i + 2]) {
-                    group.push_back(rowIndices[i + 2]);
-                    localGroups.insert(group);
-                }
+            if (i + 2 < rowIndices.size() &&
+                neighbors[rowIndices[i]][d] == rowIndices[i + 1] &&
+                neighbors[rowIndices[i + 1]][d] == rowIndices[i + 2]) {
+                group.push_back(rowIndices[i + 2]);
+                groups.insert(group);
             }
         }
     }
-
-    // Merge results safely
-    std::lock_guard<std::mutex> lock(groupMutex);
-    groupSet.insert(localGroups.begin(), localGroups.end());
 }
 
-// ========================== Parallel Group Generation ========================== //
-std::set<std::vector<int>> Board::generateParallelGroups(Occupant side) const {
-    std::set<std::vector<int>> groups;
-    std::vector<std::thread> threads;
+void Board::scanNorthEast(
+    const std::vector<std::vector<std::pair<int, int>>>& coordinateSet,
+    Occupant side, int d, std::set<std::vector<int>>& groups) const {
 
-    int eastDirectionIdx = 1;
-    int northEastDirectionIdx = 3;
-    int northWestDirectionIdx = 2;
+    short number_of_marbels_processed = 0;
 
-    // ✅ Pass `true` for `isHorizontal` when scanning HorizontalCoordinates
-    threads.emplace_back([this, &groups, side, eastDirectionIdx]() {
-        scanCoordinateSet(HorizontalCoordinates, side, groups, eastDirectionIdx, true);
-    });
+    for (const auto& row : coordinateSet) {
 
-    // ✅ Pass `false` for `isHorizontal` when scanning other directions
-    threads.emplace_back([this, &groups, side, northEastDirectionIdx]() {
-        scanCoordinateSet(NorthEasternCoordinates, side, groups, northEastDirectionIdx, false);
-    });
 
-    threads.emplace_back([this, &groups, side, northWestDirectionIdx]() {
-        scanCoordinateSet(NorthWesternCoordinates, side, groups, northWestDirectionIdx, false);
-    });
 
-    for (auto& t : threads) {
-        t.join();
+        std::vector<int> rowIndices;
+
+        for (const auto& coord : row) {
+            long long key = packCoord(coord.first, coord.second);
+
+            auto it = s_coordToIndex.find(key);
+
+            if (it != s_coordToIndex.end()) {
+                int idx = it->second;
+                if (occupant[idx] == side) {
+                    rowIndices.push_back(idx);
+                }
+            }
+        }
+
+        for (size_t i = 0; i < rowIndices.size(); ++i) {
+            if (number_of_marbels_processed > 14) return;
+
+
+            std::vector<int> group = { rowIndices[i] };
+            number_of_marbels_processed++;
+
+            if (i + 1 < rowIndices.size() && neighbors[rowIndices[i]][d] == rowIndices[i + 1]) {
+                group.push_back(rowIndices[i + 1]);
+                groups.insert(group);
+            }
+
+            if (i + 2 < rowIndices.size() &&
+                neighbors[rowIndices[i]][d] == rowIndices[i + 1] &&
+                neighbors[rowIndices[i + 1]][d] == rowIndices[i + 2]) {
+                group.push_back(rowIndices[i + 2]);
+                groups.insert(group);
+            }
+        }
     }
+}
+
+void Board::scanNorthWest(
+    const std::vector<std::vector<std::pair<int, int>>>& coordinateSet,
+    Occupant side, int d, std::set<std::vector<int>>& groups) const {
+
+    short number_of_marbels_processed = 0;
+
+
+    for (const auto& row : coordinateSet) {
+
+
+        std::vector<int> rowIndices;
+
+        for (const auto& coord : row) {
+            long long key = packCoord(coord.first, coord.second);
+            auto it = s_coordToIndex.find(key);
+            if (it != s_coordToIndex.end()) {
+                int idx = it->second;
+                if (occupant[idx] == side) {
+                    rowIndices.push_back(idx);
+                }
+            }
+        }
+
+        for (size_t i = 0; i < rowIndices.size(); ++i) {
+            if (number_of_marbels_processed > 14) return;
+
+            std::vector<int> group = { rowIndices[i] };
+            number_of_marbels_processed++;
+
+            if (i + 1 < rowIndices.size() && neighbors[rowIndices[i]][d] == rowIndices[i + 1]) {
+                group.push_back(rowIndices[i + 1]);
+                groups.insert(group);
+            }
+
+            if (i + 2 < rowIndices.size() &&
+                neighbors[rowIndices[i]][d] == rowIndices[i + 1] &&
+                neighbors[rowIndices[i + 1]][d] == rowIndices[i + 2]) {
+                group.push_back(rowIndices[i + 2]);
+                groups.insert(group);
+            }
+        }
+    }
+}
+
+
+// ========================== Multi-Threaded Group Generation ========================== //
+// ========================== Multi-Threaded Group Generation ========================== //
+// std::set<std::vector<int>> Board::generateGroups(Occupant side) const {
+//     std::set<std::vector<int>> groups;
+//
+//     int eastDirectionIdx = 1;
+//     int northEastDirectionIdx = 3;
+//     int northWestDirectionIdx = 2;
+//
+//     // Launch asynchronous tasks for each direction using std::future
+//     std::future<std::set<std::vector<int>>> f1 = std::async(std::launch::async,
+//         [this, side, eastDirectionIdx]() {
+//             return this->scanHorizontal(HorizontalEasternCoordinates, side, eastDirectionIdx);
+//         });
+//
+//     std::future<std::set<std::vector<int>>> f2 = std::async(std::launch::async,
+//         [this, side, northEastDirectionIdx]() {
+//             return this->scanNorthEast(NorthEasternCoordinates, side, northEastDirectionIdx);
+//         });
+//
+//     std::future<std::set<std::vector<int>>> f3 = std::async(std::launch::async,
+//         [this, side, northWestDirectionIdx]() {
+//             return this->scanNorthWest(NorthWesternCoordinates, side, northWestDirectionIdx);
+//         });
+//
+//     // Retrieve results using move semantics
+//     std::set<std::vector<int>> res1 = f1.get();
+//     std::set<std::vector<int>> res2 = f2.get();
+//     std::set<std::vector<int>> res3 = f3.get();
+//
+//     // Merge all sets without unnecessary copying
+//     groups.merge(std::move(res1));
+//     groups.merge(std::move(res2));
+//     groups.merge(std::move(res3));
+//
+//     return groups;
+// }
+
+
+
+
+std::set<std::vector<int>> Board::generateGroups(Occupant side) const {
+    std::set<std::vector<int>> groups;
+
+    // Modify the groups set directly instead of returning
+    scanHorizontal(HorizontalEasternCoordinates, side, 1, groups);
+    scanNorthEast(NorthEasternCoordinates, side, 3, groups);
+    scanNorthWest(NorthWesternCoordinates, side, 2, groups);
 
     return groups;
 }
 
+
+// ========================== Multi-Threaded Group Generation ========================== //
+#include <future>
+#include <vector>
+#include <set>
+#include <unordered_set>
+
+// ========================== Multi-Threaded Group Generation ========================== //
+
+
+
+
+
+
+
+// std::set<std::vector<int>> Board::generateGroups(Occupant side) const {
+//     std::set<std::vector<int>> groups;
+//
+//     // Compute groups sequentially in a single thread
+//     std::set<std::vector<int>> res1 = scanHorizontal(HorizontalEasternCoordinates, side, 1);
+//     std::set<std::vector<int>> res2 = scanNorthEast(NorthEasternCoordinates, side, 3);
+//     std::set<std::vector<int>> res3 = scanNorthWest(NorthWesternCoordinates, side, 2);
+//
+//     // Merge results
+//     groups.insert(res1.begin(), res1.end());
+//     groups.insert(res2.begin(), res2.end());
+//     groups.insert(res3.begin(), res3.end());
+//
+//     return groups;
+// }
+
+
+// ========================== Multi-Threaded Group Generation ========================== //
+// ========================== Multi-Threaded Group Generation ========================== //
+// std::set<std::vector<int>> Board::generateGroups(Occupant side) const {
+//     std::set<std::vector<int>> groups;
+//
+//     int eastDirectionIdx = 1;
+//     int northEastDirectionIdx = 3;
+//     int northWestDirectionIdx = 2;
+//
+//     // Launch asynchronous tasks for each direction using std::future
+//     std::future<std::set<std::vector<int>>> f1 = std::async(std::launch::async,
+//         [this, side, eastDirectionIdx]() {
+//             return this->scanHorizontal(HorizontalEasternCoordinates, side, eastDirectionIdx);
+//         });
+//
+//     std::future<std::set<std::vector<int>>> f2 = std::async(std::launch::async,
+//         [this, side, northEastDirectionIdx]() {
+//             return this->scanNorthEast(NorthEasternCoordinates, side, northEastDirectionIdx);
+//         });
+//
+//     std::future<std::set<std::vector<int>>> f3 = std::async(std::launch::async,
+//         [this, side, northWestDirectionIdx]() {
+//             return this->scanNorthWest(NorthWesternCoordinates, side, northWestDirectionIdx);
+//         });
+//
+//     // Retrieve results using move semantics
+//     std::set<std::vector<int>> res1 = f1.get();
+//     std::set<std::vector<int>> res2 = f2.get();
+//     std::set<std::vector<int>> res3 = f3.get();
+//
+//     // Merge all sets without unnecessary copying
+//     groups.merge(std::move(res1));
+//     groups.merge(std::move(res2));
+//     groups.merge(std::move(res3));
+//
+//     return groups;
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ========================== Parallel Group Generation ========================== //
+// std::set<std::vector<int>> Board::generateParallelGroups(Occupant side) const {
+//     std::set<std::vector<int>> groups;
+//     std::vector<std::thread> threads;
+//
+//     int eastDirectionIdx = 1;
+//     int northEastDirectionIdx = 3;
+//     int northWestDirectionIdx = 2;
+//
+//     // ✅ Pass `true` for `isHorizontal` when scanning HorizontalCoordinates
+//     threads.emplace_back([this, &groups, side, eastDirectionIdx]() {
+//         scanCoordinateSet(HorizontalCoordinates, side, groups, eastDirectionIdx, true);
+//     });
+//
+//     // ✅ Pass `false` for `isHorizontal` when scanning other directions
+//     threads.emplace_back([this, &groups, side, northEastDirectionIdx]() {
+//         scanCoordinateSet(NorthEasternCoordinates, side, groups, northEastDirectionIdx, false);
+//     });
+//
+//     threads.emplace_back([this, &groups, side, northWestDirectionIdx]() {
+//         scanCoordinateSet(NorthWesternCoordinates, side, groups, northWestDirectionIdx, false);
+//     });
+//
+//     for (auto& t : threads) {
+//         t.join();
+//     }
+//
+//     return groups;
+// }
 
 
 
@@ -342,52 +580,6 @@ bool Board::isGroupAligned(const vector<int>& group, int& alignedDirection) cons
     return false;
 }
 
-// O(n log n) implementation of isGroupAligned
-// bool Board::isGroupAligned(const vector<int>& group, int& alignedDirection) const {
-//     if (group.size() < 2)
-//         return false;
-//     vector<int> sortedGroup = group;
-//     sort(sortedGroup.begin(), sortedGroup.end(), [this](int a, int b) {
-//         auto ca = s_indexToCoord[a];
-//         auto cb = s_indexToCoord[b];
-//         return (ca.second < cb.second) || (ca.second == cb.second && ca.first < cb.first);
-//         });
-//     auto coord0 = s_indexToCoord[sortedGroup[0]];
-//     auto coord1 = s_indexToCoord[sortedGroup[1]];
-//     int dx = coord1.first - coord0.first;
-//     int dy = coord1.second - coord0.second;
-//     if (dx == 0 && dy == 0)
-//         return false;
-//     for (int d = 0; d < NUM_DIRECTIONS; d++) {
-//         auto offset = DIRECTION_OFFSETS[d];
-//         if ((offset.first != 0 && dx % offset.first == 0 &&
-//             dx / offset.first >= 1 && dy == (dx / offset.first) * offset.second) ||
-//             (offset.first == 0 && offset.second != 0 && dy % offset.second == 0 &&
-//                 dy / offset.second >= 1 && dx == 0)) {
-//             bool aligned = true;
-//             for (size_t i = 2; i < sortedGroup.size(); i++) {
-//                 auto coord = s_indexToCoord[sortedGroup[i]];
-//                 int adx = coord.first - coord0.first;
-//                 int ady = coord.second - coord0.second;
-//                 if (offset.first != 0) {
-//                     if (adx % offset.first != 0) { aligned = false; break; }
-//                     int k = adx / offset.first;
-//                     if (k < 1 || ady != k * offset.second) { aligned = false; break; }
-//                 }
-//                 else {
-//                     if (ady % offset.second != 0) { aligned = false; break; }
-//                     int k = ady / offset.second;
-//                     if (k < 1 || adx != 0) { aligned = false; break; }
-//                 }
-//             }
-//             if (aligned) {
-//                 alignedDirection = d;
-//                 return true;
-//             }
-//         }
-//     }
-//     return false;
-// }
 
 vector<int> Board::canonicalizeGroup(const vector<int>& group) {
     vector<int> canon = group;
@@ -413,12 +605,18 @@ std::vector<Move> Board::generateMoves(Occupant side) const {
     std::vector<Move> moves;  // Stores all valid moves
 
     // Generate unique groups using the multi-threaded approach
-    std::set<std::vector<int>> candidateGroups = generateParallelGroups(side);
+    std::set<std::vector<int>> candidateGroups = generateGroups(side);
+    std::set<std::vector<int>> candidateGroups2;
+
+
 
     // Iterate over each group and attempt moves in all directions
     for (const auto& group : candidateGroups) {
         for (int d = 0; d < NUM_DIRECTIONS; d++) {
+
+
             Move candidateMove;
+
             if (tryMove(group, d, candidateMove)) { // Validate and apply move logic
                 moves.push_back(candidateMove);
             }
