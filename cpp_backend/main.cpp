@@ -81,9 +81,13 @@ int main(int argc, char* argv[]) {
     cout << "Time to generate all moves: " << duration.count()/1000 << " seconds\n";
     cout << "Number of moves generated: " << moves.size() << "\n";
 
-    size_t pos = inputFilename.find("."); // Find the first dot
+    // Step 1: Extract the filename without the path
+    size_t lastSlash = inputFilename.find_last_of("/\\");
+    string fileNameWithExt = (lastSlash != string::npos) ? inputFilename.substr(lastSlash + 1) : inputFilename;
 
-    string baseName = (pos != std::string::npos) ? inputFilename.substr(0, pos) : inputFilename;
+    // Step 2: Remove the file extension
+    size_t dotPos = fileNameWithExt.find_last_of(".");
+    string baseName = (dotPos != string::npos) ? fileNameWithExt.substr(0, dotPos) : fileNameWithExt;
     
     ofstream movesFile(baseName + ".move");
     ofstream boardsFile(baseName + ".board");
