@@ -43,6 +43,10 @@ public:
     static const int NUM_CELLS = 61;     // Exactly 61 valid positions.
     static const int NUM_DIRECTIONS = 6;   // Directions: W, E, NW, NE, SW, SE.
 
+    // Arrays to track player coordinates
+    std::vector<std::pair<int, int>> blackOccupantsCoords;
+    std::vector<std::pair<int, int>> whiteOccupantsCoords;
+
     // Direction offsets (dx, dy) in board coordinates.
     // Order: W=(-1,0), E=(+1,0), NW=(0,+1), NE=(+1,+1), SW=(-1,-1), SE=(0,-1)
     static const std::array<std::pair<int, int>, NUM_DIRECTIONS> DIRECTION_OFFSETS;
@@ -52,6 +56,9 @@ public:
 
     // Board representation: occupant[i] tells who occupies cell index i.
     std::array<Occupant, NUM_CELLS> occupant;
+
+
+
     // Neighbors table: for each cell i, neighbors[i][d] gives the neighbor's index in
     // direction d (or -1 if none exists).
     std::array<std::array<int, NUM_DIRECTIONS>, NUM_CELLS> neighbors;
@@ -70,6 +77,8 @@ public:
 
     // Converts a cell index to its board notation (e.g., 0 -> "A1").
     static std::string indexToNotation(int idx);
+
+    bool isGroupAligned(const std::vector<int> &group, int &alignedDirection) const;
 
     // Attempts to apply a move on a temporary copy of the board.
     // Returns true if the move is legal (applied without error), false otherwise.
@@ -106,7 +115,7 @@ public:
     bool loadFromInputFile(const std::string& filename);
 
     // Sets the occupant of a cell given its board notation.
-    void setOccupant(const std::string& notation, Occupant who);
+    void setOccupant(const std::string& notation, Occupant who, bool updateCoords = false);
 
     // Helper: Sets the occupant of a cell by its index.
     void setOccupant(int index, Occupant who) {
@@ -138,12 +147,14 @@ private:
     // Builds the neighbor table using the coordinate mapping.
     void initNeighbors();
 
+    void updateOccupantCoordinates();
+
+    void updateOccupantCoordinates(int oldIndex, int newIndex, Occupant occupantType);
+
+
     //--------------------------------------------------------------------------
     // Group Generation and Alignment Helpers
     //--------------------------------------------------------------------------
-
-    // Converts a group of marble indices into a canonical (sorted) order.
-    static std::vector<int> canonicalizeGroup(const std::vector<int>& group);
 
     // Recursively collects all connected groups (up to size 3) of marbles of a given side,
     // starting from cell 'current'. The current group is stored in 'group', and valid groups
@@ -166,14 +177,6 @@ private:
 
     std::set<std::vector<int>> generateGroups(Occupant side) const;
 
-    // Checks if all marbles in 'group' are collinear in one of the allowed directions.
-    // If so, sets 'alignedDirection' (0..5) to that direction and returns true;
-    // otherwise, returns false.
-    bool isGroupAligned(const std::vector<int>& group, int& alignedDirection) const;
-
-    // (Alternate helper) Returns the alignment direction for a contiguous group.
-    // If the group is not aligned, returns -1.
-    int getGroupAlignmentDirection(const std::vector<int>& group) const;
 
     //--------------------------------------------------------------------------
     // Coordinate Conversion Helpers (Private)
