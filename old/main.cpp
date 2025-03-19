@@ -6,13 +6,16 @@
 #include <cctype>
 #include <chrono> // Add this for timing functionality
 
+
+using namespace std;
+
 // Helper: Trim whitespace from the beginning and end of a string.
-std::string trim(const std::string& s) {
+string trim(const string& s) {
     size_t start = 0;
-    while (start < s.size() && std::isspace(static_cast<unsigned char>(s[start])))
+    while (start < s.size() && isspace(static_cast<unsigned char>(s[start])))
         start++;
     size_t end = s.size();
-    while (end > start && std::isspace(static_cast<unsigned char>(s[end - 1])))
+    while (end > start && isspace(static_cast<unsigned char>(s[end - 1])))
         end--;
     return s.substr(start, end - start);
 }
@@ -20,24 +23,24 @@ std::string trim(const std::string& s) {
 int main(int argc, char* argv[]) {
     // Check for an input filename argument.
     if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <input_file>\n";
+        cerr << "Usage: " << argv[0] << " <input_file>\n";
         return 1;
     }
     
-    std::string inputFilename = argv[1];
+    string inputFilename = argv[1];
     
     // Open the original input file.
-    std::ifstream fin(inputFilename);
+    ifstream fin(inputFilename);
     if (!fin.is_open()) {
-        std::cerr << "Error: could not open file: " << inputFilename << "\n";
+        cerr << "Error: could not open file: " << inputFilename << "\n";
         return 1;
     }
     
     // Read all non-empty lines (after trimming) into a vector.
-    std::vector<std::string> nonEmptyLines;
-    std::string line;
-    while (std::getline(fin, line)) {
-        std::string trimmed = trim(line);
+    vector<string> nonEmptyLines;
+    string line;
+    while (getline(fin, line)) {
+        string trimmed = trim(line);
         if (!trimmed.empty()) {
             nonEmptyLines.push_back(trimmed);
         }
@@ -45,9 +48,9 @@ int main(int argc, char* argv[]) {
     fin.close();
     
     // Write these non-empty lines to a temporary file.
-    std::ofstream tempOut("temp.input");
+    ofstream tempOut("temp.input");
     if (!tempOut.is_open()) {
-        std::cerr << "Error: could not create temporary file.\n";
+        cerr << "Error: could not create temporary file.\n";
         return 1;
     }
     for (const auto& l : nonEmptyLines) {
@@ -58,33 +61,41 @@ int main(int argc, char* argv[]) {
     // Now load from the temporary file.
     Board board;
     if (!board.loadFromInputFile("temp.input")) {
-        std::cerr << "Error loading board from temp.input\n";
+        cerr << "Error loading board from temp.input\n";
         return 1;
     }
     
     // Start timing
-    auto start = std::chrono::high_resolution_clock::now();
+    auto start = chrono::high_resolution_clock::now();
     
     // Generate moves using board.nextToMove from the file.
     auto moves = board.generateMoves(board.nextToMove);
     
     // End timing
-    auto end = std::chrono::high_resolution_clock::now();
+    auto end = chrono::high_resolution_clock::now();
     
     // Calculate duration
-    std::chrono::duration<double, std::milli> duration = end - start;
+    chrono::duration<double, milli> duration = end - start;
     
     // Output the timing information
-    std::cout << "Time to generate all moves: " << duration.count() << " milliseconds\n";
-    std::cout << "Number of moves generated: " << moves.size() << "\n";
+    cout << "Time to generate all moves: " << duration.count()/1000 << " seconds\n";
+    cout << "Number of moves generated: " << moves.size() << "\n";
+
+    // Step 1: Extract the filename without the path
+    size_t lastSlash = inputFilename.find_last_of("/\\");
+    string fileNameWithExt = (lastSlash != string::npos) ? inputFilename.substr(lastSlash + 1) : inputFilename;
+
+    // Step 2: Remove the file extension
+    size_t dotPos = fileNameWithExt.find_last_of(".");
+    string baseName = (dotPos != string::npos) ? fileNameWithExt.substr(0, dotPos) : fileNameWithExt;
     
-    std::ofstream movesFile("moves.txt");
-    std::ofstream boardsFile("boards.txt");
+    ofstream movesFile(baseName + ".move");
+    ofstream boardsFile(baseName + ".board");
     
     // For each move:
     for (auto& m : moves) {
         // Write the move in document notation.
-        std::string moveNotation = Board::moveToNotation(m, board.nextToMove);
+        string moveNotation = Board::moveToNotation(m, board.nextToMove);
         movesFile << moveNotation << "\n";
         
         // Create a copy and apply the move.
@@ -92,7 +103,7 @@ int main(int argc, char* argv[]) {
         copy.applyMove(m);
         
         // Write the board state.
-        std::string occupantStr = copy.toBoardString();
+        string occupantStr = copy.toBoardString();
         boardsFile << occupantStr << "\n";
     }
     
