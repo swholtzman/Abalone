@@ -154,7 +154,8 @@ std::set<std::vector<int>> Board::generateGroups(Occupant side) const {
     // Select the target list based on occupant color
     if (side == Occupant::BLACK) {
         targetList = &blackOccupantsCoords;
-    } else if (side == Occupant::WHITE) {
+    }
+    else if (side == Occupant::WHITE) {
         targetList = &whiteOccupantsCoords;
     }
 
@@ -164,7 +165,7 @@ std::set<std::vector<int>> Board::generateGroups(Occupant side) const {
         if (it == s_coordToIndex.end()) continue;  // Skip if coordinate is invalid
 
         int idx = it->second;
-        groups.insert({idx});  // Add single-marble group
+        groups.insert({ idx });  // Add single-marble group
 
         for (int i = 1; i <= 3; i++) {  // Only iterate over necessary directions
             int first_neighbour_index = neighbors[idx][i];
@@ -172,7 +173,7 @@ std::set<std::vector<int>> Board::generateGroups(Occupant side) const {
             // Ensure first neighbor is valid and belongs to the same player
             if (first_neighbour_index == -1 || occupant[first_neighbour_index] != side) continue;
 
-            std::vector<int> twoMarbleGroup = {idx, first_neighbour_index};
+            std::vector<int> twoMarbleGroup = { idx, first_neighbour_index };
             std::sort(twoMarbleGroup.begin(), twoMarbleGroup.end());
             groups.insert(twoMarbleGroup);  // Insert two-marble group
 
@@ -180,7 +181,7 @@ std::set<std::vector<int>> Board::generateGroups(Occupant side) const {
 
             if (second_neighbour_index == -1 || occupant[second_neighbour_index] != side) continue;
 
-            std::vector<int> threeMarbleGroup = {idx, first_neighbour_index, second_neighbour_index};
+            std::vector<int> threeMarbleGroup = { idx, first_neighbour_index, second_neighbour_index };
             std::sort(threeMarbleGroup.begin(), threeMarbleGroup.end());
             groups.insert(threeMarbleGroup);  // Insert three-marble group
         }
@@ -354,6 +355,173 @@ void Board::applyMove(const Move& m) {
         }
     }
 }
+
+/**
+ * Helper lambda: record a change to occupant[i], so we can undo it later.
+ *
+ * Usage:
+ *    recordChange(i, newOcc);
+ * This appends a CellChange to delta.changes, then writes newOcc into occupant[i].
+ */
+inline void recordChange(std::array<Occupant, Board::NUM_CELLS>& occupantArray,
+    MoveDelta& delta, int i, Occupant newOcc)
+{
+    MoveDelta::CellChange change;
+    change.index = i;
+    change.oldOcc = occupantArray[i];
+    change.newOcc = newOcc;
+    delta.changes.push_back(change);
+
+    // Actually update occupant
+    occupantArray[i] = newOcc;
+}
+
+
+MoveDelta Board::applyMoveInPlace(const Move& m)
+{
+    MoveDelta delta;
+    if (m.marbleIndices.empty()) {
+        throw std::runtime_error("No marbles in move.");
+    }
+
+    int d = m.direction;
+
+    // We follow the same logic you have in applyMove:
+    // 1) If it's inline, push opponents if necessary.
+    // 2) Move own marbles in correct order.
+    // 3) If side-step, just move each marble to the side.
+
+    // Figure out whether it's inline or sidestep from Move.isInline
+    // We replicate your push logic, but call recordChange() each time occupant[] is modified.
+
+    if (m.isInline) {
+        // 1) Identify the front marble
+        int frontIdx = getFrontCell(m.marbleIndices, d);
+        int dest = neighbors[frontIdx][d];
+
+        // If occupant[dest] is occupied by the opposite color, handle pushing
+        if (dest >= 0 &&
+            occupant[dest] != Occupant::EMPTY &&
+            occupant[dest] != occupant[frontIdx])
+        {
+            // Count how many opponent marbles in a row
+            int oppCount = 0;
+            int cell = dest;
+            Occupant frontOcc = occupant[frontIdx];
+            while (cell >= 0 && occupant[cell] != Occupant::EMPTY && occupant[cell] != frontOcc) {
+                oppCount++;
+                cell = neighbors[cell][d];
+            }
+
+            // If oppCount >= group size => invalid push
+            if (oppCount >= (int)m.marbleIndices.size()) {
+                throw std::runtime_error("Illegal move: cannot push, opponent group too large.");
+            }
+
+            // If the final cell is on board and not empty => blocked
+            if (cell >= 0 && occupant[cell] != Occupant::EMPTY) {
+                throw std::runtime_error("Illegal move: push blocked, destination not empty.");
+            }
+
+            // We push the chain of opponent marbles
+            std::vector<int> chain;
+            cell = dest;
+            for (int i = 0; i < oppCount; i++) {
+                chain.push_back(cell);
+                cell = neighbors[cell][d]; // move further along
+            }
+
+            // Move them from last to first
+            for (int i = (int)chain.size() - 1; i >= 0; --i) {
+                int from = chain[i];
+                int to = (i == (int)chain.size() - 1) ? cell : chain[i + 1];
+
+                // If to < 0, the marble is pushed off the board
+                if (to < 0) {
+                    // record occupant[from] -> EMPTY
+                    recordChange(occupant, delta, from, Occupant::EMPTY);
+                }
+                else {
+                    // Must be empty
+                    if (occupant[to] != Occupant::EMPTY) {
+                        throw std::runtime_error("Illegal move: push blocked while moving opponent marbles.");
+                    }
+                    // Move occupant[from] -> occupant[to], occupant[from] = EMPTY
+                    Occupant fromOcc = occupant[from];
+                    recordChange(occupant, delta, to, fromOcc);
+                    recordChange(occupant, delta, from, Occupant::EMPTY);
+                }
+            }
+        }
+
+        // 2) Move our own marbles in reverse order to avoid overwriting
+        // Sort the group by dot-product with direction
+        auto offset = DIRECTION_OFFSETS[d];
+        std::vector<int> sortedGroup = m.marbleIndices;
+        std::sort(sortedGroup.begin(), sortedGroup.end(),
+            [&](int a, int b) {
+                auto ca = s_indexToCoord[a];
+                auto cb = s_indexToCoord[b];
+                int scoreA = offset.first * ca.first + offset.second * ca.second;
+                int scoreB = offset.first * cb.first + offset.second * cb.second;
+                return scoreA < scoreB;
+            });
+
+        // Move from last to first
+        for (auto it = sortedGroup.rbegin(); it != sortedGroup.rend(); ++it) {
+            int idx = *it;
+            int target = neighbors[idx][d];
+            if (target < 0) {
+                throw std::runtime_error("Illegal move: marble would move off-board.");
+            }
+            if (occupant[target] != Occupant::EMPTY) {
+                throw std::runtime_error("Illegal move: destination cell is not empty for inline move.");
+            }
+            // occupant[target] = occupant[idx], occupant[idx] = EMPTY
+            Occupant fromOcc = occupant[idx];
+            recordChange(occupant, delta, target, fromOcc);
+            recordChange(occupant, delta, idx, Occupant::EMPTY);
+        }
+    }
+    else {
+        // Side-step
+        // For each marble in m.marbleIndices, move it sideways one step
+        for (int idx : m.marbleIndices) {
+            int target = neighbors[idx][d];
+            if (target < 0) {
+                throw std::runtime_error("Illegal move: side-step moves off-board.");
+            }
+            if (occupant[target] != Occupant::EMPTY) {
+                throw std::runtime_error("Illegal move: destination cell is not empty for side-step.");
+            }
+            // occupant[target] = occupant[idx], occupant[idx] = EMPTY
+            Occupant fromOcc = occupant[idx];
+            recordChange(occupant, delta, target, fromOcc);
+            recordChange(occupant, delta, idx, Occupant::EMPTY);
+        }
+    }
+
+    // If you rely on blackOccupantsCoords / whiteOccupantsCoords for your AI or logging,
+    // you could update them here OR skip it if you plan to do a fresh occupantCoordinates
+    // update only after the full search. For instance:
+    // updateOccupantCoordinates(); // but it's slower if called every time
+
+    return delta;
+}
+
+void Board::undoMove(const MoveDelta& delta)
+{
+    // Revert occupant changes in reverse order of application
+    for (auto it = delta.changes.rbegin(); it != delta.changes.rend(); ++it) {
+        occupant[it->index] = it->oldOcc;
+    }
+
+    // If you update occupantCoords above, you'd have to revert them too.
+    // Otherwise, you can skip if occupantCoords are only updated at top level.
+    // Example:
+    // updateOccupantCoordinates();
+}
+
 
 int Board::getFrontCell(const vector<int>& group, int direction) const {
     auto offset = DIRECTION_OFFSETS[direction];
@@ -541,7 +709,8 @@ void Board::updateOccupantCoordinates() {
     for (int i = 0; i < NUM_CELLS; i++) {
         if (occupant[i] == Occupant::BLACK) {
             blackOccupantsCoords.push_back(s_indexToCoord[i]);
-        } else if (occupant[i] == Occupant::WHITE) {
+        }
+        else if (occupant[i] == Occupant::WHITE) {
             whiteOccupantsCoords.push_back(s_indexToCoord[i]);
         }
     }
@@ -549,7 +718,7 @@ void Board::updateOccupantCoordinates() {
     // Sort the lists to maintain order from A1 to A5, B1 to B6, etc.
     auto sortingLambda = [](const std::pair<int, int>& a, const std::pair<int, int>& b) {
         return (a.second == b.second) ? (a.first < b.first) : (a.second < b.second);
-    };
+        };
 
     std::sort(blackOccupantsCoords.begin(), blackOccupantsCoords.end(), sortingLambda);
     std::sort(whiteOccupantsCoords.begin(), whiteOccupantsCoords.end(), sortingLambda);
@@ -561,7 +730,8 @@ void Board::updateOccupantCoordinates(int oldIndex, int newIndex, Occupant occup
 
     if (occupantType == Occupant::BLACK) {
         targetList = &blackOccupantsCoords;
-    } else if (occupantType == Occupant::WHITE) {
+    }
+    else if (occupantType == Occupant::WHITE) {
         targetList = &whiteOccupantsCoords;
     }
 

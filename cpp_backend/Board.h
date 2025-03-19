@@ -22,6 +22,18 @@ enum class Occupant {
     WHITE
 };
 
+// This new struct will track occupant changes when a move is applied.
+struct MoveDelta {
+    struct CellChange {
+        int index;        // Which cell index changed
+        Occupant oldOcc;  // Occupant before the move
+        Occupant newOcc;  // Occupant after the move
+    };
+
+    // List of all cell changes
+    std::vector<CellChange> changes;
+};
+
 // Structure to represent a move.
 // 'marbleIndices' holds the indices of the marbles to be moved.
 // 'direction' is an integer from 0 to 5 corresponding to a movement direction.
@@ -78,7 +90,7 @@ public:
     // Converts a cell index to its board notation (e.g., 0 -> "A1").
     static std::string indexToNotation(int idx);
 
-    bool isGroupAligned(const std::vector<int> &group, int &alignedDirection) const;
+    bool isGroupAligned(const std::vector<int>& group, int& alignedDirection) const;
 
     // Attempts to apply a move on a temporary copy of the board.
     // Returns true if the move is legal (applied without error), false otherwise.
@@ -93,6 +105,19 @@ public:
 
     // Apply a move to *this* board (modifies occupant[]).
     void applyMove(const Move& m);
+
+    /**
+     * Applies a move in-place, returning a MoveDelta that records
+     * how occupants changed. This does NOT copy the Board.
+     *
+     * You can use undoMove(delta) to revert occupant[] to its prior state.
+     */
+    MoveDelta applyMoveInPlace(const Move& m);
+
+    /**
+     * Undo a previously applied in-place move, restoring occupant[].
+     */
+    void undoMove(const MoveDelta& delta);
 
     // Returns the index of the marble in 'group' that is furthest in the given direction.
     // Uses the dot product with the direction offset to decide which marble is the "front."
@@ -163,17 +188,17 @@ private:
         std::set<std::vector<int>>& result) const;
 
     void scanCoordinateSet(const std::vector<std::vector<std::pair<int, int>>>& coordinateSet,
-                              Occupant side, std::set<std::vector<int>>& groupSet, int d, bool isHorizontal) const;
+        Occupant side, std::set<std::vector<int>>& groupSet, int d, bool isHorizontal) const;
 
 
-    void scanHorizontal(const std::vector<std::vector<std::pair<int, int>>> &coordinateSet, Occupant side, int d,
-                        std::set<std::vector<int>> &groups) const;
+    void scanHorizontal(const std::vector<std::vector<std::pair<int, int>>>& coordinateSet, Occupant side, int d,
+        std::set<std::vector<int>>& groups) const;
 
-    void scanNorthEast(const std::vector<std::vector<std::pair<int, int>>> &coordinateSet, Occupant side, int d,
-                       std::set<std::vector<int>> &groups) const;
+    void scanNorthEast(const std::vector<std::vector<std::pair<int, int>>>& coordinateSet, Occupant side, int d,
+        std::set<std::vector<int>>& groups) const;
 
-    void scanNorthWest(const std::vector<std::vector<std::pair<int, int>>> &coordinateSet, Occupant side, int d,
-                       std::set<std::vector<int>> &groups) const;
+    void scanNorthWest(const std::vector<std::vector<std::pair<int, int>>>& coordinateSet, Occupant side, int d,
+        std::set<std::vector<int>>& groups) const;
 
     std::set<std::vector<int>> generateGroups(Occupant side) const;
 
