@@ -82,13 +82,45 @@ bool Board::isGroupAligned(const std::vector<int>& group, int& alignedDirection)
 }
 
 
-bool Board::tryMove(const vector<int>& group, int direction, Move& move) const {
-    DEBUG_PRINT("Trying move for group: ");
-    for (int idx : group)
-        DEBUG_PRINT(indexToNotation(idx) << " ");
-    DEBUG_PRINT("in direction " << direction << "\n");
+bool Board::isLegalMove(const Move& m) const {
+    if (m.marbleIndices.empty())
+        return false;
+    int d = m.direction;
+    int front = getFrontCell(m.marbleIndices, d);
+    int dest = neighbors[front][d];
+    if (dest < 0)
+        return false;
 
-    Board temp = *this;
+    // For inline moves, check if pushing is legal.
+    if (m.isInline) {
+        if (occupant[dest] != Occupant::EMPTY && occupant[dest] != occupant[front]) {
+            int oppCount = 0;
+            int cell = dest;
+            Occupant frontOcc = occupant[front];
+            while (cell >= 0 && occupant[cell] != Occupant::EMPTY && occupant[cell] != frontOcc) {
+                oppCount++;
+                cell = neighbors[cell][d];
+            }
+            if (oppCount >= (int)m.marbleIndices.size())
+                return false;
+            if (cell >= 0 && occupant[cell] != Occupant::EMPTY)
+                return false;
+        }
+    }
+    else {  // Side-step: every marble's target cell must be valid and empty.
+        for (int idx : m.marbleIndices) {
+            int target = neighbors[idx][d];
+            if (target < 0 || occupant[target] != Occupant::EMPTY)
+                return false;
+        }
+    }
+    return true;
+}
+
+//---------------------------------------------------------------------
+// Modified tryMove: now uses isLegalMove instead of exception catching.
+//---------------------------------------------------------------------
+bool Board::tryMove(const std::vector<int>& group, int direction, Move& move) const {
     move.marbleIndices = group;
     move.direction = direction;
     if (group.size() == 1) {
@@ -97,27 +129,18 @@ bool Board::tryMove(const vector<int>& group, int direction, Move& move) const {
     else {
         int alignedDir;
         if (isGroupAligned(group, alignedDir)) {
-            DEBUG_PRINT("Group is aligned. Aligned direction: " << alignedDir << "\n");
             move.isInline = (direction == alignedDir || direction == OPPOSITES[alignedDir]);
         }
         else {
             move.isInline = false;
         }
     }
-    try {
-        temp.applyMove(move);
-    }
-    catch (const runtime_error& e) {
-        DEBUG_PRINT("Move failed: " << e.what() << "\n");
+    // Simply check legality without invoking try-catch.
+    if (!isLegalMove(move)) {
         return false;
     }
-    DEBUG_PRINT("Move succeeded for group: ");
-    for (int idx : group)
-        DEBUG_PRINT(indexToNotation(idx) << " ");
-    DEBUG_PRINT("direction " << direction << "\n");
     return true;
 }
-
 
 #include <thread>
 #include <mutex>

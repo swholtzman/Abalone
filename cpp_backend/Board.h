@@ -92,6 +92,9 @@ public:
 
     bool isGroupAligned(const std::vector<int>& group, int& alignedDirection) const;
 
+    // New: Checks move legality without exceptions.
+    bool isLegalMove(const Move& m) const;
+
     // Attempts to apply a move on a temporary copy of the board.
     // Returns true if the move is legal (applied without error), false otherwise.
     bool tryMove(const std::vector<int>& group, int direction, Move& move) const;
