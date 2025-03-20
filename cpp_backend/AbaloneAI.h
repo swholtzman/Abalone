@@ -2,6 +2,7 @@
 #define ABALONE_AI_H
 
 #include "Board.h"
+#include "TranspositionTable.h"
 #include <chrono>
 #include <utility>
 
@@ -17,6 +18,8 @@ private:
     std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
     // Indicates if search was terminated due to time limit
     bool timeoutOccurred;
+
+    TranspositionTable transpositionTable;
     
     // Piece value
     static const int MARBLE_VALUE = 100;
@@ -49,7 +52,7 @@ private:
 
 public:
     // Default parameters are specified only here.
-    AbaloneAI(int depth = 4, int timeLimitMs = 5000);
+    AbaloneAI(int depth = 4, int timeLimitMs = 5000, size_t ttSizeInMB = 64);
     
     /**
      * Finds the best move for the given board position.
