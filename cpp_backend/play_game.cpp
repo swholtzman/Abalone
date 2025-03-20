@@ -3,6 +3,7 @@
 #include "AbaloneAI.h"
 #include <iostream>
 #include <cstdlib>
+#include <fstream>
 #include <ctime>
 #include <vector>
 #include <chrono>
@@ -56,6 +57,12 @@ int main(int argc, char* argv[]) {
     board.initStandardLayout();
     // Ensure the first move is by Black.
     board.nextToMove = Occupant::BLACK;
+
+    // Create files for visualization
+    std::ofstream initialPositionFile("initial_position.txt");
+    std::ofstream possibleMovesFile("possible_moves.txt");
+
+    initialPositionFile << board.toBoardString() << std::endl;
 
     int moveCount = 0;
     while (true) {
@@ -135,6 +142,9 @@ int main(int argc, char* argv[]) {
         // Attempt to apply the chosen move.
         try {
             board.applyMove(chosenMove);
+
+            // Write the new board state to possible moves file
+            possibleMovesFile << board.toBoardString() << std::endl;
         }
         catch (const std::exception& ex) {
             std::cout << "Error applying move: " << ex.what() << "\n";
@@ -147,5 +157,11 @@ int main(int argc, char* argv[]) {
     }
 
     std::cout << "\nGame finished after " << moveCount << " moves.\n";
+
+    // Execute the visualizer (assuming it's compiled as "board_visualizer")
+    system("./board_visualizer initial_position.txt possible_moves.txt");
+
+    std::cout << "Board visualization complete. Check visualizer_output.txt for results.\n";
+
     return 0;
 }

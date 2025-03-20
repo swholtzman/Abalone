@@ -1,6 +1,7 @@
 #include "TranspositionTable.h"
 #include <random>
 #include <chrono>
+#include <iostream>
 
 // Zobrist key initialization
 bool TranspositionTable::s_zobristInitialized = false;
@@ -69,7 +70,7 @@ void TranspositionTable::storeEntry(const Board& board, int depth, int score, Mo
     TTEntry& entry = m_table[index];
     
     // Only overwrite if current entry is occupied, has lower depth, or this is the same position
-    if (!entry.isOccupied || depth >= entry.depth || entry.key == hash) {
+    if (!entry.isOccupied || entry.key == hash || depth >= entry.depth) {
         entry.key = hash;
         entry.depth = depth;
         entry.score = score;
