@@ -3,5 +3,6 @@ abalone
 abalone_generator
 compareBoards
 board_visualizer
+play_game
 visualizer_output.txt
 venv

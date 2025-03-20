@@ -12,8 +12,18 @@ enum class MoveType {
     UPPERBOUND  // Beta cutoff (score <= beta)
 };
 
-// Forward declaration of TTEntry
-struct TTEntry;
+// Define TTEntry completely before using it in std::vector
+struct TTEntry {
+    uint64_t key;       // Zobrist hash key
+    int depth;          // Search depth
+    int score;          // Evaluation score
+    MoveType type;      // Type of node (exact, lower bound, upper bound)
+    Move bestMove;      // Best move from this position
+    bool valid;         // Entry validity flag
+    
+    // Constructor
+    TTEntry() : key(0), depth(0), score(0), type(MoveType::EXACT), valid(false) {}
+};
 
 class TranspositionTable {
 public:

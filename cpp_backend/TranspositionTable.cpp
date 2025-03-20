@@ -6,25 +6,6 @@
 bool TranspositionTable::s_zobristInitialized = false;
 std::array<std::array<uint64_t, 3>, Board::NUM_CELLS> TranspositionTable::s_zobristKeys;
 
-// Transposition table entry
-struct TTEntry {
-    uint64_t zobristKey;    // Zobrist key for this position
-    int depth;              // Search depth for this entry
-    int score;              // Evaluated score
-    MoveType moveType;      // Type of move (EXACT, LOWERBOUND, UPPERBOUND)
-    Move bestMove;          // Best move found at this position
-    bool valid;             // Whether this entry is valid
-
-    TTEntry() : zobristKey(0), depth(0), score(0), moveType(MoveType::EXACT), valid(false) {}
-};
-
-// Transposition table enum
-enum class MoveType {
-    EXACT,      // Exact evaluation
-    LOWERBOUND, // Alpha cutoff (score >= alpha)
-    UPPERBOUND  // Beta cutoff (score <= beta)
-};
-
 TranspositionTable::TranspositionTable(size_t sizeInMB) {
     initZobristKeys();
     size_t entryCount = (sizeInMB * 1024 * 1024) / sizeof(TTEntry);
@@ -73,7 +54,6 @@ uint64_t TranspositionTable::computeHash(const Board& board) {
     }
     
     // Hash the side to move
-    // By toggling this key only for one player (WHITE in this case), the hash will flip between two values when the turn changes
     if (board.nextToMove == Occupant::WHITE) {
         hash ^= m_sideToMoveKey;
     }
@@ -89,11 +69,11 @@ void TranspositionTable::storeEntry(const Board& board, int depth, int score, Mo
     TTEntry& entry = m_table[index];
     
     // Only overwrite if current entry is invalid, has lower depth, or this is the same position
-    if (!entry.valid || depth >= entry.depth || entry.zobristKey == hash) {
-        entry.zobristKey = hash;
+    if (!entry.valid || depth >= entry.depth || entry.key == hash) {
+        entry.key = hash;
         entry.depth = depth;
         entry.score = score;
-        entry.moveType = moveType;
+        entry.type = moveType;
         entry.bestMove = bestMove;
         entry.valid = true;
     }
@@ -106,9 +86,9 @@ bool TranspositionTable::probeEntry(const Board& board, int depth, int& score, M
     
     TTEntry& entry = m_table[index];
     
-    if (entry.valid && entry.zobristKey == hash && entry.depth >= depth) {
+    if (entry.valid && entry.key == hash && entry.depth >= depth) {
         score = entry.score;
-        moveType = entry.moveType;
+        moveType = entry.type;
         bestMove = entry.bestMove;
         return true;
     }
@@ -124,7 +104,7 @@ bool TranspositionTable::getBestMove(const Board& board, Move& bestMove) {
     TTEntry& entry = m_table[index];
     
     // Checks if the entry is valid AND if its Zobrist key matches the current position's hash
-    if (entry.valid && entry.zobristKey == hash) {
+    if (entry.valid && entry.key == hash) {
         bestMove = entry.bestMove;
         return true;
     }
