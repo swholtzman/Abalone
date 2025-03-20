@@ -4,5 +4,8 @@ abalone_generator
 compareBoards
 board_visualizer
 play_game
+testNormalized.board
+temp.input
 *.txt
+*.move
 venv
