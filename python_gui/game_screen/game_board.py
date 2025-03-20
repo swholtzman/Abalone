@@ -156,6 +156,7 @@ class GameBoard:
                 tile_model.player_color = player_colour
                 tile_view.refresh()
 
+#
     def _set_standard_layout(self, host_color, opponent_color):
         """
         For 'Standard' layout, place host marbles in certain
