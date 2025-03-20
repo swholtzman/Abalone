@@ -3,6 +3,13 @@ Abalone game created to develop an effective AI bot system with heuristics for o
 
 ## Patch Notes
 
+### Patch 1.0.8
+- Pushed March 20, 2025 1:56am ; Sam Holtzman
+- Significant UI logic advancements
+- Move logic has started, but need to actually assess valid moves
+- Need to allow for multi-select without crashing
+- Need to implement further UI items such as scoreboards, clock, etc
+
 ### Patch 1.0.7
 - Pushed March 13, 2025 11:15pm ; Wayne Chen
 - Updated the code for reading input file in main.cpp

@@ -6,7 +6,7 @@ class SettingsController:
     def __init__(self, parent, main_app_callback):
         """
         :param parent: The parent Tk (or Frame) where the SettingsView is placed.
-        :param main_app_callback: A function in your MainApp that can be called
+        :param main_app_callback: A function in the MainApp that can be called
                                   when the user clicks 'Start Game'.
         """
         self.model = SettingsModel()  # The data model
@@ -19,7 +19,8 @@ class SettingsController:
         Here, you can sync data from view to model, then notify the main app.
         """
         self.model.board_layout = self.view.get_board_layout()
-        self.model.your_colour = self.view.get_your_colour()
+        self.model.match_type = self.view.get_match_type()
+        self.model.host_colour = self.view.get_host_colour()
         self.model.moves_per_team = self.view.get_moves_per_team()
         self.model.time_limit_black = self.view.get_time_limit_black()
         self.model.time_limit_white = self.view.get_time_limit_white()

@@ -13,14 +13,13 @@ class SettingsView(QtWidgets.QWidget):
         # Add stretch items to center the content vertically.
         main_layout.addStretch()
 
-        # Replace your current center_frame setup with the following:
         self.center_frame = QtWidgets.QFrame(self)
         self.center_frame.setObjectName("centerFrame")
         self.center_frame.setStyleSheet("""
             QFrame#centerFrame {
                 background-color: rgba(52,52,52,0.3);
-                border-radius: 5px;
-                padding: 20%;
+                border-radius: 10px;
+                padding: 20px;
             }
         """)
         self.center_frame.setMinimumSize(800, 650)
@@ -42,7 +41,7 @@ class SettingsView(QtWidgets.QWidget):
         # Change the title label alignment to center instead of left:
         self.title_label = QtWidgets.QLabel("Game Setup", self.center_frame)
         self.title_label.setStyleSheet(
-            "color: white; font: 32pt; font-weight: 500; background-color: transparent;"
+            "color: white; font: 28pt; font-weight: 500; background-color: transparent;"
         )
         self.title_label.setAlignment(QtCore.Qt.AlignLeft)
         inner_layout.addWidget(self.title_label)
@@ -56,11 +55,20 @@ class SettingsView(QtWidgets.QWidget):
             default_value="Standard"
         )
 
-        # Create dropdown for Your Colour.
-        self._your_colour_combo = self._create_labeled_dropdown(
+        # Create dropdown for Match Type.
+        self._match_type = self._create_labeled_dropdown(
             parent=self.center_frame,
             layout=inner_layout,
-            label_text="Your Colour",
+            label_text="Match Type",
+            dropdown_values=["Human vs Human", "Human vs Computer", "Computer vs Computer"],
+            default_value="Human vs Human"
+        )
+
+        # Create dropdown for Host Colour.
+        self._host_colour_combo = self._create_labeled_dropdown(
+            parent=self.center_frame,
+            layout=inner_layout,
+            label_text="Host Colour",
             dropdown_values=["Black", "White"],
             default_value="Black"
         )
@@ -127,7 +135,7 @@ class SettingsView(QtWidgets.QWidget):
         container_layout.setSpacing(8)
 
         label = QtWidgets.QLabel(label_text, container)
-        label.setStyleSheet("color: white; background: transparent; font-size: 22px;")
+        label.setStyleSheet("color: white; background: transparent; font-size: 18px;")
         container_layout.addWidget(label, alignment=QtCore.Qt.AlignLeft)
 
         # White rectangle frame with rounded corners
@@ -135,22 +143,22 @@ class SettingsView(QtWidgets.QWidget):
         frame.setStyleSheet("""
             QFrame {
                 background-color: #FFF;
-                border-radius: 10px;
+                border-radius: 7.5px;
             }
         """)
         frame_layout = QtWidgets.QHBoxLayout(frame)
         frame_layout.setContentsMargins(10, 5, 10, 5)
-        frame.setFixedHeight(48)
+        frame.setFixedHeight(44)
 
         combo = QtWidgets.QComboBox(frame)
         combo.addItems(dropdown_values)
         combo.setCurrentText(default_value)
         # Style for the inner text
-        combo.setStyleSheet("color: #150700; font-size: 22px;")
+        combo.setStyleSheet("color: #150700; font-size: 18px;")
         combo.setEditable(True)
         combo.lineEdit().setAlignment(QtCore.Qt.AlignCenter)
         combo.setEditable(False)
-        combo.setFixedHeight(48)
+        combo.setFixedHeight(44)
 
         frame_layout.addWidget(combo)
         container_layout.addWidget(frame)
@@ -164,10 +172,10 @@ class SettingsView(QtWidgets.QWidget):
         container.setFixedWidth(685)
         container_layout = QtWidgets.QVBoxLayout(container)
         container_layout.setContentsMargins(0, 0, 0, 0)
-        container_layout.setSpacing(8)
+        container_layout.setSpacing(10)
 
         label = QtWidgets.QLabel(label_text, container)
-        label.setStyleSheet("color: white; background: transparent; font-size: 22px;")
+        label.setStyleSheet("color: white; background: transparent; font-size: 18px;")
         container_layout.addWidget(label, alignment=QtCore.Qt.AlignLeft)
 
         # White rectangle frame with rounded corners
@@ -175,18 +183,18 @@ class SettingsView(QtWidgets.QWidget):
         frame.setStyleSheet("""
             QFrame {
                 background-color: #FFF;
-                border-radius: 10px;
+                border-radius: 7.5px;
             }
         """)
         frame_layout = QtWidgets.QHBoxLayout(frame)
         frame_layout.setContentsMargins(10, 5, 10, 5)
-        frame.setFixedHeight(48)
+        frame.setFixedHeight(44)
 
         spin = QtWidgets.QSpinBox(frame)
         spin.setRange(0, max_value)
         spin.setValue(default_value)
-        spin.setStyleSheet("color: #150700; font-size: 22px; qproperty-alignment: AlignCenter;")
-        spin.setFixedHeight(48)
+        spin.setStyleSheet("color: #150700; font-size: 18px; qproperty-alignment: AlignCenter;")
+        spin.setFixedHeight(44)
 
         frame_layout.addWidget(spin)
         container_layout.addWidget(frame)
@@ -201,8 +209,11 @@ class SettingsView(QtWidgets.QWidget):
     def get_board_layout(self):
         return self._board_layout_combo.currentText()
 
-    def get_your_colour(self):
-        return self._your_colour_combo.currentText()
+    def get_match_type(self):
+        return self._match_type.currentText()
+
+    def get_host_colour(self):
+        return self._host_colour_combo.currentText()
 
     def get_moves_per_team(self):
         return self._moves_per_team_spin.value()
