@@ -51,7 +51,7 @@ class SettingsView(QtWidgets.QWidget):
             parent=self.center_frame,
             layout=inner_layout,
             label_text="Board Layout",
-            dropdown_values=["Standard", "Belgian Daisy"],
+            dropdown_values=["Standard", "Belgian Daisy", "German Daisy"],
             default_value="Standard"
         )
 

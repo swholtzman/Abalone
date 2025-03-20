@@ -134,6 +134,8 @@ class GameBoard:
             self._set_standard_layout(host_color, opponent_color)
         elif layout_name.lower() == "belgian daisy":
             self._set_belgian_daisy_layout(host_color, opponent_color)
+        elif layout_name.lower() == "german daisy":
+            self._set_german_daisy_layout(host_color, opponent_color)
         else:
             # Default or fallback
             self._clear_occupants()
@@ -189,6 +191,25 @@ class GameBoard:
         host_coords = [
             (2,3),(3,3),(5,3),(6,3),(1,2),(2,2),(3,2),
             (4,2),(5,2),(6,2),(1,1),(2,1),(4,1),(5,1)
+        ]
+
+        self._fill_layout(opponent_coords, opponent_color)
+        self._fill_layout(host_coords, host_color)
+
+    def _set_german_daisy_layout(self, host_color, opponent_color):
+        """
+        Another example layout. Populate occupant states accordingly.
+        """
+        self._clear_occupants()
+
+        opponent_coords = [
+            (4,8),(5,8),(3,7),(4,7),(5,7),(3,6),(4,6),
+            (8,8),(9,8),(7,7),(8,7),(9,7),(7,6),(8,6)
+        ]
+
+        host_coords = [
+            (2,4),(3,4),(1,3),(2,3),(3,3),(1,2),(2,2),
+            (6,4),(7,4),(5,3),(6,3),(7,3),(5,2),(6,2)
         ]
 
         self._fill_layout(opponent_coords, opponent_color)
