@@ -32,6 +32,13 @@ struct Move {
     int direction;
     bool isInline;
     int pushCount;
+
+    bool operator==(const Move& other) const {
+        return (marbleIndices == other.marbleIndices &&
+                direction == other.direction &&
+                isInline == other.isInline &&
+                pushCount == other.pushCount);
+    }
 };
 
 //------------------------------------------------------------------------------
