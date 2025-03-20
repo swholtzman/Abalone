@@ -19,10 +19,10 @@ struct TTEntry {
     int score;          // Evaluation score
     MoveType type;      // Type of node (exact, lower bound, upper bound)
     Move bestMove;      // Best move from this position
-    bool valid;         // Entry validity flag
+    bool isOccupied;         // Entry validity flag. An invalid entry is considered empty.
     
     // Constructor
-    TTEntry() : key(0), depth(0), score(0), type(MoveType::EXACT), valid(false) {}
+    TTEntry() : key(0), depth(0), score(0), type(MoveType::EXACT), isOccupied(false) {}
 };
 
 class TranspositionTable {

@@ -36,7 +36,7 @@ void TranspositionTable::initZobristKeys() {
 // Clear the table
 void TranspositionTable::clearTable() {
     for (auto& entry : m_table) {
-        entry.valid = false;
+        entry.isOccupied = false;
     }
 }
 
@@ -68,14 +68,14 @@ void TranspositionTable::storeEntry(const Board& board, int depth, int score, Mo
     
     TTEntry& entry = m_table[index];
     
-    // Only overwrite if current entry is invalid, has lower depth, or this is the same position
-    if (!entry.valid || depth >= entry.depth || entry.key == hash) {
+    // Only overwrite if current entry is occupied, has lower depth, or this is the same position
+    if (!entry.isOccupied || depth >= entry.depth || entry.key == hash) {
         entry.key = hash;
         entry.depth = depth;
         entry.score = score;
         entry.type = moveType;
         entry.bestMove = bestMove;
-        entry.valid = true;
+        entry.isOccupied = true;
     }
 }
 
@@ -86,7 +86,8 @@ bool TranspositionTable::probeEntry(const Board& board, int depth, int& score, M
     
     TTEntry& entry = m_table[index];
     
-    if (entry.valid && entry.key == hash && entry.depth >= depth) {
+    // Checks if the entry is occupied AND if its Zobrist key matches the current position's hash
+    if (entry.isOccupied && entry.key == hash && entry.depth >= depth) {
         score = entry.score;
         moveType = entry.type;
         bestMove = entry.bestMove;
@@ -103,8 +104,8 @@ bool TranspositionTable::getBestMove(const Board& board, Move& bestMove) {
     
     TTEntry& entry = m_table[index];
     
-    // Checks if the entry is valid AND if its Zobrist key matches the current position's hash
-    if (entry.valid && entry.key == hash) {
+    // Checks if the entry is occupied AND if its Zobrist key matches the current position's hash
+    if (entry.isOccupied && entry.key == hash) {
         bestMove = entry.bestMove;
         return true;
     }
@@ -117,7 +118,7 @@ double TranspositionTable::getUsage() {
     size_t usedEntries = 0;
     
     for (const auto& entry : m_table) {
-        if (entry.valid) {
+        if (entry.isOccupied) {
             usedEntries++;
         }
     }
