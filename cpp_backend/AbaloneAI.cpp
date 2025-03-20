@@ -102,6 +102,28 @@ int AbaloneAI::minimax(Board& board, int depth, int alpha, int beta, bool maximi
     }
     if (depth == 0)
         return evaluatePosition(board);
+
+    // Check transposition table first
+    int origAlpha = alpha;
+    int origBeta = beta;
+    Move bestMove;
+    int score;
+    MoveType moveType;
+    
+    if (transpositionTable.probeEntry(board, depth, score, moveType, bestMove)) {
+        // TT hit - use stored information
+        if (moveType == MoveType::EXACT) {
+            return score;
+        } else if (moveType == MoveType::LOWERBOUND) {
+            alpha = std::max(alpha, score);
+        } else if (moveType == MoveType::UPPERBOUND) {
+            beta = std::min(beta, score);
+        }
+        
+        if (alpha >= beta) {
+            return score;
+        }
+    }
     
     Occupant currentPlayer = maximizingPlayer ? Occupant::BLACK : Occupant::WHITE;
     std::vector<Move> possibleMoves = board.generateMoves(currentPlayer);
@@ -109,6 +131,25 @@ int AbaloneAI::minimax(Board& board, int depth, int alpha, int beta, bool maximi
     // Game over check: no legal moves
     if (possibleMoves.empty())
         return maximizingPlayer ? std::numeric_limits<int>::min() : std::numeric_limits<int>::max();
+
+    // Get best move from TT (for move ordering)
+    Move ttBestMove;
+    bool hasTTMove = transpositionTable.getBestMove(board, ttBestMove);
+
+    // Move ordering: try TT move first if available
+    if (hasTTMove) {
+        // Move ttBestMove to the front of possibleMoves
+        auto it = std::find_if(possibleMoves.begin(), possibleMoves.end(),
+                                [&ttBestMove](const Move& m) {
+                                    return m == ttBestMove;
+                                });
+        if (it != possibleMoves.end()) {
+            std::rotate(possibleMoves.begin(), it, it + 1);
+        }
+    }
+        
+    MoveType entryType = MoveType::UPPERBOUND;
+    Move localBestMove;
     
     if (maximizingPlayer) {
         int value = std::numeric_limits<int>::min();
@@ -121,6 +162,19 @@ int AbaloneAI::minimax(Board& board, int depth, int alpha, int beta, bool maximi
             if (beta <= alpha)
                 break;  // Beta cutoff
         }
+
+        // Update TT entry type
+        if (value <= origAlpha) {
+            entryType = MoveType::UPPERBOUND;
+        } else if (value >= beta) {
+            entryType = MoveType::LOWERBOUND;
+        } else {
+            entryType = MoveType::EXACT;
+        }
+        
+        // Store in transposition table
+        transpositionTable.storeEntry(board, depth, value, entryType, localBestMove);
+
         return value;
     } else {
         int value = std::numeric_limits<int>::max();
@@ -133,17 +187,34 @@ int AbaloneAI::minimax(Board& board, int depth, int alpha, int beta, bool maximi
             if (beta <= alpha)
                 break;  // Alpha cutoff
         }
+
+        // Update TT entry type
+        if (value <= origAlpha) {
+            entryType = MoveType::UPPERBOUND;
+        } else if (value >= beta) {
+            entryType = MoveType::LOWERBOUND;
+        } else {
+            entryType = MoveType::EXACT;
+        }
+        
+        // Store in transposition table
+        transpositionTable.storeEntry(board, depth, value, entryType, localBestMove);
+
         return value;
     }
 }
 
-AbaloneAI::AbaloneAI(int depth, int timeLimitMs)
-    : maxDepth(depth), nodesEvaluated(0), timeLimit(timeLimitMs), timeoutOccurred(false) {}
+AbaloneAI::AbaloneAI(int depth, int timeLimitMs, size_t ttSizeInMB)
+    : maxDepth(depth), nodesEvaluated(0), timeLimit(timeLimitMs), 
+      timeoutOccurred(false), transpositionTable(ttSizeInMB) {}
 
 std::pair<Move, int> AbaloneAI::findBestMove(Board& board) {
     nodesEvaluated = 0;
     timeoutOccurred = false;
     startTime = std::chrono::high_resolution_clock::now();
+
+    // Clear transposition table before a new search
+    transpositionTable.clearTable();
     
     Occupant currentPlayer = board.nextToMove;
     bool maximizingPlayer = (currentPlayer == Occupant::BLACK);
@@ -222,6 +293,9 @@ std::pair<Move, int> AbaloneAI::findBestMoveIterativeDeepening(Board& board, int
         bestMove = result.first;
         bestScore = result.second;
     }
+
+    // At the end of search, print TT usage statistics
+    std::cout << "Transposition table usage: " << transpositionTable.getUsage() << "%" << std::endl;
     
     return std::make_pair(bestMove, bestScore);
 }

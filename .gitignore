@@ -3,4 +3,9 @@ abalone
 abalone_generator
 compareBoards
 board_visualizer
-visualizer_output.txt
+play_game
+testNormalized.board
+temp.input
+*.txt
+*.move
+venv
