@@ -70,6 +70,8 @@ public:
     // direction d (or -1 if none exists).
     std::array<std::array<int, NUM_DIRECTIONS>, NUM_CELLS> neighbors;
 
+    // Reverse mapping: cell index to coordinate (m,y).
+    static std::array<std::pair<int, int>, NUM_CELLS> s_indexToCoord;
 
     //--------------------------------------------------------------------------
     // Public Methods and Constructors
@@ -145,8 +147,6 @@ private:
     static bool s_mappingInitialized;
     // Mapping from a packed coordinate (m,y) to a cell index.
     static std::unordered_map<long long, int> s_coordToIndex;
-    // Reverse mapping: cell index to coordinate (m,y).
-    static std::array<std::pair<int, int>, NUM_CELLS> s_indexToCoord;
 
     // Initializes the coordinate mapping.
     static void initMapping();

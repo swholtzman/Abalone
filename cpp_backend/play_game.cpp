@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
     //       "random" for random moves for both sides,
     //       "ai_vs_random" for AI vs random (Black uses AI, White random)
     int winningThreshold = 4;
-    int aiDepth = 3;
+    int aiDepth = 5;
     int timeLimitMs = 5000;
     std::string mode = "ai_vs_random"; // Options: "ai", "random", or "ai_vs_random"
 
@@ -159,7 +159,7 @@ int main(int argc, char* argv[]) {
     std::cout << "\nGame finished after " << moveCount << " moves.\n";
 
     // Execute the visualizer (assuming it's compiled as "board_visualizer")
-    system("./board_visualizer initial_position.txt possible_moves.txt");
+    system(("./board_visualizer initial_position.txt possible_moves.txt" + std::string(board.nextToMove == Occupant::BLACK ? "b" : "w")).c_str());
 
     std::cout << "Board visualization complete. Check visualizer_output.txt for results.\n";
 

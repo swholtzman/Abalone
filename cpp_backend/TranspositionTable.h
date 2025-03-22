@@ -20,9 +20,10 @@ struct TTEntry {
     MoveType type;      // Type of node (exact, lower bound, upper bound)
     Move bestMove;      // Best move from this position
     bool isOccupied;         // Entry validity flag. An invalid entry is considered empty.
+    int age;            // Age of the entry (used for replacement strategy)
     
     // Constructor
-    TTEntry() : key(0), depth(0), score(0), type(MoveType::EXACT), isOccupied(false) {}
+    TTEntry() : key(0), depth(0), score(0), type(MoveType::EXACT), isOccupied(false), age(0) {}
 };
 
 class TranspositionTable {
@@ -48,6 +49,11 @@ public:
     // Compute Zobrist hash for a given board position
     uint64_t computeHash(const Board& board);
 
+    void incrementAge();
+
+
+    double getHitRate();
+
 private:
     // Initialize Zobrist keys
     void initZobristKeys();
@@ -61,6 +67,14 @@ private:
     
     // The actual transposition table
     std::vector<TTEntry> m_table;
+
+    // Age of the entries
+    int m_currentAge;
+
+    // Counters for hit rate tracking
+    size_t m_hits;
+    size_t m_probes;
+
 };
 
 #endif // TRANSPOSITION_TABLE_H

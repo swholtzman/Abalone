@@ -23,6 +23,12 @@ private:
     
     // Piece value
     static const int MARBLE_VALUE = 100;
+
+    //count the number of times pruning occurs
+    int pruningCount = 0;
+
+    // static constexpr int QUIESCENCE_DEPTH_LIMIT = 5;  // Maximum depth for quiescence search
+    
     
     /**
      * Evaluates the current board position from BLACK's perspective.
@@ -39,6 +45,8 @@ private:
      * Calculates how many marbles are in edge positions (risk of being pushed off).
      */
     int calculateEdgeDanger(const Board& board, Occupant side);
+
+    int calculateThreatPotential(const Board& board, Occupant side);
     
     /**
      * Checks if the time limit has been exceeded.
@@ -49,6 +57,17 @@ private:
      * The minimax algorithm with alpha-beta pruning.
      */
     int minimax(Board& board, int depth, int alpha, int beta, bool maximizingPlayer);
+
+    // Quiescence search functions
+    int quiescenceSearch(Board& board, int alpha, int beta, bool maximizingPlayer, int qsDepth);
+    bool isQuietPosition(const Board& board, Occupant currentPlayer);
+    std::vector<Move> getCapturingMoves(const std::vector<Move>& moves);
+
+    // Evaluate a move quickly for node ordering
+    int evaluateMove(const Board& board, const Move& move, Occupant side);
+
+    // Order moves based on evaluation and TT move
+    void orderMoves(std::vector<Move>& moves, const Board& board, Occupant side, const Move& ttMove);
 
 public:
     // Default parameters are specified only here.

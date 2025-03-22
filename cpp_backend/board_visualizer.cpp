@@ -96,8 +96,8 @@ void displayBoardToFile(const std::map<Coordinate, Marble>& board, std::ofstream
 }
 
 int main(int argc, char* argv[]) {
-    if (argc != 3) {
-        std::cerr << "Usage: " << argv[0] << " <initial_position_file> <possible_moves_file>" << std::endl;
+    if (argc != 4) {
+        std::cerr << "Usage: " << argv[0] << " <initial_position_file> <possible_moves_file> <starting_player>\n" << std::endl;
         return 1;
     }
     
@@ -121,6 +121,8 @@ int main(int argc, char* argv[]) {
         std::cerr << "Error: Could not open output file output.txt" << std::endl;
         return 1;
     }
+
+    std::string currentPlayer = argv[3];
     
     // Process initial position
     // std::string firstLine, initialGameState;
@@ -160,6 +162,8 @@ int main(int argc, char* argv[]) {
             outputFile << "Move #" << moveCount << ":" << std::endl << std::endl;
             displayBoardToFile(moveBoard, outputFile);
             outputFile << "\nGame State: " << moveGameState << std::endl;
+            outputFile << "Current Player: " << (currentPlayer == "b" ? "Black" : "White") << std::endl;
+            currentPlayer = (currentPlayer == "b" ? "w" : "b");
             outputFile << "\n--------------------------------------------------\n\n";
             
             moveCount++;

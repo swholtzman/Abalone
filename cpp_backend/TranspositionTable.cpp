@@ -11,7 +11,18 @@ TranspositionTable::TranspositionTable(size_t sizeInMB) {
     initZobristKeys();
     size_t entryCount = (sizeInMB * 1024 * 1024) / sizeof(TTEntry);
     m_table.resize(entryCount);
+    m_currentAge = 0;
+    m_hits = 0;
+    m_probes = 0;
     clearTable();
+}
+
+void TranspositionTable::incrementAge() {
+    m_currentAge++;
+}
+
+double TranspositionTable::getHitRate() {
+    return (m_probes > 0) ? ((double)m_hits / m_probes * 100.0) : 0.0;
 }
 
 void TranspositionTable::initZobristKeys() {
@@ -36,9 +47,7 @@ void TranspositionTable::initZobristKeys() {
 
 // Clear the table
 void TranspositionTable::clearTable() {
-    for (auto& entry : m_table) {
-        entry.isOccupied = false;
-    }
+    std::memset(m_table.data(), 0, m_table.size() * sizeof(TTEntry));
 }
 
 // Compute Zobrist hash for a given board position
@@ -69,14 +78,27 @@ void TranspositionTable::storeEntry(const Board& board, int depth, int score, Mo
     
     TTEntry& entry = m_table[index];
     
-    // Only overwrite if current entry is occupied, has lower depth, or this is the same position
-    if (!entry.isOccupied || entry.key == hash || depth >= entry.depth) {
+    // Always replace with the following exceptions:
+    // 1. If it's the same position but we have a deeper search stored
+    // 2. If the existing entry is from the current search and has higher depth
+    bool shouldReplace = true;
+    
+    if (entry.isOccupied && entry.key == hash) {
+        // Same position - check depth
+        if (entry.depth > depth && entry.age == m_currentAge) {
+            // Keep existing entry - it's deeper and from current search
+            shouldReplace = false;
+        }
+    }
+    
+    if (shouldReplace) {
         entry.key = hash;
         entry.depth = depth;
         entry.score = score;
         entry.type = moveType;
         entry.bestMove = bestMove;
         entry.isOccupied = true;
+        entry.age = m_currentAge;  // Update age to current search
     }
 }
 
@@ -84,15 +106,24 @@ void TranspositionTable::storeEntry(const Board& board, int depth, int score, Mo
 bool TranspositionTable::probeEntry(const Board& board, int depth, int& score, MoveType& moveType, Move& bestMove) {
     uint64_t hash = computeHash(board);
     size_t index = hash % m_table.size();
+
+    m_probes++;  // Increment probe counter
     
     TTEntry& entry = m_table[index];
     
-    // Checks if the entry is occupied AND if its Zobrist key matches the current position's hash
-    if (entry.isOccupied && entry.key == hash && entry.depth >= depth) {
-        score = entry.score;
-        moveType = entry.type;
+    // Checks if the entry is valid and matches our position
+    if (entry.isOccupied && entry.key == hash) {
+        // We found a matching position
+        if (entry.depth >= depth) {
+            m_hits++;  // Increment hit counter
+            score = entry.score;
+            moveType = entry.type;
+            bestMove = entry.bestMove;
+            return true;
+        }
+        
+        // Entry is too shallow but we can still use the move
         bestMove = entry.bestMove;
-        return true;
     }
     
     return false;
