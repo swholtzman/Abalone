@@ -5,6 +5,8 @@
 #include <chrono>
 #include <iostream>
 
+int AbaloneAI::PRUNES_OCCURED = 0;
+
 // Evaluate the board position from BLACK's perspective
 int AbaloneAI::evaluatePosition(const Board& board) {
     nodesEvaluated++;
@@ -100,132 +102,114 @@ int AbaloneAI::minimax(Board& board, int depth, int alpha, int beta, bool maximi
         timeoutOccurred = true;
         return evaluatePosition(board);
     }
+
     if (depth == 0)
         return evaluatePosition(board);
 
-    // Check transposition table first
+    // Transposition table lookup
     int origAlpha = alpha;
-    int origBeta = beta;
     Move bestMove;
-    int score;
+    int ttScore;
     MoveType moveType;
-    
-    if (transpositionTable.probeEntry(board, depth, score, moveType, bestMove)) {
-        // TT hit - use stored information
-        if (moveType == MoveType::EXACT) {
-            return score;
-        } else if (moveType == MoveType::LOWERBOUND) {
-            alpha = std::max(alpha, score);
-        } else if (moveType == MoveType::UPPERBOUND) {
-            beta = std::min(beta, score);
-        }
-        
-        if (alpha >= beta) {
-            return score;
-        }
+
+    if (transpositionTable.probeEntry(board, depth, ttScore, moveType, bestMove)) {
+        if (moveType == MoveType::EXACT)
+            return ttScore;
+        else if (moveType == MoveType::LOWERBOUND)
+            alpha = std::max(alpha, ttScore);
+        else if (moveType == MoveType::UPPERBOUND)
+            beta = std::min(beta, ttScore);
+
+        if (alpha >= beta)
+            return ttScore;
     }
-    
+
     Occupant currentPlayer = maximizingPlayer ? Occupant::BLACK : Occupant::WHITE;
     std::vector<Move> possibleMoves = board.generateMoves(currentPlayer);
-    
-    // Game over check: no legal moves
-    if (possibleMoves.empty())
-        return maximizingPlayer ? std::numeric_limits<int>::min() : std::numeric_limits<int>::max();
 
-    //////////////////////////////
-    // Score each move by applying it and evaluating the resulting position
-    std::vector<std::pair<Move, int>> scoredMoves;
+    if (possibleMoves.empty())
+        return maximizingPlayer ? std::numeric_limits<int>::min()
+                                : std::numeric_limits<int>::max();
+
+    // Score and cache board states for each move
+    std::vector<std::tuple<Move, int, Board>> scoredMoves;
     for (const Move& move : possibleMoves) {
         Board tempBoard = board;
         tempBoard.applyMove(move);
-        int scorei = evaluatePosition(tempBoard); // Already exists
-        scoredMoves.emplace_back(move, scorei);
+        int moveScore = evaluatePosition(tempBoard);
+        scoredMoves.emplace_back(move, moveScore, tempBoard);
     }
 
-    // Sort moves: high-to-low for maximizing, low-to-high for minimizing
+    // Sort by heuristic score
     std::sort(scoredMoves.begin(), scoredMoves.end(), [&](const auto& a, const auto& b) {
-        return maximizingPlayer ? a.second > b.second : a.second < b.second;
+        return maximizingPlayer ? std::get<1>(a) > std::get<1>(b)
+                                : std::get<1>(a) < std::get<1>(b);
     });
 
-    // Rebuild the possibleMoves vector in sorted order
-    possibleMoves.clear();
-    for (const auto& pair : scoredMoves) {
-        possibleMoves.push_back(pair.first);
+    // Rebuild move and board vectors
+    std::vector<Move> orderedMoves;
+    std::vector<Board> correspondingBoards;
+    for (const auto& tup : scoredMoves) {
+        orderedMoves.push_back(std::get<0>(tup));
+        correspondingBoards.push_back(std::get<2>(tup));
     }
-    ///////////////////////////////////////////
 
-
-    // Get best move from TT (for move ordering)
+    // Move ordering using TT
     Move ttBestMove;
     bool hasTTMove = transpositionTable.getBestMove(board, ttBestMove);
-
-    // Move ordering: try TT move first if available
     if (hasTTMove) {
-        // Move ttBestMove to the front of possibleMoves
-        auto it = std::find_if(possibleMoves.begin(), possibleMoves.end(),
-                                [&ttBestMove](const Move& m) {
-                                    return m == ttBestMove;
-                                });
-        if (it != possibleMoves.end()) {
-            std::rotate(possibleMoves.begin(), it, it + 1);
+        auto it = std::find(orderedMoves.begin(), orderedMoves.end(), ttBestMove);
+        if (it != orderedMoves.end()) {
+            size_t idx = std::distance(orderedMoves.begin(), it);
+            std::rotate(orderedMoves.begin(), it, it + 1);
+            std::rotate(correspondingBoards.begin(), correspondingBoards.begin() + idx,
+                        correspondingBoards.begin() + idx + 1);
         }
     }
-        
+
     MoveType entryType = MoveType::UPPERBOUND;
     Move localBestMove;
-    
-    if (maximizingPlayer) {
-        int value = std::numeric_limits<int>::min();
-        for (const Move& move : possibleMoves) {
-            Board tempBoard = board;
-            tempBoard.applyMove(move);
-            int eval = minimax(tempBoard, depth - 1, alpha, beta, false);
-            value = std::max(value, eval);
-            alpha = std::max(alpha, value);
-            if (beta <= alpha)
-                break;  // Beta cutoff
-        }
+    int bestEval = maximizingPlayer ? std::numeric_limits<int>::min()
+                                    : std::numeric_limits<int>::max();
 
-        // Update TT entry type
-        if (value <= origAlpha) {
-            entryType = MoveType::UPPERBOUND;
-        } else if (value >= beta) {
-            entryType = MoveType::LOWERBOUND;
+    for (size_t i = 0; i < orderedMoves.size(); ++i) {
+        const Move& move = orderedMoves[i];
+        Board &childBoard = correspondingBoards[i];
+
+        int eval = minimax(childBoard, depth - 1, alpha, beta, !maximizingPlayer);
+
+        if (maximizingPlayer) {
+            if (eval > bestEval) {
+                bestEval = eval;
+                localBestMove = move;
+            }
+            alpha = std::max(alpha, bestEval);
         } else {
-            entryType = MoveType::EXACT;
-        }
-        
-        // Store in transposition table
-        transpositionTable.storeEntry(board, depth, value, entryType, localBestMove);
-
-        return value;
-    } else {
-        int value = std::numeric_limits<int>::max();
-        for (const Move& move : possibleMoves) {
-            Board tempBoard = board;
-            tempBoard.applyMove(move);
-            int eval = minimax(tempBoard, depth - 1, alpha, beta, true);
-            value = std::min(value, eval);
-            beta = std::min(beta, value);
-            if (beta <= alpha)
-                break;  // Alpha cutoff
+            if (eval < bestEval) {
+                bestEval = eval;
+                localBestMove = move;
+            }
+            beta = std::min(beta, bestEval);
         }
 
-        // Update TT entry type
-        if (value <= origAlpha) {
-            entryType = MoveType::UPPERBOUND;
-        } else if (value >= beta) {
-            entryType = MoveType::LOWERBOUND;
-        } else {
-            entryType = MoveType::EXACT;
+        if (beta <= alpha) {
+            PRUNES_OCCURED++;
+            break; // Prune
         }
-        
-        // Store in transposition table
-        transpositionTable.storeEntry(board, depth, value, entryType, localBestMove);
-
-        return value;
     }
+
+    // Determine TT entry type
+    if (bestEval <= origAlpha)
+        entryType = MoveType::UPPERBOUND;
+    else if (bestEval >= beta)
+        entryType = MoveType::LOWERBOUND;
+    else
+        entryType = MoveType::EXACT;
+
+    transpositionTable.storeEntry(board, depth, bestEval, entryType, localBestMove);
+    return bestEval;
 }
+
 
 AbaloneAI::AbaloneAI(int depth, int timeLimitMs, size_t ttSizeInMB)
     : maxDepth(depth), nodesEvaluated(0), timeLimit(timeLimitMs), 
@@ -301,6 +285,7 @@ std::pair<Move, int> AbaloneAI::findBestMoveIterativeDeepening(Board& board, int
             bestScore = result.second;
             foundMove = true;
             std::cout << "Completed depth " << depth << std::endl;
+            std::cout << "Prunes Occured: " << PRUNES_OCCURED << std::endl;
         } else {
             std::cout << "Timeout at depth " << depth << ", using previous result" << std::endl;
             break;
