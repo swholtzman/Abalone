@@ -23,7 +23,8 @@ private:
     
     // Piece value
     static const int MARBLE_VALUE = 100;
-    
+
+    static int PRUNES_OCCURED;
     /**
      * Evaluates the current board position from BLACK's perspective.
      * Higher scores are better for BLACK, lower scores for WHITE.

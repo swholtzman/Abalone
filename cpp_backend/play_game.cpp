@@ -9,6 +9,7 @@
 #include <chrono>
 #include <string>
 
+//hi
 // Utility function to count marbles of a given side on the board.
 int countMarbles(const Board& board, Occupant side) {
     int count = 0;
@@ -165,3 +166,47 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
