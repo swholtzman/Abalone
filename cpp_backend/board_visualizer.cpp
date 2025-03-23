@@ -161,8 +161,8 @@ int main(int argc, char* argv[]) {
             // Write this possible move to the output file
             outputFile << "Move #" << moveCount << ":" << std::endl << std::endl;
             displayBoardToFile(moveBoard, outputFile);
-            outputFile << "\nGame State: " << moveGameState << std::endl;
             outputFile << "Current Player: " << (currentPlayer == "b" ? "Black" : "White") << std::endl;
+            outputFile << "\nGame State: " << moveGameState << std::endl;
             currentPlayer = (currentPlayer == "b" ? "w" : "b");
             outputFile << "\n--------------------------------------------------\n\n";
             

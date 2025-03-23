@@ -121,6 +121,11 @@ int AbaloneAI::evaluateMove(const Board& board, const Move& move, Occupant side)
     int beforeDanger = calculateEdgeDanger(board, side);
     int afterDanger = calculateEdgeDanger(tempBoard, side);
     score -= (afterDanger - beforeDanger) * 15;
+    
+    // Prioritize moves that increase threat potential
+    int beforeThreats = calculateThreatPotential(board, side);
+    int afterThreats = calculateThreatPotential(tempBoard, side);
+    score += (afterThreats - beforeThreats) * 10;
 
     // Bonus for pushing opponent marbles off the edge
     if (move.pushCount > 0) {
@@ -202,6 +207,29 @@ bool AbaloneAI::isTimeUp() {
     return elapsed >= timeLimit;
 }
 
+// Helper method to update killer moves
+void AbaloneAI::updateKillerMove(const Move& move, int depth) {
+    // Don't store captures as killer moves (they're already prioritized)
+    if (move.pushCount > 0)
+        return;
+        
+    // Don't store the move if it's already the first killer move
+    if (killerMoves[depth][0] == move)
+        return;
+        
+    // Shift the existing killer move to the second position
+    killerMoves[depth][1] = killerMoves[depth][0];
+    
+    // Store the new killer move in the first position
+    killerMoves[depth][0] = move;
+}
+
+// Helper function to check if a move is a killer move
+bool AbaloneAI::isKillerMove(const Move& move, int depth) const {
+    return (depth < killerMoves.size() && 
+           (killerMoves[depth][0] == move || killerMoves[depth][1] == move));
+}
+
 // Helper function to sort moves based on their evaluation
 void AbaloneAI::orderMoves(std::vector<Move>& moves, const Board& board, Occupant side, const Move& ttMove) {
     // Define a struct to hold moves and their scores
@@ -219,18 +247,29 @@ void AbaloneAI::orderMoves(std::vector<Move>& moves, const Board& board, Occupan
     
     std::vector<ScoredMove> scoredMoves;
     
-    // First, check if ttMove is in the list and give it highest priority
-    bool ttMoveFound = false;
+    // Score each move
     for (const Move& move : moves) {
+        int moveScore = 0;
+        
+        // 1. Highest priority: Transposition table move
         if (move == ttMove) {
-            // Give TT move highest priority
-            scoredMoves.push_back(ScoredMove(move, std::numeric_limits<int>::max()));
-            ttMoveFound = true;
-        } else {
-            // Score other moves
-            int moveScore = evaluateMove(board, move, side);
-            scoredMoves.push_back(ScoredMove(move, moveScore));
+            moveScore = 100000;  // Very high score
         }
+        // 2. Second priority: Killer moves
+        else if (isKillerMove(move, maxDepth)) {
+            moveScore = 10000;  // High score, but lower than TT move
+            
+            // First killer move gets higher priority than second
+            if (move == killerMoves[maxDepth][0]) {
+                moveScore += 1000;
+            }
+        }
+        // 3. Third priority: Move evaluation heuristic
+        else {
+            moveScore = evaluateMove(board, move, side);
+        }
+        
+        scoredMoves.push_back(ScoredMove(move, moveScore));
     }
     
     // Sort moves by score
@@ -306,6 +345,8 @@ int AbaloneAI::minimax(Board& board, int depth, int alpha, int beta, bool maximi
             alpha = std::max(alpha, value);
             if (beta <= alpha)
                 pruningCount++;
+                // this move caused a beta cutoff, so update killer moves
+                updateKillerMove(move, depth);
                 break;  // Beta cutoff
         }
 
@@ -336,6 +377,9 @@ int AbaloneAI::minimax(Board& board, int depth, int alpha, int beta, bool maximi
             
             beta = std::min(beta, value);
             if (beta <= alpha)
+                pruningCount++;
+                // this move caused an alpha cutoff, so update killer moves
+                updateKillerMove(move, depth);
                 break;  // Alpha cutoff
         }
 
@@ -357,7 +401,10 @@ int AbaloneAI::minimax(Board& board, int depth, int alpha, int beta, bool maximi
 
 AbaloneAI::AbaloneAI(int depth, int timeLimitMs, size_t ttSizeInMB)
     : maxDepth(depth), nodesEvaluated(0), timeLimit(timeLimitMs), 
-      timeoutOccurred(false), transpositionTable(ttSizeInMB) {}
+      timeoutOccurred(false), transpositionTable(ttSizeInMB),
+        killerMoves(depth + 1) {
+            pruningCount = 0;
+}
 
 std::pair<Move, int> AbaloneAI::findBestMove(Board& board) {
     nodesEvaluated = 0;
@@ -367,6 +414,9 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board) {
     // Clear transposition table before a new search
     // transpositionTable.clearTable();
     transpositionTable.incrementAge();
+
+    // Reset killer moves for a new search
+    killerMoves = std::vector<std::array<Move, MAX_KILLER_MOVES>>(maxDepth + 1);
     
     Occupant currentPlayer = board.nextToMove;
     bool maximizingPlayer = (currentPlayer == Occupant::BLACK);

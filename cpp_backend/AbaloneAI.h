@@ -27,7 +27,15 @@ private:
     //count the number of times pruning occurs
     int pruningCount = 0;
 
-    // static constexpr int QUIESCENCE_DEPTH_LIMIT = 5;  // Maximum depth for quiescence search
+    // Killer move heuristic - stores two killer moves per depth
+    static constexpr int MAX_KILLER_MOVES = 2;
+    std::vector<std::array<Move, MAX_KILLER_MOVES>> killerMoves;
+    
+    // Helper method to update killer moves
+    void updateKillerMove(const Move& move, int depth);
+    
+    // Helper function to check if a move is a killer move
+    bool isKillerMove(const Move& move, int depth) const;
     
     
     /**
@@ -57,11 +65,6 @@ private:
      * The minimax algorithm with alpha-beta pruning.
      */
     int minimax(Board& board, int depth, int alpha, int beta, bool maximizingPlayer);
-
-    // Quiescence search functions
-    int quiescenceSearch(Board& board, int alpha, int beta, bool maximizingPlayer, int qsDepth);
-    bool isQuietPosition(const Board& board, Occupant currentPlayer);
-    std::vector<Move> getCapturingMoves(const std::vector<Move>& moves);
 
     // Evaluate a move quickly for node ordering
     int evaluateMove(const Board& board, const Move& move, Occupant side);

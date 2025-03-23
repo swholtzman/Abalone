@@ -30,8 +30,8 @@ int main(int argc, char* argv[]) {
     // mode: "ai" to use AI for both sides,
     //       "random" for random moves for both sides,
     //       "ai_vs_random" for AI vs random (Black uses AI, White random)
-    int winningThreshold = 4;
-    int aiDepth = 5;
+    int winningThreshold = 3;
+    int aiDepth = 10;
     int timeLimitMs = 5000;
     std::string mode = "ai_vs_random"; // Options: "ai", "random", or "ai_vs_random"
 
@@ -60,7 +60,7 @@ int main(int argc, char* argv[]) {
 
     // Create files for visualization
     std::ofstream initialPositionFile("initial_position.txt");
-    std::ofstream possibleMovesFile("possible_moves.txt");
+    std::ofstream movesMadeFile("moves_made.txt");
 
     initialPositionFile << board.toBoardString() << std::endl;
 
@@ -144,7 +144,7 @@ int main(int argc, char* argv[]) {
             board.applyMove(chosenMove);
 
             // Write the new board state to possible moves file
-            possibleMovesFile << board.toBoardString() << std::endl;
+            movesMadeFile << board.toBoardString() << std::endl;
         }
         catch (const std::exception& ex) {
             std::cout << "Error applying move: " << ex.what() << "\n";
@@ -159,7 +159,7 @@ int main(int argc, char* argv[]) {
     std::cout << "\nGame finished after " << moveCount << " moves.\n";
 
     // Execute the visualizer (assuming it's compiled as "board_visualizer")
-    system(("./board_visualizer initial_position.txt possible_moves.txt" + std::string(board.nextToMove == Occupant::BLACK ? "b" : "w")).c_str());
+    system(("./board_visualizer initial_position.txt moves_made.txt " + std::string(board.nextToMove == Occupant::BLACK ? "w" : "b")).c_str());
 
     std::cout << "Board visualization complete. Check visualizer_output.txt for results.\n";
 
