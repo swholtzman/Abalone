@@ -2,6 +2,7 @@
 #include <random>
 #include <chrono>
 #include <iostream>
+#include <cstring>
 
 // Zobrist key initialization
 bool TranspositionTable::s_zobristInitialized = false;
@@ -28,20 +29,20 @@ double TranspositionTable::getHitRate() {
 void TranspositionTable::initZobristKeys() {
     // Initialize only once
     if (s_zobristInitialized) return;
-    
+
     // Initialize with random values using a good random number generator
     std::mt19937_64 rng(std::chrono::steady_clock::now().time_since_epoch().count());
     std::uniform_int_distribution<uint64_t> dist;
-    
+
     for (int i = 0; i < Board::NUM_CELLS; ++i) {
         for (int j = 0; j < 3; ++j) { // 3 = EMPTY, BLACK, WHITE
             s_zobristKeys[i][j] = dist(rng);
         }
     }
-    
+
     // Additional key for the side to move
     m_sideToMoveKey = dist(rng);
-    
+
     s_zobristInitialized = true;
 }
 
@@ -53,7 +54,7 @@ void TranspositionTable::clearTable() {
 // Compute Zobrist hash for a given board position
 uint64_t TranspositionTable::computeHash(const Board& board) {
     uint64_t hash = 0;
-    
+
     // Hash the occupants
     for (int i = 0; i < Board::NUM_CELLS; ++i) {
         Occupant occ = board.getOccupant(i);
@@ -62,12 +63,12 @@ uint64_t TranspositionTable::computeHash(const Board& board) {
             hash ^= s_zobristKeys[i][occIndex];
         }
     }
-    
+
     // Hash the side to move
     if (board.nextToMove == Occupant::WHITE) {
         hash ^= m_sideToMoveKey;
     }
-    
+
     return hash;
 }
 
@@ -75,14 +76,14 @@ uint64_t TranspositionTable::computeHash(const Board& board) {
 void TranspositionTable::storeEntry(const Board& board, int depth, int score, MoveType moveType, const Move& bestMove) {
     uint64_t hash = computeHash(board);
     size_t index = hash % m_table.size();
-    
+
     TTEntry& entry = m_table[index];
-    
+
     // Always replace with the following exceptions:
     // 1. If it's the same position but we have a deeper search stored
     // 2. If the existing entry is from the current search and has higher depth
     bool shouldReplace = true;
-    
+
     if (entry.isOccupied && entry.key == hash) {
         // Same position - check depth
         if (entry.depth > depth && entry.age == m_currentAge) {
@@ -90,7 +91,7 @@ void TranspositionTable::storeEntry(const Board& board, int depth, int score, Mo
             shouldReplace = false;
         }
     }
-    
+
     if (shouldReplace) {
         entry.key = hash;
         entry.depth = depth;
@@ -108,9 +109,9 @@ bool TranspositionTable::probeEntry(const Board& board, int depth, int& score, M
     size_t index = hash % m_table.size();
 
     m_probes++;  // Increment probe counter
-    
+
     TTEntry& entry = m_table[index];
-    
+
     // Checks if the entry is valid and matches our position
     if (entry.isOccupied && entry.key == hash) {
         // We found a matching position
@@ -121,11 +122,11 @@ bool TranspositionTable::probeEntry(const Board& board, int depth, int& score, M
             bestMove = entry.bestMove;
             return true;
         }
-        
+
         // Entry is too shallow but we can still use the move
         bestMove = entry.bestMove;
     }
-    
+
     return false;
 }
 
@@ -133,27 +134,27 @@ bool TranspositionTable::probeEntry(const Board& board, int depth, int& score, M
 bool TranspositionTable::getBestMove(const Board& board, Move& bestMove) {
     uint64_t hash = computeHash(board);
     size_t index = hash % m_table.size();
-    
+
     TTEntry& entry = m_table[index];
-    
+
     // Checks if the entry is occupied AND if its Zobrist key matches the current position's hash
     if (entry.isOccupied && entry.key == hash) {
         bestMove = entry.bestMove;
         return true;
     }
-    
+
     return false;
 }
 
 // Get the current usage percentage of the table
 double TranspositionTable::getUsage() {
     size_t usedEntries = 0;
-    
+
     for (const auto& entry : m_table) {
         if (entry.isOccupied) {
             usedEntries++;
         }
     }
-    
+
     return (double)usedEntries / m_table.size() * 100.0;
 }
