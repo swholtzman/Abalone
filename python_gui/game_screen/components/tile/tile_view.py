@@ -3,7 +3,7 @@ from PyQt5.QtGui import QBrush, QPen, QColor, QRadialGradient, QFont
 from PyQt5.QtCore import Qt, QRectF
 
 class TileView(QGraphicsItem):
-    def __init__(self, model, diameter=55, gameboard = None):
+    def __init__(self, model, center_x, center_y, diameter=55, gameboard=None):
         super().__init__()
         self.model = model
         self.gameboard = gameboard

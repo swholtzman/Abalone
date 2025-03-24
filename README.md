@@ -2,6 +2,10 @@
 Abalone game created to develop an effective AI bot system with heuristics for optimized gameplay strategies.
 
 ## Patch Notes
+
+### Path 1.1.2
+- Pushed March 24, 2025 3:46pm ; Sam Holtzman
+- repaired crashing but introduced while removing unused params in tile_view.py __init__()
 ### Path 1.1.1
 - Pushed March 24, 2025 2:48pm ; Sam Holtzman
 - Game now playable

@@ -6,7 +6,7 @@ class TileFactory(object):
         self.tile_size = tile_size
         self.gameboard = gameboard
 
-    def create_tile(self, col, row, x, y):
+    def create_tile(self,  col, row, x, y):
         # tile_id = f"({col},{row})"
         tile_model = TileModel(
             tile_id=f"{chr(ord('A') + (col - 1))}{row}",
