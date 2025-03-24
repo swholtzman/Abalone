@@ -447,35 +447,45 @@ void Board::initStandardLayout() {
 
 void Board::initBelgianDaisyLayout() {
     occupant.fill(Occupant::EMPTY);
+    
     vector<string> blackPositions = {
-        "C5","C6","D4","D7","E4","E7","F4","F7","G5","G6"
+        "A1","A2","B1","B2","B3","C2","C3",
+        "G7","G8","H7","H8","H9","I8","I9"
     };
     for (auto& cell : blackPositions) {
         setOccupant(cell, Occupant::BLACK);
     }
+    
     vector<string> whitePositions = {
-        "C4","D3","E3","F3","G4","G7","D8","E8","F8","G8"
+        "A4","A5","B4","B5","B6","C5","C6",
+        "G4","G5","H4","H5","H6","I5","I6"
     };
     for (auto& cell : whitePositions) {
         setOccupant(cell, Occupant::WHITE);
     }
+    
     updateOccupantCoordinates();
 }
 
 void Board::initGermanDaisyLayout() {
     occupant.fill(Occupant::EMPTY);
+    
     vector<string> blackPositions = {
-        "B4","C4","D5","E5","F5","G5","H6"
+        "B1","B2","C1","C2","C3","D2","D3",
+        "F7","F8","G7","G8","G9","H8","H9"
     };
     for (auto& cell : blackPositions) {
         setOccupant(cell, Occupant::BLACK);
     }
+    
     vector<string> whitePositions = {
-        "B5","C5","D4","E4","F4","G4","H5"
+        "B5","B6","C5","C6","C7","D6","D7",
+        "F3","F4","G3","G4","G5","H4","H5"
     };
     for (auto& cell : whitePositions) {
         setOccupant(cell, Occupant::WHITE);
     }
+    
     updateOccupantCoordinates();
 }
 
@@ -532,7 +542,6 @@ bool Board::loadFromInputFile(const string& filename) {
     fin.close();
     return true;
 }
-
 
 void Board::updateOccupantCoordinates() {
     blackOccupantsCoords.clear();
