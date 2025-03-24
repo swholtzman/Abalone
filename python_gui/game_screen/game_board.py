@@ -1,7 +1,5 @@
-from PyQt5 import QtWidgets, QtGui, QtCore
-from PyQt5.QtWidgets import QGraphicsPolygonItem
-from PyQt5.QtGui import QPolygonF, QColor, QBrush
-from PyQt5.QtCore import QPointF
+from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtGui import QColor, QBrush
 from PyQt5.QtSvg import QGraphicsSvgItem
 
 from python_gui.factories.tile_factory import TileFactory
@@ -33,26 +31,12 @@ class GameBoard:
         self.scene = QtWidgets.QGraphicsScene()
         self.scene.setSceneRect(0, 0, 680, 680)
 
-        # d = 186.52
-        # hex_polygon = QPolygonF([
-        #     QPointF(340 - d, 0),  # top-left
-        #     QPointF(340 + d, 0),  # top-right
-        #     QPointF(680, 340),  # right
-        #     QPointF(340 + d, 680),  # bottom-right
-        #     QPointF(340 - d, 680),  # bottom-left
-        #     QPointF(0, 340)  # left
-        # ])
-        # hex_item = QGraphicsPolygonItem(hex_polygon)
-        # hex_item.setBrush(QBrush(QColor("#1E1E1E")))
-        # hex_item.setPen(QtGui.QPen(QtCore.Qt.NoPen))
-        # self.scene.addItem(hex_item)
-
         svg_item = QGraphicsSvgItem("../public/resources/images/BoardBG.svg")
         # Instead of hardcoding, compute the center based on the actual bounding rect.
         scene_rect = self.scene.sceneRect()
         scene_center = QtCore.QPointF(scene_rect.width() / 2, scene_rect.height() / 2)
         svg_rect = svg_item.boundingRect()
-        # Set the SVG's position so its center matches the scene center.
+        # Set the SVGs position so its center matches the scene center.
         svg_item.setPos(scene_center - svg_rect.center())
         self.scene.addItem(svg_item)
 
@@ -74,7 +58,7 @@ class GameBoard:
         self._tile_factory = TileFactory(tile_size=55, gameboard=self)
         self._tiles = {}
         self._selected_tiles = []
-        self.current_player = "Black"
+        self.current_player = "White"
 
         # By default, let's create all the tile pairs. Initially unoccupied.
         self._create_board()
@@ -149,14 +133,13 @@ class GameBoard:
             view.refresh()
 
     def _fill_layout(self, coordinate_list, player_colour):
-        for cpos in coordinate_list:
-            if cpos in self._tiles:
-                tile_model, tile_view = self._tiles[cpos]
+        for c_pos in coordinate_list:
+            if c_pos in self._tiles:
+                tile_model, tile_view = self._tiles[c_pos]
                 tile_model.is_occupied = True
                 tile_model.player_color = player_colour
                 tile_view.refresh()
 
-#
     def _set_standard_layout(self, host_color, opponent_color):
         """
         For 'Standard' layout, place host marbles in certain
@@ -218,37 +201,40 @@ class GameBoard:
 
 # MOVE LOGIC IN PROGRESS
 
-    def on_tile_clicked(self, colrow, shift_pressed):
+    def on_tile_clicked(self, col_row, shift_pressed):
         """
         Called by a TileView when the user clicks that tile.
         We handle selection logic (possibly partial code).
         """
-        tile_model, tile_view = self._tiles[colrow]
-        # 1) Check color ownership
+        tile_model, tile_view = self._tiles[col_row]
+
+        # CASE 1: If user clicks an option tile, that means they are confirming the move
+        if tile_model.is_option:
+            # We handle the "confirm move" logic
+            self.confirm_move(col_row)
+            return
+
+        # CASE 2: Otherwise, we do normal selection
         if tile_model.player_color != self.current_player:
-            # e.g. user clicked an opponent or empty tile; in pure abalone you might allow no selection
-            # or you might just clear selection. Let's just clear if not SHIFT, or ignore if SHIFT.
             if not shift_pressed:
                 self._selected_tiles.clear()
                 self._clear_options()
             return
 
+        # SHIFT vs Non-SHIFT logic for selection:
         if not shift_pressed:
-            # Clear old selection, select this tile
-            self._selected_tiles = [colrow]
+            self._selected_tiles = [col_row]
         else:
-            # SHIFT: attempt to add colrow, but only if we remain <= 3 and collinear, contiguous, same color
-            new_selection = self._selected_tiles + [colrow]
+            new_selection = self._selected_tiles + [col_row]
             if self._is_valid_selection(new_selection):
                 self._selected_tiles = new_selection
             else:
-                # If invalid, maybe ignore or beep, etc.
-                pass
+                pass  # ignore or beep
 
-        # Now that we have a new selection, highlight possible moves
         self._highlight_valid_moves()
 
-    def _is_valid_selection(self, coords_list):
+    @staticmethod
+    def _is_valid_selection(coords_list):
         """
         Check if coords_list:
           1) has up to 3 tiles
@@ -283,8 +269,8 @@ class GameBoard:
             # Suppose mv["destinations"] is a list of (col,row) the selection would occupy.
             # or maybe the final "first tile" if you prefer the user to click that spot to confirm.
             # We'll highlight them:
-            for cpos in mv["highlight_coords"]:
-                mod, view = self._tiles[cpos]
+            for c_pos in mv["highlight_coords"]:
+                mod, view = self._tiles[c_pos]
                 mod.is_option = True
                 view.refresh()
 
@@ -296,42 +282,123 @@ class GameBoard:
 
     def _get_moves_for_selection(self, selected_coords):
         """
-        Return a list of possible moves, each describing which new positions
-        would be occupied if that move is taken, or which tile(s) should
-        be highlighted for user to click.
+        Return a list of possible moves.
+        For single-tile selection: highlight adjacent unoccupied tiles.
+        For 2-3 tile selection:
         """
+        if not selected_coords:
+            return []
+
+            # SINGLE TILE (unchanged):
+        if len(selected_coords) == 1:
+            return self._single_tile_moves(selected_coords[0])
+
+            # MULTI TILE (2 or 3)
+        alignment_dir, sorted_tiles, is_collinear = self._analyze_selection(selected_coords)
+        if not is_collinear:
+            return []
+
+        # For each of the 6 directions:
         moves = []
-
-        # For each direction in DIRECTIONS:
         for dir_key, (dx, dy) in self.DIRECTIONS.items():
-            # Check if the selection can move in that direction (inline or sidestep).
-            # If inline, see if push is legal. If sidestep, see if spaces are free, etc.
-            # We'll show a simplified approach for a single or multi-tile shift:
-
-            if self._can_move_in_direction(selected_coords, dx, dy):
-                # Suppose we figure out the final coords of the group if it moves that way.
-                final_positions = self._compute_destination(selected_coords, dx, dy)
-                # We might highlight the last tile or all final positions as "clickable to confirm."
-                moves.append({
-                    "direction": dir_key,
-                    "highlight_coords": final_positions  # or maybe just [ final_positions[-1] ] etc.
-                })
+            # Figure out if we’re inline or side-step relative to alignment_dir
+            is_inline = self._is_inline(alignment_dir, (dx, dy))
+            if is_inline:
+                # If inline, check push logic or empty-forward logic
+                if self._can_move_inline(sorted_tiles, dx, dy):
+                    # Compute final positions or highlight
+                    final_positions = self._compute_destination(sorted_tiles, dx, dy)
+                    moves.append({
+                        "direction": dir_key,
+                        "highlight_coords": final_positions
+                    })
+            else:
+                # If side-step, each marble must move perpendicular
+                if self._can_move_sidestep(sorted_tiles, dx, dy):
+                    final_positions = self._compute_destination(sorted_tiles, dx, dy)
+                    moves.append({
+                        "direction": dir_key,
+                        "highlight_coords": final_positions
+                    })
 
         return moves
 
-    def _can_move_in_direction(self, selected_coords, dx, dy):
+    def _can_move_inline(self, sorted_tiles, dx, dy):
         """
-        Determine if the selected marbles can legally move/push in (dx,dy).
-        This is where the bulk of Abalone logic goes:
-          - Are we inline or sidestep?
-          - If inline, do we push an opponent chain?
-          - Are we pushing off the board?
-          - Are we pushing our own marble? That’s illegal, etc.
+        Return True if the group can move inline in (dx, dy).
+        Checks if the forward space is free or pushable.
         """
-        # Big chunk of logic omitted. We'll just stub it out:
+        front = self._get_front_most(sorted_tiles, dx, dy)
+        f_col, f_row = front
+        next_coord = (f_col + dx, f_row + dy)
+        if next_coord not in self._tiles:
+            # Off-board: suicidal moves are not allowed.
+            return False
+        next_model, _ = self._tiles[next_coord]
+        if not next_model.is_occupied:
+            return True  # free space
+
+        if next_model.player_color == self.current_player:
+            return False  # cannot push own tile
+
+        # Gather opponent chain.
+        chain = self._gather_chain(next_coord, dx, dy)
+        chain_len = len(chain)
+        selected_len = len(sorted_tiles)
+        # FIX: access the tile model from the tuple.
+        if any(self._tiles[c][0].player_color == self.current_player for c in chain):
+            return False
+        if chain_len >= selected_len:
+            return False
+        # Check if the chain can be pushed further.
+        last_in_chain = chain[-1]
+        last_col, last_row = last_in_chain
+        beyond_coord = (last_col + dx, last_row + dy)
+        if beyond_coord not in self._tiles:
+            # Pushing off is allowed (capture).
+            return True
+        else:
+            beyond_model, _ = self._tiles[beyond_coord]
+            return not beyond_model.is_occupied
+
+    def _can_move_sidestep(self, sorted_tiles, dx, dy):
+        """
+        For side-step, none of the new positions can be occupied or out of bounds.
+        There's no pushing in side-step.
+        """
+        for (col, row) in sorted_tiles:
+            nx, ny = col + dx, row + dy
+            if (nx, ny) not in self._tiles:
+                return False
+            nm, _ = self._tiles[(nx, ny)]
+            if nm.is_occupied:
+                # side-step can't push, so if it’s occupied -> invalid
+                return False
         return True
 
-    def _compute_destination(self, selected_coords, dx, dy):
+    def _gather_chain(self, start_col_row, dx, dy):
+        """
+        Return a list of consecutive marbles (col,row) of the same occupant color
+        as the marble at 'start_col_row', in the direction opposite of (dx,dy).
+        Because if we push from front -> next -> next, we chain them.
+        """
+        color = self._tiles[start_col_row][0].player_color
+        chain = []
+        cur_col_row = start_col_row
+        while True:
+            if cur_col_row not in self._tiles:
+                break
+            cm, _ = self._tiles[cur_col_row]
+            if cm.is_occupied and cm.player_color == color:
+                chain.append(cur_col_row)
+                # move deeper in the same direction
+                cur_col_row = (cur_col_row[0] + dx, cur_col_row[1] + dy)
+            else:
+                break
+        return chain
+
+    @staticmethod
+    def _compute_destination(selected_coords, dx, dy):
         """
         Return the final positions if we move the selection by (dx,dy).
         For inline pushes, we might also shift the opponents or push them off the board.
@@ -344,10 +411,257 @@ class GameBoard:
 
     def confirm_move(self, destination_coord):
         """
-        Called when user clicks an option tile (or some 'Confirm Move' button).
-        Actually apply the move: move the selected marbles, push if needed, etc.
-        Then switch turns, clear selection, etc.
+        If we have multiple tiles, we need to deduce which direction we’re moving in,
+        then apply occupant updates (including any push).
         """
-        # Implementation detail: find which direction/destination this coordinate belongs to,
-        # then do the occupant updates:
-        pass
+        if not self._selected_tiles:
+            return
+
+        num_selected = len(self._selected_tiles)
+
+        if num_selected == 1:
+            # Single-tile logic from before...
+            src = self._selected_tiles[0]
+            self._move_single(src, destination_coord)
+        else:
+            # Multi-tile
+            # 1) Figure out which direction leads to 'destination_coord'
+            #    Typically you stored "direction" in your moves;
+            #    you'd see if 'destination_coord' is in the "highlight_coords" of that move.
+            #    We'll do a naive approach: check each direction if it includes 'destination_coord'.
+            possible_moves = self._get_moves_for_selection(self._selected_tiles)
+
+            chosen_move = None
+            for mv in possible_moves:
+                if destination_coord in mv["highlight_coords"]:
+                    chosen_move = mv
+                    break
+
+            if not chosen_move:
+                return  # shouldn't happen if user clicked highlight
+
+            direction = chosen_move["direction"]
+            dx, dy = self.DIRECTIONS[direction]
+
+            alignment_dir, sorted_tiles, _ = self._analyze_selection(self._selected_tiles)
+            is_inline = self._is_inline(alignment_dir, (dx, dy))
+
+            if is_inline:
+                self._apply_inline_move(sorted_tiles, dx, dy)
+            else:
+                self._apply_sidestep_move(sorted_tiles, dx, dy)
+
+        # Clear selection and highlight
+        self._selected_tiles.clear()
+        self._clear_options()
+
+        # Switch turn
+        self.current_player = "Black" if self.current_player == "White" else "White"
+        print(f"Turn ended. Now it's {self.current_player}'s turn.")
+
+    def _apply_inline_move(self, sorted_tiles, dx, dy):
+        """
+        Update the occupant states for an inline move (which might include pushing).
+        Instead of sequentially moving one tile at a time (which overwrites source data),
+        we compute the new positions for all selected tiles and update them "simultaneously."
+        """
+        # First, handle opponent push (if any) before moving our own tiles.
+        front = self._get_front_most(sorted_tiles, dx, dy)
+        self._push_opponents_if_any(front, dx, dy)
+
+        # Compute a mapping: for each selected tile, new destination coordinate.
+        new_positions = {coord: (coord[0] + dx, coord[1] + dy) for coord in sorted_tiles}
+
+        # All selected tiles have the same color.
+        color = self._tiles[sorted_tiles[0]][0].player_color
+
+        # Update each destination tile with our color.
+        for src_coord, dest_coord in new_positions.items():
+            if dest_coord not in self._tiles:
+                # Destination off-board (suicidal move) is not allowed.
+                continue
+            dst_model, dst_view = self._tiles[dest_coord]
+            dst_model.is_occupied = True
+            dst_model.player_color = color
+            dst_view.refresh()
+
+        # Clear all the original source tiles.
+        for src_coord in sorted_tiles:
+            # Only clear if the source is not also a destination (i.e. moved in-place).
+            if src_coord not in new_positions.values():
+                src_model, src_view = self._tiles[src_coord]
+                src_model.is_occupied = False
+                src_model.player_color = None
+                src_view.refresh()
+
+    def _push_opponents_if_any(self, front_coord, dx, dy):
+        """
+        If there's an opponent chain in front of 'front_coord', push it if possible.
+        Possibly leads to capturing if they go off-board.
+        """
+        next_col = front_coord[0] + dx
+        next_row = front_coord[1] + dy
+        if (next_col, next_row) not in self._tiles:
+            return  # no push needed
+
+        next_model, _ = self._tiles[(next_col, next_row)]
+        if not next_model.is_occupied:
+            return  # no occupant => no push
+
+        # We gather the chain
+        chain = self._gather_chain((next_col, next_row), dx, dy)
+        if not chain:
+            return
+
+        # We move from the last in chain outwards
+        chain_reversed = chain[::-1]  # push them from back->front
+        for col_row in chain_reversed:
+            col, row = col_row
+            new_col = col + dx
+            new_row = row + dy
+            if (new_col, new_row) not in self._tiles:
+                # Off-board => capture
+                # occupant removed:
+                self._tiles[col_row][0].is_occupied = False
+                self._tiles[col_row][0].player_color = None
+                self._tiles[col_row][1].refresh()
+                # TODO: track which team captured
+            else:
+                new_m, new_v = self._tiles[(new_col, new_row)]
+                old_m, old_v = self._tiles[col_row]
+                new_m.is_occupied = True
+                new_m.player_color = old_m.player_color
+
+                old_m.is_occupied = False
+                old_m.player_color = None
+
+                new_v.refresh()
+                old_v.refresh()
+
+    def _apply_sidestep_move(self, sorted_tiles, dx, dy):
+        """
+        For side-step moves, we update each tile in an order that prevents overwriting.
+        Since side-step moves do not push, we simply move each tile if the destination is free.
+        We'll update in descending order of dot product.
+        """
+        # Sort descending (i.e. highest dot product first) to move front-most first.
+        st = sorted(sorted_tiles, key=lambda coord: coord[0]*dx + coord[1]*dy, reverse=True)
+        color = self._tiles[st[0]][0].player_color
+        for (col, row) in st:
+            src_model, src_view = self._tiles[(col, row)]
+            dest_coord = (col + dx, row + dy)
+            if dest_coord not in self._tiles:
+                continue
+            dst_model, dst_view = self._tiles[dest_coord]
+            dst_model.is_occupied = True
+            dst_model.player_color = color
+            src_model.is_occupied = False
+            src_model.player_color = None
+            src_view.refresh()
+            dst_view.refresh()
+
+    # HELPER FUNCTIONS
+    @staticmethod
+    def _is_inline(alignment_dir, move_direction):
+        """
+        Return True if the move_direction is inline with the alignment_dir.
+        That is, if the move direction equals the alignment direction or its exact opposite.
+        """
+        return move_direction == alignment_dir or move_direction == (-alignment_dir[0], -alignment_dir[1])
+
+    @staticmethod
+    def _get_front_most(sorted_tiles, dx, dy):
+        """
+        Given a list of selected tile coordinates (already sorted in some order),
+        return the coordinate of the tile that is "front" relative to the move direction (dx, dy).
+        We define “front” as the tile with the highest dot product with (dx, dy).
+        """
+        front = max(sorted_tiles, key=lambda coord: coord[0]*dx + coord[1]*dy)
+        return front
+
+    def _should_reverse_movement(self, dx, dy):
+        """
+        For multi-tile moves, determine if we should update in reverse order.
+        For example, when moving east (dx > 0) or moving north (dy > 0), we update the
+        front-most tile first to avoid overwriting source data.
+        """
+        if dx > 0 or dy > 0:
+            return True
+        return False
+
+    def _single_tile_moves(self, tile_coord):
+        """
+        (Already implemented.) Returns adjacent unoccupied moves.
+        """
+        col, row = tile_coord
+        highlight_coords = []
+        for _, (dx, dy) in self.DIRECTIONS.items():
+            nx, ny = col + dx, row + dy
+            if (nx, ny) in self._tiles:
+                neighbor_model, _ = self._tiles[(nx, ny)]
+                if not neighbor_model.is_occupied:
+                    highlight_coords.append((nx, ny))
+        if highlight_coords:
+            return [{"direction": "adjacent", "highlight_coords": highlight_coords}]
+        else:
+            return []
+
+    @staticmethod
+    def _analyze_selection(selected_coords):
+        """
+        For multi-tile selection (2–3), determine:
+          - The alignment direction as a tuple (dx, dy) normalized to one of the allowed directions.
+          - The list of selected coordinates sorted by their dot product with that alignment.
+          - Whether the selection is collinear.
+        """
+        if not selected_coords:
+            return (0, 0), selected_coords, False
+        if len(selected_coords) == 1:
+            return (1, 0), selected_coords, True
+
+        sorted_tiles = sorted(selected_coords)
+        first = sorted_tiles[0]
+        last = sorted_tiles[-1]
+        dx = last[0] - first[0]
+        dy = last[1] - first[1]
+
+        if dx > 0 and dy == 0:
+            alignment_dir = (1, 0)
+        elif dx < 0 and dy == 0:
+            alignment_dir = (-1, 0)
+        elif dx > 0 and dy > 0:
+            alignment_dir = (1, 1)
+        elif dx == 0 and dy > 0:
+            alignment_dir = (0, 1)
+        elif dx == 0 and dy < 0:
+            alignment_dir = (0, -1)
+        elif dx < 0 and dy < 0:
+            alignment_dir = (-1, -1)
+        else:
+            alignment_dir = (1, 0)
+
+        is_collinear = True
+        for i in range(1, len(sorted_tiles)):
+            diff = (sorted_tiles[i][0] - sorted_tiles[i - 1][0],
+                    sorted_tiles[i][1] - sorted_tiles[i - 1][1])
+            if diff != alignment_dir:
+                is_collinear = False
+                break
+
+        sorted_tiles = sorted(sorted_tiles, key=lambda coord: coord[0] * alignment_dir[0] + coord[1] * alignment_dir[1])
+        return alignment_dir, sorted_tiles, is_collinear
+
+    def _move_single(self, src, destination_coord):
+        """
+        Move a single tile from src to destination_coord.
+        """
+        src_model, src_view = self._tiles[src]
+        dst_model, dst_view = self._tiles[destination_coord]
+        if dst_model.is_occupied:
+            return
+        dst_model.is_occupied = True
+        dst_model.player_color = src_model.player_color
+        src_model.is_occupied = False
+        src_model.player_color = None
+        src_view.refresh()
+        dst_view.refresh()
