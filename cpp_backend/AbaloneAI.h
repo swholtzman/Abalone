@@ -25,6 +25,9 @@ private:
     static const int MARBLE_VALUE = 100;
 
     static int PRUNES_OCCURED;
+
+    int evaluateCounterDefensively(const Board &board);
+
     /**
      * Evaluates the current board position from BLACK's perspective.
      * Higher scores are better for BLACK, lower scores for WHITE.
@@ -67,5 +70,7 @@ public:
      */
     std::pair<Move, int> findBestMoveIterativeDeepening(Board& board, int maxSearchDepth = 10);
 };
+
+static long long packCoord(int m, int y);
 
 #endif // ABALONE_AI_H

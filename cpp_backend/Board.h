@@ -136,7 +136,6 @@ public:
         return (index >= 0 && index < NUM_CELLS) ? occupant[index] : Occupant::EMPTY;
     }
 
-private:
     //--------------------------------------------------------------------------
     // Static Mapping and Neighbor Calculation
     //--------------------------------------------------------------------------
@@ -147,6 +146,8 @@ private:
     static std::unordered_map<long long, int> s_coordToIndex;
     // Reverse mapping: cell index to coordinate (m,y).
     static std::array<std::pair<int, int>, NUM_CELLS> s_indexToCoord;
+private:
+
 
     // Initializes the coordinate mapping.
     static void initMapping();

@@ -4,8 +4,63 @@
 #include <algorithm>
 #include <chrono>
 #include <iostream>
+#include <valarray>
 
 int AbaloneAI::PRUNES_OCCURED = 0;
+
+
+
+int AbaloneAI::evaluateCounterDefensively(const Board& board) {
+    double black_points = 0;
+    double white_points = 0;
+
+    const int reversed_points[] = {5, 4, 3, 2, 1};
+
+    for (const auto& black_marble : board.blackOccupantsCoords) {
+        int squared_sum = std::pow(2, black_marble.first) + std::pow(2, black_marble.second);
+        int square_root = static_cast<int>(std::sqrt(squared_sum));
+        if (square_root >= 0 && square_root < 5)
+            black_points += reversed_points[square_root];
+
+        long long key = packCoord(black_marble.first, black_marble.second);
+        int marble_index = Board::s_coordToIndex.at(key);  // safer with `.at()` or check existence
+
+        for (int i = 0; i < Board::NUM_DIRECTIONS; ++i) {
+            int neighborIndex = board.neighbors[marble_index][i];
+            if (neighborIndex >= 0) {
+                if (board.occupant[neighborIndex] == Occupant::BLACK) {
+                    black_points += 1;
+                }
+            } else {
+                black_points -= 1;
+            }
+        }
+    }
+
+    for (const auto& white_marble : board.whiteOccupantsCoords) {
+        int squared_sum = std::pow(2, white_marble.first) + std::pow(2, white_marble.second);
+        int square_root = static_cast<int>(std::sqrt(squared_sum));
+        if (square_root >= 0 && square_root < 5)
+            white_points += reversed_points[square_root];
+
+        long long key = packCoord(white_marble.first, white_marble.second);
+        int marble_index = Board::s_coordToIndex.at(key);
+
+        for (int i = 0; i < Board::NUM_DIRECTIONS; ++i) {
+            int neighborIndex = board.neighbors[marble_index][i];
+            if (neighborIndex >= 0) {
+                if (board.occupant[neighborIndex] == Occupant::WHITE) {
+                    white_points += 1;
+                }
+            } else {
+                white_points -= 1;
+            }
+        }
+    }
+
+    return static_cast<int>(black_points - white_points);
+}
+
 
 // Evaluate the board position from BLACK's perspective
 int AbaloneAI::evaluatePosition(const Board& board) {
