@@ -6,6 +6,10 @@
 #include <iostream>
 
 // Evaluate the board position from BLACK's perspective
+// Add this constant
+const int STARTING_MARBLES = 14; // Standard Abalone has 14 marbles per side
+
+// Modify evaluatePosition to adjust weights based on game phase
 int AbaloneAI::evaluatePosition(const Board& board) {
     nodesEvaluated++;
     
@@ -19,10 +23,24 @@ int AbaloneAI::evaluatePosition(const Board& board) {
             whiteMarbles++;
     }
     
-    // Basic score: difference in marble counts
-    int score = (blackMarbles - whiteMarbles) * MARBLE_VALUE;
+    // Determine game phase (early, mid, late)
+    float gameProgress = 1.0f - ((blackMarbles + whiteMarbles) / (float)(2 * STARTING_MARBLES));
     
-    // Component 1: Center control bonus
+    // Adjust weights based on game phase
+    int marbleValue = MARBLE_VALUE;
+    int centerValue = 10;
+    int cohesionValue = 5;
+    int edgeValue = 15;
+    int mobilityValue = 3;
+    int threatValue = 10;
+    int formationValue = 12;
+    int sumitoValue = 15;
+    int positionValue = 8;
+    
+    // Calculate component values
+    int score = (blackMarbles - whiteMarbles) * marbleValue;
+    
+    // Center control
     int blackCenterControl = 0;
     int whiteCenterControl = 0;
     std::vector<int> centerCells = {
@@ -40,27 +58,22 @@ int AbaloneAI::evaluatePosition(const Board& board) {
                 whiteCenterControl++;
         }
     }
-    score += (blackCenterControl - whiteCenterControl) * 10;
+    score += (blackCenterControl - whiteCenterControl) * centerValue;
     
-    // Component 2: Group cohesion bonus
+    // Group cohesion
     int blackCohesion = calculateCohesion(board, Occupant::BLACK);
     int whiteCohesion = calculateCohesion(board, Occupant::WHITE);
-    score += (blackCohesion - whiteCohesion) * 5;
+    score += (blackCohesion - whiteCohesion) * cohesionValue;
     
-    // Component 3: Edge danger penalty
+    // Edge danger
     int blackEdgeDanger = calculateEdgeDanger(board, Occupant::BLACK);
     int whiteEdgeDanger = calculateEdgeDanger(board, Occupant::WHITE);
-    score -= (blackEdgeDanger - whiteEdgeDanger) * 15;
-
-    // // Component 4: Mobility bonus
-    // int blackMobility = calculateMobility(board, Occupant::BLACK);
-    // int whiteMobility = calculateMobility(board, Occupant::WHITE);
-    // score += (blackMobility - whiteMobility) * 3;
+    score -= (blackEdgeDanger - whiteEdgeDanger) * edgeValue;
     
-    // Component 5: Threat potential bonus
+    // Threat potential
     int blackThreats = calculateThreatPotential(board, Occupant::BLACK);
     int whiteThreats = calculateThreatPotential(board, Occupant::WHITE);
-    score += (blackThreats - whiteThreats) * 10;
+    score += (blackThreats - whiteThreats) * threatValue;
     
     return score;
 }
@@ -127,6 +140,7 @@ int AbaloneAI::evaluateMove(const Board& board, const Move& move, Occupant side)
     int afterThreats = calculateThreatPotential(tempBoard, side);
     score += (afterThreats - beforeThreats) * 10;
 
+
     // Bonus for pushing opponent marbles off the edge
     if (move.pushCount > 0) {
         score += 50 * move.pushCount;
@@ -143,6 +157,154 @@ int AbaloneAI::evaluateMove(const Board& board, const Move& move, Occupant side)
     }
     
     return score;
+}
+
+int AbaloneAI::calculatePositionalAdvantage(const Board& board, Occupant side) {
+    int positionScore = 0;
+    
+    // Define strategic positions (beyond just center)
+    std::vector<int> strategicPositions = {
+        // Example positions - you would customize these
+        Board::notationToIndex("D4"), Board::notationToIndex("F4"),
+        Board::notationToIndex("C5"), Board::notationToIndex("G5"),
+        Board::notationToIndex("D6"), Board::notationToIndex("F6")
+    };
+    
+    // Count control of strategic positions
+    for (int idx : strategicPositions) {
+        if (idx >= 0 && board.occupant[idx] == side) {
+            positionScore += 8;
+        }
+    }
+    
+    return positionScore;
+}
+
+int AbaloneAI::calculateSumitoAdvantages(const Board& board, Occupant side) {
+    int sumitoScore = 0;
+    Occupant opponent = (side == Occupant::BLACK) ? Occupant::WHITE : Occupant::BLACK;
+    
+    for (int i = 0; i < Board::NUM_CELLS; i++) {
+        if (board.occupant[i] != side) continue;
+        
+        for (int d = 0; d < Board::NUM_DIRECTIONS; d++) {
+            // Count friendly marbles in a row
+            int friendlyCount = 1;
+            int currentIdx = i;
+            
+            while (friendlyCount < 3) { // Maximum 3 marbles can push in Abalone
+                int nextIdx = board.neighbors[currentIdx][d];
+                if (nextIdx < 0 || board.occupant[nextIdx] != side) break;
+                friendlyCount++;
+                currentIdx = nextIdx;
+            }
+            
+            // Now check for opponent marbles in the opposite direction
+            if (friendlyCount >= 2) { // Need at least 2 marbles to push
+                int oppositeDir = (d + 3) % 6; // Assuming 6 directions, get opposite
+                int oppositeIdx = board.neighbors[i][oppositeDir];
+                
+                if (oppositeIdx >= 0 && board.occupant[oppositeIdx] == opponent) {
+                    // Count opponent marbles
+                    int opponentCount = 1;
+                    currentIdx = oppositeIdx;
+                    
+                    while (true) {
+                        int nextIdx = board.neighbors[currentIdx][oppositeDir];
+                        if (nextIdx < 0 || board.occupant[nextIdx] != opponent) break;
+                        opponentCount++;
+                        currentIdx = nextIdx;
+                    }
+                    
+                    // Check if we have sumito advantage (can push opponent)
+                    if (friendlyCount > opponentCount) {
+                        // Higher score for pushing more marbles or being close to edge
+                        int edgeDistance = 0;
+                        currentIdx = oppositeIdx;
+                        while (opponentCount-- > 0) {
+                            edgeDistance++;
+                            int nextIdx = board.neighbors[currentIdx][oppositeDir];
+                            if (nextIdx < 0) {
+                                // Can push off the edge!
+                                sumitoScore += 100;
+                                break;
+                            }
+                            currentIdx = nextIdx;
+                        }
+                        
+                        // Regular sumito advantage
+                        sumitoScore += (25 - edgeDistance * 5);
+                    }
+                }
+            }
+        }
+    }
+    
+    return sumitoScore;
+}
+
+int AbaloneAI::calculateMobility(const Board& board, Occupant side) {
+    int mobilityScore = 0;
+    
+    for (int i = 0; i < Board::NUM_CELLS; i++) {
+        if (board.occupant[i] == side) {
+            for (int d = 0; d < Board::NUM_DIRECTIONS; d++) {
+                int neighbor = board.neighbors[i][d];
+                // Count empty neighbors (simple mobility)
+                if (neighbor >= 0 && board.occupant[neighbor] == Occupant::EMPTY) {
+                    mobilityScore++;
+                }
+            }
+        }
+    }
+    
+    return mobilityScore;
+}
+
+// Add this function to recognize and reward strong formations
+int AbaloneAI::calculateFormations(const Board& board, Occupant side) {
+    int formationScore = 0;
+    
+    // Check for lines of 3 or more marbles in each direction
+    for (int i = 0; i < Board::NUM_CELLS; i++) {
+        if (board.occupant[i] != side) continue;
+        
+        for (int d = 0; d < Board::NUM_DIRECTIONS; d++) {
+            // Count consecutive marbles in this direction
+            int count = 1;
+            int currentIdx = i;
+            
+            while (true) {
+                int nextIdx = board.neighbors[currentIdx][d];
+                if (nextIdx < 0 || board.occupant[nextIdx] != side) break;
+                count++;
+                currentIdx = nextIdx;
+            }
+            
+            // Reward formations of 3+ marbles (stronger with more marbles)
+            if (count >= 3) {
+                formationScore += (count - 2) * 15;
+                
+                // Extra bonus for formations not on the edge
+                bool isEdgeFormation = false;
+                for (int j = 0; j < count; j++) {
+                    for (int dir = 0; dir < Board::NUM_DIRECTIONS; dir++) {
+                        if (board.neighbors[currentIdx][dir] < 0) {
+                            isEdgeFormation = true;
+                            break;
+                        }
+                    }
+                    if (isEdgeFormation) break;
+                }
+                
+                if (!isEdgeFormation) {
+                    formationScore += count * 5;
+                }
+            }
+        }
+    }
+    
+    return formationScore;
 }
 
 int AbaloneAI::calculateCohesion(const Board& board, Occupant side) {
@@ -343,11 +505,12 @@ int AbaloneAI::minimax(Board& board, int depth, int alpha, int beta, bool maximi
             }
             
             alpha = std::max(alpha, value);
-            if (beta <= alpha)
+            if (beta <= alpha) {
                 pruningCount++;
                 // this move caused a beta cutoff, so update killer moves
                 updateKillerMove(move, depth);
                 break;  // Beta cutoff
+            }
         }
 
         // Update TT entry type
@@ -376,11 +539,12 @@ int AbaloneAI::minimax(Board& board, int depth, int alpha, int beta, bool maximi
             }
             
             beta = std::min(beta, value);
-            if (beta <= alpha)
+            if (beta <= alpha) {
                 pruningCount++;
                 // this move caused an alpha cutoff, so update killer moves
                 updateKillerMove(move, depth);
                 break;  // Alpha cutoff
+            }
         }
 
         // Update TT entry type
