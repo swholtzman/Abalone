@@ -58,7 +58,7 @@ class GameBoard:
         self._tile_factory = TileFactory(tile_size=55, gameboard=self)
         self._tiles = {}
         self._selected_tiles = []
-        self.current_player = "White"
+        self.current_player = "Black"
 
         # By default, let's create all the tile pairs. Initially unoccupied.
         self._create_board()
