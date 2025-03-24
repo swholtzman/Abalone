@@ -3,7 +3,7 @@ from PyQt5.QtGui import QBrush, QPen, QColor, QRadialGradient, QFont
 from PyQt5.QtCore import Qt, QRectF
 
 class TileView(QGraphicsItem):
-    def __init__(self, model, center_x, center_y, diameter=55, gameboard = None):
+    def __init__(self, model, diameter=55, gameboard = None):
         super().__init__()
         self.model = model
         self.gameboard = gameboard
@@ -65,8 +65,8 @@ class TileView(QGraphicsItem):
         """
         if self.gameboard:
             shift_pressed = bool(event.modifiers() & Qt.ShiftModifier)
-            colrow = self.model.tile_id_coords  # e.g., (col, row)
-            self.gameboard.on_tile_clicked(colrow, shift_pressed)
+            col_row = self.model.tile_id_coords  # e.g., (col, row)
+            self.gameboard.on_tile_clicked(col_row, shift_pressed)
         # Accept the event so it doesn’t propagate further.
         event.accept()
 

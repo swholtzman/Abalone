@@ -199,8 +199,7 @@ class GameBoard:
         self._fill_layout(opponent_coords, opponent_color)
         self._fill_layout(host_coords, host_color)
 
-# MOVE LOGIC IN PROGRESS
-
+    # MOVE LOGIC (in progress)
     def on_tile_clicked(self, col_row, shift_pressed):
         """
         Called by a TileView when the user clicks that tile.
@@ -250,7 +249,7 @@ class GameBoard:
 
         # Check collinearity & adjacency. For 2 or 3 tiles, they must form a line in one of the DIRECTIONS
         # This can be done by sorting them in some coordinate order and verifying consistent steps.
-        # We'll skip the actual logic here and just assume it's correct for brevity.
+        # We'll skip the actual logic here and just assume it's correct.
         return True
 
     def _highlight_valid_moves(self):
@@ -267,7 +266,6 @@ class GameBoard:
 
         for mv in possible_moves:
             # Suppose mv["destinations"] is a list of (col,row) the selection would occupy.
-            # or maybe the final "first tile" if you prefer the user to click that spot to confirm.
             # We'll highlight them:
             for c_pos in mv["highlight_coords"]:
                 mod, view = self._tiles[c_pos]
@@ -420,7 +418,6 @@ class GameBoard:
         num_selected = len(self._selected_tiles)
 
         if num_selected == 1:
-            # Single-tile logic from before...
             src = self._selected_tiles[0]
             self._move_single(src, destination_coord)
         else:
@@ -579,7 +576,8 @@ class GameBoard:
         front = max(sorted_tiles, key=lambda coord: coord[0]*dx + coord[1]*dy)
         return front
 
-    def _should_reverse_movement(self, dx, dy):
+    @staticmethod
+    def _should_reverse_movement(dx, dy):
         """
         For multi-tile moves, determine if we should update in reverse order.
         For example, when moving east (dx > 0) or moving north (dy > 0), we update the

@@ -2,7 +2,14 @@
 Abalone game created to develop an effective AI bot system with heuristics for optimized gameplay strategies.
 
 ## Patch Notes
-### Patch 1.0.X
+### Path 1.1.1
+- Pushed March 24, 2025 2:48pm ; Sam Holtzman
+- Game now playable
+- resolved some warnings
+- resolved some typos
+- removed some redundant comments
+
+### Patch 1.0.9
 - Pushed March 24, 2025 2:42pm ; Sam Holtzman
 - game_board.py updates; game is play-able
 - settings_view.py updates; fixed settings margins

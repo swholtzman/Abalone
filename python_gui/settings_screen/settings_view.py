@@ -127,7 +127,8 @@ class SettingsView(QtWidgets.QWidget):
 
         main_layout.addStretch()  # Push content to center vertically.
 
-    def _create_labeled_dropdown(self, parent, layout, label_text, dropdown_values, default_value):
+    @staticmethod
+    def _create_labeled_dropdown(parent, layout, label_text, dropdown_values, default_value):
         container = QtWidgets.QWidget(parent)
         container.setFixedWidth(685)  # 80% of a 800px-wide center_frame
         container_layout = QtWidgets.QVBoxLayout(container)
@@ -167,7 +168,8 @@ class SettingsView(QtWidgets.QWidget):
 
         return combo
 
-    def _create_labeled_intinput(self, parent, layout, label_text, default_value, max_value):
+    @staticmethod
+    def _create_labeled_intinput(parent, layout, label_text, default_value, max_value):
         container = QtWidgets.QWidget(parent)
         container.setFixedWidth(685)
         container_layout = QtWidgets.QVBoxLayout(container)

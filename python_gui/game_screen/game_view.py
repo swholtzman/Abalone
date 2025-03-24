@@ -1,4 +1,4 @@
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets
 from python_gui.game_screen.game_board import GameBoard
 
 
