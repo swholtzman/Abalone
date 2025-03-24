@@ -74,21 +74,32 @@ uint64_t TranspositionTable::computeHash(const Board& board) {
 // Store a position in the transposition table
 void TranspositionTable::storeEntry(const Board& board, int depth, int score, MoveType moveType, const Move& bestMove) {
     uint64_t hash = computeHash(board);
-    size_t index = hash % m_table.size();
+    size_t index = hash & (m_table.size() - 1);  // Faster than modulo
     
     TTEntry& entry = m_table[index];
     
-    // Always replace with the following exceptions:
-    // 1. If it's the same position but we have a deeper search stored
-    // 2. If the existing entry is from the current search and has higher depth
+    // Always replace strategy with refinements
     bool shouldReplace = true;
     
     if (entry.isOccupied && entry.key == hash) {
-        // Same position - check depth
-        if (entry.depth > depth && entry.age == m_currentAge) {
-            // Keep existing entry - it's deeper and from current search
-            shouldReplace = false;
+        // Same position
+        if (entry.age == m_currentAge) {
+            // Same search - prefer deeper searches or exact nodes
+            if (entry.depth > depth && entry.type == MoveType::EXACT) {
+                shouldReplace = false;
+            } else if (entry.depth == depth) {
+                // Equal depth, prefer more accurate node types
+                if (entry.type == MoveType::EXACT && moveType != MoveType::EXACT) {
+                    shouldReplace = false;
+                }
+            }
         }
+    }
+    
+    // For entries that are almost done with their search, always keep them
+    if (entry.isOccupied && entry.key == hash && 
+        entry.depth >= depth + 3 && entry.age == m_currentAge - 1) {
+        shouldReplace = false;
     }
     
     if (shouldReplace) {
@@ -98,7 +109,10 @@ void TranspositionTable::storeEntry(const Board& board, int depth, int score, Mo
         entry.type = moveType;
         entry.bestMove = bestMove;
         entry.isOccupied = true;
-        entry.age = m_currentAge;  // Update age to current search
+        entry.age = m_currentAge;
+    } else if (entry.key == hash && entry.bestMove.marbleIndices.empty() && !bestMove.marbleIndices.empty()) {
+        // Always update the best move if we didn't have one
+        entry.bestMove = bestMove;
     }
 }
 

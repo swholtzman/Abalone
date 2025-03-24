@@ -19,10 +19,10 @@ private:
     // Indicates if search was terminated due to time limit
     bool timeoutOccurred;
 
-    TranspositionTable transpositionTable;
-    
     // Piece value
     static const int MARBLE_VALUE = 100;
+
+    TranspositionTable transpositionTable;
 
     //count the number of times pruning occurs
     int pruningCount = 0;
@@ -35,8 +35,9 @@ private:
     void updateKillerMove(const Move& move, int depth);
     
     // Helper function to check if a move is a killer move
-    bool isKillerMove(const Move& move, int depth) const;
-    
+    bool isKillerMove(const Move& move, int depth) const;  
+
+    void getDynamicWeights(float gameProgress, int& marbleValue, int& centerValue, int& cohesionValue, int& edgeValue, int& threatValue, int& mobilityValue);
     
     /**
      * Evaluates the current board position from BLACK's perspective.
@@ -54,7 +55,12 @@ private:
      */
     int calculateEdgeDanger(const Board& board, Occupant side);
 
+    /**
+     * Calculate threat potential
+     */
     int calculateThreatPotential(const Board& board, Occupant side);
+
+    int calculateMobility(const Board& board, Occupant side);
     
     /**
      * Checks if the time limit has been exceeded.

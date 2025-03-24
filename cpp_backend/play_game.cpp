@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
     //       "random" for random moves for both sides,
     //       "ai_vs_random" for AI vs random (Black uses AI, White random)
     int winningThreshold = 3;
-    int aiDepth = 20;
+    int aiDepth = 5;
     int timeLimitMs = 5000;
     std::string mode = "ai_vs_random"; // Options: "ai", "random", or "ai_vs_random"
 
@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
 
     // Set up the board using the standard starting layout.
     Board board;
-    board.initStandardLayout();
+    board.initBelgianDaisyLayout();
     // Ensure the first move is by Black.
     board.nextToMove = Occupant::BLACK;
 
