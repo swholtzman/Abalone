@@ -36,7 +36,9 @@ visualize:
 	./$(VISUALIZER_TARGET) $(word 1,$(MAKECMDGOALS)) $(word 2,$(MAKECMDGOALS))
 
 # Run play_game: g++ -std=c++17 play_game.cpp Board.cpp TranspositionTable.cpp AbaloneAI.cpp -o play_game
-play_game:
+#play_game:
+#	$(CC) $(CFLAGS) play_game.cpp Board.cpp TranspositionTable.cpp AbaloneAI.cpp -o play_game
+play_game: play_game.cpp Board.cpp TranspositionTable.cpp AbaloneAI.cpp Board.h AbaloneAI.h TranspositionTable.h
 	$(CC) $(CFLAGS) play_game.cpp Board.cpp TranspositionTable.cpp AbaloneAI.cpp -o play_game
 
 # Prevent Make from treating the arguments as targets
