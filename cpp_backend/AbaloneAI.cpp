@@ -1,9 +1,12 @@
 #include "AbaloneAI.h"
 #include "Board.h"
+#include "Evaluation.h"
+
 #include <limits>
 #include <algorithm>
 #include <chrono>
 #include <iostream>
+
 
 // Evaluate the board position from BLACK's perspective
 // Add this constant
@@ -660,13 +663,32 @@ std::pair<Move, int> AbaloneAI::findBestMoveIterativeDeepening(Board& board, int
 
     for (int depth = 1; depth <= maxSearchDepth; depth++) {
         std::cout << "Searching at depth " << depth << "..." << std::endl;
-        timeoutOccurred = false;
+
+        // Check if total elapsed time exceeds the time limit
+        auto now = std::chrono::high_resolution_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count();
+
+        if (elapsed >= timeLimit) {
+            std::cout << "Total time limit exceeded. Stopping search." << std::endl;
+            break;
+        }
+
+        // Adjust remaining time for this depth
+        int remainingTime = timeLimit - elapsed;
+
+        // Temporarily modify the time limit for this depth's search
+        int originalTimeLimit = timeLimit;
+        timeLimit = remainingTime;
+
         int originalMaxDepth = maxDepth;
         maxDepth = depth;
 
         auto result = findBestMove(board);
 
+        // Restore original time limit and max depth
+        timeLimit = originalTimeLimit;
         maxDepth = originalMaxDepth;
+
         if (!timeoutOccurred) {
             bestMove = result.first;
             bestScore = result.second;
@@ -677,8 +699,6 @@ std::pair<Move, int> AbaloneAI::findBestMoveIterativeDeepening(Board& board, int
             std::cout << "Timeout at depth " << depth << ", using previous result" << std::endl;
             break;
         }
-        if (isTimeUp())
-            break;
     }
 
     if (!foundMove) {
