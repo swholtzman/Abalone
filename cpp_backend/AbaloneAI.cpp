@@ -29,16 +29,48 @@ int AbaloneAI::evaluatePosition(const Board& board) {
     // Determine game phase (early, mid, late)
     float gameProgress = 1.0f - ((blackMarbles + whiteMarbles) / (float)(2 * STARTING_MARBLES));
 
-    // Adjust weights based on game phase
-    int marbleValue = MARBLE_VALUE;
-    int centerValue = 10;
-    int cohesionValue = 5;
+    float earlyWeight = 1.0f - gameProgress;   // near 1.0 at start, goes to 0.0 late
+    float lateWeight = gameProgress;          // near 0.0 at start, goes to 1.0 late
+
+    // SCALES: 
+//   - marbleValue: becomes bigger in the late game (focus on finishing / pushing).
+//   - centerValue: more important early, less important late.
+//   - cohesionValue: more important early, somewhat less late.
+//   - edgeValue: potentially more important in mid-late, but you can also
+//     do a mild increase if you want. In the snippet, we keep it constant to show an example.
+
+    int marbleValue = (int)(MARBLE_VALUE * (0.5f + 1.5f * lateWeight));
+    //   - when gameProgress=0 (start), factor = 0.5 => half the usual MARBLE_VALUE
+    //   - when gameProgress=1 (late), factor = 2.0 => double the usual MARBLE_VALUE
+
+    int centerValue = (int)(10 * (1.0f - 0.6f * lateWeight));
+    //   - at start: factor = 1.0 => 10
+    //   - at end:   factor = 0.4 => 4
+
+    int cohesionValue = (int)(5 * (1.0f - 0.5f * lateWeight));
+    //   - at start: factor = 1.0 => 5
+    //   - at end:   factor = 0.5 => 2 or 3
+
     int edgeValue = 15;
-    int mobilityValue = 3;
-    int threatValue = 10;
-    int formationValue = 12;
-    int sumitoValue = 15;
-    int positionValue = 8;
+    //   - you could also do: edgeValue = (int)(15 * (0.8f + 0.2f * lateWeight)) 
+    //     if you want to boost it slightly late game.
+
+    int mobilityValue = (int)(3 * (1.0f - 0.7f * lateWeight));
+    //   - at start: factor=1.0 => 3
+    //   - at end:   factor=0.3 => ~1
+    //   This encourages mobility early, but it does not vanish entirely at the end.
+
+    int formationValue = (int)(12 * (0.8f + 0.2f * earlyWeight));
+    //   - maybe more relevant in mid-early, so we keep it fairly large
+    //   - you can pick any function you like
+
+    int threatValue = 10;  // If you want, you could do a partial scale, or keep it constant
+    int sumitoValue = (int)(15 * (0.5f + 0.5f * lateWeight));
+    //   - sumito advantage can be valuable any time, but is often more important mid-late
+
+    int positionValue = (int)(8 * (1.0f - 0.5f * lateWeight));
+    //   - for your strategic positions
+
 
     // Calculate component values
     int score = (blackMarbles - whiteMarbles) * marbleValue;
@@ -77,6 +109,17 @@ int AbaloneAI::evaluatePosition(const Board& board) {
     int blackThreats = calculateThreatPotential(board, Occupant::BLACK);
     int whiteThreats = calculateThreatPotential(board, Occupant::WHITE);
     score += (blackThreats - whiteThreats) * threatValue;
+
+    // mobility
+    int blackMobility = calculateMobility(board, Occupant::BLACK);
+    int whiteMobility = calculateMobility(board, Occupant::WHITE);
+    score += (blackMobility - whiteMobility) * mobilityValue;
+
+    // positional advantage
+    int blackPositionalAdv = calculatePositionalAdvantage(board, Occupant::BLACK);
+    int whitePositionalAdv = calculatePositionalAdvantage(board, Occupant::WHITE);
+    score += (blackPositionalAdv - whitePositionalAdv) * positionValue;
+
 
     return score;
 }
