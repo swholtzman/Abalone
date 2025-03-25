@@ -121,6 +121,18 @@ int AbaloneAI::evaluatePosition(const Board& board) {
     score += (blackPositionalAdv - whitePositionalAdv) * positionValue;
 
 
+    // // Positional advantages that make the bot a pussy
+
+    // // Sumito advantages
+    // int blackSumito = calculateSumitoAdvantages(board, Occupant::BLACK);
+    // int whiteSumito = calculateSumitoAdvantages(board, Occupant::WHITE);
+    // score += (blackSumito - whiteSumito) * sumitoValue;
+
+    // // Formations
+    // int blackFormations = calculateFormations(board, Occupant::BLACK);
+    // int whiteFormations = calculateFormations(board, Occupant::WHITE);
+    // score += (blackFormations - whiteFormations) * formationValue;
+
     return score;
 }
 
@@ -205,6 +217,80 @@ int AbaloneAI::evaluateMove(const Board& board, const Move& move, Occupant side)
     return score;
 }
 
+int AbaloneAI::calculateCohesion(const Board& board, Occupant side) {
+    int cohesion = 0;
+    for (int i = 0; i < Board::NUM_CELLS; i++) {
+        if (board.occupant[i] == side) {
+            for (int d = 0; d < Board::NUM_DIRECTIONS; d++) {
+                int neighbor = board.neighbors[i][d];
+                if (neighbor >= 0 && board.occupant[neighbor] == side)
+                    cohesion++;
+            }
+        }
+    }
+    return cohesion;
+}
+
+int AbaloneAI::calculateEdgeDanger(const Board& board, Occupant side) {
+    int edgeCount = 0;
+    for (int i = 0; i < Board::NUM_CELLS; i++) {
+        if (board.occupant[i] == side) {
+            bool onEdge = false;
+            for (int d = 0; d < Board::NUM_DIRECTIONS; d++) {
+                if (board.neighbors[i][d] < 0) {  // neighbor off-board
+                    onEdge = true;
+                    break;
+                }
+            }
+            if (onEdge)
+                edgeCount++;
+        }
+    }
+    return edgeCount;
+}
+
+int AbaloneAI::calculateThreatPotential(const Board& board, Occupant side) {
+    int threatScore = 0;
+
+    // Check for potential threats in each direction
+    for (int i = 0; i < Board::NUM_CELLS; i++) {
+        if (board.occupant[i] == side) {
+            for (int d = 0; d < Board::NUM_DIRECTIONS; d++) {
+                int neighbor = board.neighbors[i][d];
+                if (neighbor >= 0 && board.occupant[neighbor] == Occupant::EMPTY) {
+                    // Check if the next cell is an opponent
+                    int nextNeighbor = board.neighbors[neighbor][d];
+                    if (nextNeighbor >= 0 && board.occupant[nextNeighbor] != side) {
+                        threatScore++;
+                    }
+                }
+            }
+        }
+    }
+
+    return threatScore;
+}
+
+int AbaloneAI::calculateMobility(const Board& board, Occupant side) {
+    int mobilityScore = 0;
+
+    for (int i = 0; i < Board::NUM_CELLS; i++) {
+        if (board.occupant[i] == side) {
+            for (int d = 0; d < Board::NUM_DIRECTIONS; d++) {
+                int neighbor = board.neighbors[i][d];
+                // Count empty neighbors (simple mobility)
+                if (neighbor >= 0 && board.occupant[neighbor] == Occupant::EMPTY) {
+                    mobilityScore++;
+                }
+            }
+        }
+    }
+
+    return mobilityScore;
+}
+
+
+
 int AbaloneAI::calculatePositionalAdvantage(const Board& board, Occupant side) {
     int positionScore = 0;
 
@@ -279,7 +365,7 @@ int AbaloneAI::calculateSumitoAdvantages(const Board& board, Occupant side) {
                         }
 
                         // Regular sumito advantage
-                        sumitoScore += (25 - edgeDistance * 5);
+                        sumitoScore += (10 - edgeDistance * 3);
                     }
                 }
             }
@@ -287,24 +373,6 @@ int AbaloneAI::calculateSumitoAdvantages(const Board& board, Occupant side) {
     }
 
     return sumitoScore;
-}
-
-int AbaloneAI::calculateMobility(const Board& board, Occupant side) {
-    int mobilityScore = 0;
-
-    for (int i = 0; i < Board::NUM_CELLS; i++) {
-        if (board.occupant[i] == side) {
-            for (int d = 0; d < Board::NUM_DIRECTIONS; d++) {
-                int neighbor = board.neighbors[i][d];
-                // Count empty neighbors (simple mobility)
-                if (neighbor >= 0 && board.occupant[neighbor] == Occupant::EMPTY) {
-                    mobilityScore++;
-                }
-            }
-        }
-    }
-
-    return mobilityScore;
 }
 
 // Add this function to recognize and reward strong formations
@@ -329,7 +397,7 @@ int AbaloneAI::calculateFormations(const Board& board, Occupant side) {
 
             // Reward formations of 3+ marbles (stronger with more marbles)
             if (count >= 3) {
-                formationScore += (count - 2) * 15;
+                formationScore += (count - 2) * 5;
 
                 // Extra bonus for formations not on the edge
                 bool isEdgeFormation = false;
@@ -344,67 +412,13 @@ int AbaloneAI::calculateFormations(const Board& board, Occupant side) {
                 }
 
                 if (!isEdgeFormation) {
-                    formationScore += count * 5;
+                    formationScore += count * 2;
                 }
             }
         }
     }
 
     return formationScore;
-}
-
-int AbaloneAI::calculateCohesion(const Board& board, Occupant side) {
-    int cohesion = 0;
-    for (int i = 0; i < Board::NUM_CELLS; i++) {
-        if (board.occupant[i] == side) {
-            for (int d = 0; d < Board::NUM_DIRECTIONS; d++) {
-                int neighbor = board.neighbors[i][d];
-                if (neighbor >= 0 && board.occupant[neighbor] == side)
-                    cohesion++;
-            }
-        }
-    }
-    return cohesion;
-}
-
-int AbaloneAI::calculateEdgeDanger(const Board& board, Occupant side) {
-    int edgeCount = 0;
-    for (int i = 0; i < Board::NUM_CELLS; i++) {
-        if (board.occupant[i] == side) {
-            bool onEdge = false;
-            for (int d = 0; d < Board::NUM_DIRECTIONS; d++) {
-                if (board.neighbors[i][d] < 0) {  // neighbor off-board
-                    onEdge = true;
-                    break;
-                }
-            }
-            if (onEdge)
-                edgeCount++;
-        }
-    }
-    return edgeCount;
-}
-
-int AbaloneAI::calculateThreatPotential(const Board& board, Occupant side) {
-    int threatScore = 0;
-
-    // Check for potential threats in each direction
-    for (int i = 0; i < Board::NUM_CELLS; i++) {
-        if (board.occupant[i] == side) {
-            for (int d = 0; d < Board::NUM_DIRECTIONS; d++) {
-                int neighbor = board.neighbors[i][d];
-                if (neighbor >= 0 && board.occupant[neighbor] == Occupant::EMPTY) {
-                    // Check if the next cell is an opponent
-                    int nextNeighbor = board.neighbors[neighbor][d];
-                    if (nextNeighbor >= 0 && board.occupant[nextNeighbor] != side) {
-                        threatScore++;
-                    }
-                }
-            }
-        }
-    }
-
-    return threatScore;
 }
 
 bool AbaloneAI::isTimeUp() {
