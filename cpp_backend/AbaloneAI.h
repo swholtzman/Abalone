@@ -28,6 +28,7 @@ private:
 
     int evaluateCounterDefensively(const Board &board);
 
+
     /**
      * Evaluates the current board position from BLACK's perspective.
      * Higher scores are better for BLACK, lower scores for WHITE.
@@ -69,8 +70,9 @@ public:
      * Default max search depth is 10.
      */
     std::pair<Move, int> findBestMoveIterativeDeepening(Board& board, int maxSearchDepth = 10);
+
+    static long long packCoord(int m, int y);
 };
 
-static long long packCoord(int m, int y);
 
 #endif // ABALONE_AI_H

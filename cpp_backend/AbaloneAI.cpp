@@ -9,6 +9,11 @@
 int AbaloneAI::PRUNES_OCCURED = 0;
 
 
+long long AbaloneAI::packCoord(int m, int y) {
+    return (static_cast<long long>(m) << 32) ^ (static_cast<long long>(y) & 0xffffffff);
+}
+
+
 
 int AbaloneAI::evaluateCounterDefensively(const Board& board) {
     double black_points = 0;
@@ -17,7 +22,8 @@ int AbaloneAI::evaluateCounterDefensively(const Board& board) {
     const int reversed_points[] = {5, 4, 3, 2, 1};
 
     for (const auto& black_marble : board.blackOccupantsCoords) {
-        int squared_sum = std::pow(2, black_marble.first) + std::pow(2, black_marble.second);
+        black_points += 10;
+        int squared_sum = std::pow( black_marble.first, 2) + std::pow( black_marble.second, 2);
         int square_root = static_cast<int>(std::sqrt(squared_sum));
         if (square_root >= 0 && square_root < 5)
             black_points += reversed_points[square_root];
@@ -33,12 +39,14 @@ int AbaloneAI::evaluateCounterDefensively(const Board& board) {
                 }
             } else {
                 black_points -= 1;
+                white_points += 1;
             }
         }
     }
 
     for (const auto& white_marble : board.whiteOccupantsCoords) {
-        int squared_sum = std::pow(2, white_marble.first) + std::pow(2, white_marble.second);
+        white_points += 10;
+        int squared_sum = std::pow( white_marble.first, 2) + std::pow( white_marble.second, 2);
         int square_root = static_cast<int>(std::sqrt(squared_sum));
         if (square_root >= 0 && square_root < 5)
             white_points += reversed_points[square_root];
@@ -54,6 +62,7 @@ int AbaloneAI::evaluateCounterDefensively(const Board& board) {
                 }
             } else {
                 white_points -= 1;
+                black_points += 1;
             }
         }
     }
@@ -155,11 +164,11 @@ bool AbaloneAI::isTimeUp() {
 int AbaloneAI::minimax(Board& board, int depth, int alpha, int beta, bool maximizingPlayer) {
     if (isTimeUp()) {
         timeoutOccurred = true;
-        return evaluatePosition(board);
+        return evaluateCounterDefensively(board);
     }
 
     if (depth == 0)
-        return evaluatePosition(board);
+        return evaluateCounterDefensively(board);
 
     // Transposition table lookup
     int origAlpha = alpha;
@@ -191,7 +200,7 @@ int AbaloneAI::minimax(Board& board, int depth, int alpha, int beta, bool maximi
     for (const Move& move : possibleMoves) {
         Board tempBoard = board;
         tempBoard.applyMove(move);
-        int moveScore = evaluatePosition(tempBoard);
+        int moveScore = evaluateCounterDefensively(tempBoard);
         scoredMoves.emplace_back(move, moveScore, tempBoard);
     }
 
