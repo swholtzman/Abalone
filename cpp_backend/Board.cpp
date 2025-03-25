@@ -501,16 +501,26 @@ string Board::moveToNotation(const Move& m, Occupant side) {
 }
 
 string Board::toBoardString() const {
-    string result;
-    bool first = true;
+    vector<string> black, white;
+
     for (int i = 0; i < NUM_CELLS; i++) {
-        if (occupant[i] == Occupant::BLACK || occupant[i] == Occupant::WHITE) {
-            if (!first)
-                result += ",";
-            result += indexToNotation(i);
-            result += (occupant[i] == Occupant::BLACK ? "b" : "w");
-            first = false;
-        }
+        if (occupant[i] == Occupant::BLACK)
+            black.push_back(indexToNotation(i) + "b");
+        else if (occupant[i] == Occupant::WHITE)
+            white.push_back(indexToNotation(i) + "w");
+    }
+    
+    sort(black.begin(), black.end());
+    sort(white.begin(), white.end());
+    
+    string result;
+    for (size_t i = 0; i < black.size(); i++) {
+        if (i > 0) result += ",";
+        result += black[i];
+    }
+    for (size_t i = 0; i < white.size(); i++) {
+        if (!result.empty()) result += ",";
+        result += white[i];
     }
     return result;
 }
