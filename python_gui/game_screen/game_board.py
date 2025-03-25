@@ -60,25 +60,19 @@ class GameBoard:
         self._selected_tiles = []
         self.current_player = "Black"
 
-        # By default, let's create all the tile pairs. Initially unoccupied.
+        self.black_scoreboard_model = None
+        self.black_scoreboard_view = None
+        self.white_scoreboard_model = None
+        self.white_scoreboard_view = None
+
         self._create_board()
 
     def _create_board(self):
-        """
-        Use TileFactory to create a tile (model + view) for each coordinate,
-        place it in self.scene, and store references for logic.
-        """
+        """Use TileFactory to create a tile (model+view) for each board coordinate."""
         for (col, row) in self.BOARD_COORDS:
-            # Convert (col,row) to (x,y) in the scene
             x_pos, y_pos = self._board_position_to_scene_position(col, row)
-
-            # The factory can create the tile model+view together or individually
             tile_model, tile_view = self._tile_factory.create_tile(col, row, x_pos, y_pos)
-
-            # Add the tile_view (a QGraphicsItem) to the scene
             self.scene.addItem(tile_view)
-
-            # Keep references for later updates
             self._tiles[(col, row)] = (tile_model, tile_view)
 
     def _board_position_to_scene_position(self, col, row):
@@ -219,6 +213,7 @@ class GameBoard:
             if not shift_pressed:
                 self._selected_tiles.clear()
                 self._clear_options()
+                self._clear_selected()
             return
 
         # SHIFT vs Non-SHIFT logic for selection:
@@ -231,6 +226,7 @@ class GameBoard:
             else:
                 pass  # ignore or beep
 
+        self._mark_selected_tiles()
         self._highlight_valid_moves()
 
     @staticmethod
@@ -279,6 +275,11 @@ class GameBoard:
             if model.is_option:
                 model.is_option = False
                 view.refresh()
+
+    def _clear_selected(self):
+        for (model, view) in self._tiles.values():
+            model.is_selected = False
+            view.refresh()
 
     def _get_moves_for_selection(self, selected_coords):
         """
@@ -410,91 +411,94 @@ class GameBoard:
         return [(c + dx, r + dy) for (c, r) in selected_coords]
 
     def confirm_move(self, destination_coord):
-        """
-        If we have multiple tiles, we need to deduce which direction we’re moving in,
-        then apply occupant updates (including any push).
-        """
         if not self._selected_tiles:
             return
 
-        num_selected = len(self._selected_tiles)
+        first_sel = self._selected_tiles[0]
+        color_of_selection = self._tiles[first_sel][0].player_color
 
+        # 1) Increment that color’s moves by 1
+        if color_of_selection.lower() == "black":
+            self.black_scoreboard_model.num_moves_made += 1
+            self.black_scoreboard_view.refresh()
+        else:
+            self.white_scoreboard_model.num_moves_made += 1
+            self.white_scoreboard_view.refresh()
+
+        # 2) Single-tile vs multi-tile
+        num_selected = len(self._selected_tiles)
         if num_selected == 1:
-            # Single-tile logic from before...
             src = self._selected_tiles[0]
             self._move_single(src, destination_coord)
         else:
-            # Multi-tile
-            # 1) Figure out which direction leads to 'destination_coord'
-            #    Typically you stored "direction" in your moves;
-            #    you'd see if 'destination_coord' is in the "highlight_coords" of that move.
-            #    We'll do a naive approach: check each direction if it includes 'destination_coord'.
+            # Find which direction is being used
             possible_moves = self._get_moves_for_selection(self._selected_tiles)
-
             chosen_move = None
             for mv in possible_moves:
                 if destination_coord in mv["highlight_coords"]:
                     chosen_move = mv
                     break
-
             if not chosen_move:
-                return  # shouldn't happen if user clicked highlight
+                return
 
             direction = chosen_move["direction"]
             dx, dy = self.DIRECTIONS[direction]
-
             alignment_dir, sorted_tiles, _ = self._analyze_selection(self._selected_tiles)
             is_inline = self._is_inline(alignment_dir, (dx, dy))
 
             if is_inline:
-                self._apply_inline_move(sorted_tiles, dx, dy)
+                # pass color_of_selection to apply_inline_move
+                self._apply_inline_move(sorted_tiles, dx, dy, color_of_selection)
             else:
                 self._apply_sidestep_move(sorted_tiles, dx, dy)
 
-        # Clear selection and highlight
+        # 3) Clear selection
         self._selected_tiles.clear()
         self._clear_options()
+        self._clear_selected()
 
-        # Switch turn
-        self.current_player = "Black" if self.current_player == "White" else "White"
+        # 4) Switch turn and toggle scoreboard states
+        if self.current_player == "Black":
+            self.current_player = "White"
+            self.black_scoreboard_view.set_active(False)
+            self.white_scoreboard_view.set_active(True)
+        else:
+            self.current_player = "Black"
+            self.white_scoreboard_view.set_active(False)
+            self.black_scoreboard_view.set_active(True)
+
         print(f"Turn ended. Now it's {self.current_player}'s turn.")
 
-    def _apply_inline_move(self, sorted_tiles, dx, dy):
+    def _apply_inline_move(self, sorted_tiles, dx, dy, moving_color):
         """
-        Update the occupant states for an inline move (which might include pushing).
-        Instead of sequentially moving one tile at a time (which overwrites source data),
-        we compute the new positions for all selected tiles and update them "simultaneously."
+        Update occupant states for an inline move (which might include pushing).
         """
-        # First, handle opponent push (if any) before moving our own tiles.
+        # 1) Push opponents if needed
         front = self._get_front_most(sorted_tiles, dx, dy)
-        self._push_opponents_if_any(front, dx, dy)
+        self._push_opponents_if_any(front, dx, dy, moving_color)
 
-        # Compute a mapping: for each selected tile, new destination coordinate.
+        # 2) Compute all new positions
         new_positions = {coord: (coord[0] + dx, coord[1] + dy) for coord in sorted_tiles}
 
-        # All selected tiles have the same color.
-        color = self._tiles[sorted_tiles[0]][0].player_color
-
-        # Update each destination tile with our color.
+        # 3) Update occupancy
         for src_coord, dest_coord in new_positions.items():
             if dest_coord not in self._tiles:
-                # Destination off-board (suicidal move) is not allowed.
+                # Destination out-of-bounds is usually not legal, but skip if it occurs
                 continue
             dst_model, dst_view = self._tiles[dest_coord]
             dst_model.is_occupied = True
-            dst_model.player_color = color
+            dst_model.player_color = moving_color
             dst_view.refresh()
 
-        # Clear all the original source tiles.
+        # 4) Clear source tiles
         for src_coord in sorted_tiles:
-            # Only clear if the source is not also a destination (i.e. moved in-place).
             if src_coord not in new_positions.values():
                 src_model, src_view = self._tiles[src_coord]
                 src_model.is_occupied = False
                 src_model.player_color = None
                 src_view.refresh()
 
-    def _push_opponents_if_any(self, front_coord, dx, dy):
+    def _push_opponents_if_any(self, front_coord, dx, dy, capturing_color):
         """
         If there's an opponent chain in front of 'front_coord', push it if possible.
         Possibly leads to capturing if they go off-board.
@@ -525,7 +529,8 @@ class GameBoard:
                 self._tiles[col_row][0].is_occupied = False
                 self._tiles[col_row][0].player_color = None
                 self._tiles[col_row][1].refresh()
-                # TODO: track which team captured
+                self.capture_piece(capturing_color)
+
             else:
                 new_m, new_v = self._tiles[(new_col, new_row)]
                 old_m, old_v = self._tiles[col_row]
@@ -666,3 +671,26 @@ class GameBoard:
         src_model.player_color = None
         src_view.refresh()
         dst_view.refresh()
+
+    def _mark_selected_tiles(self):
+        # Suppose self._selected_tiles is the list of coords
+        # First clear .is_selected from all tiles
+        for (m, v) in self._tiles.values():
+            m.is_selected = False
+            v.refresh()
+
+        for coord in self._selected_tiles:
+            tile_model, tile_view = self._tiles[coord]
+            # If you want to highlight them as selected, set is_selected = True
+            # for example if they can't move
+            tile_model.is_selected = True
+            tile_view.refresh()
+
+    def capture_piece(self, capturing_color):
+        """Increment the capturing color's scoreboard by 1."""
+        if capturing_color.lower() == "black":
+            self.black_scoreboard_model.score += 1
+            self.black_scoreboard_view.refresh()
+        else:
+            self.white_scoreboard_model.score += 1
+            self.white_scoreboard_view.refresh()

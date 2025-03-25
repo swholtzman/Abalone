@@ -40,8 +40,12 @@ class TileView(QGraphicsItem):
 
         # Set pen and text colors dynamically based on is_option state:
         if self.model.is_option:
-            pen_color = QColor("#CE4800")
+            pen_color = QColor("#CE4800")  # same orange as option
             text_color = QColor("#F6C602")
+        elif self.model.is_selected:
+            # If not is_option, but tile is_selected:
+            pen_color = QColor("#CE4800")  # same orange border
+            text_color = QColor("#737383")
         else:
             pen_color = QColor("#3D3D3D")
             text_color = QColor("#737383")
