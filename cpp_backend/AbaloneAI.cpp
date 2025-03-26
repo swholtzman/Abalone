@@ -477,7 +477,6 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board) {
     // Clear transposition table before a new search
     
     // Periodic cleanup of old entries
-    transpositionTable.manageTTLifecycle();
     transpositionTable.incrementAge();
 
     // Reset killer moves for a new search
