@@ -48,7 +48,7 @@ void AbaloneAI::getDynamicWeights(float gameProgress, int& marbleValue, int& cen
 // Modify evaluatePosition to adjust weights based on game phase
 int AbaloneAI::evaluatePosition(const Board& board) {
     nodesEvaluated++;
-    
+
     // Count marbles for each side
     int blackMarbles = 0;
     int whiteMarbles = 0;
@@ -61,17 +61,17 @@ int AbaloneAI::evaluatePosition(const Board& board) {
         else if (board.occupant[i] == Occupant::WHITE)
             whiteMarbles++;
     }
-    
+
     // Determine game phase based on marble count
     float gameProgress = 1.0f - ((blackMarbles + whiteMarbles) / (2.0f * STARTING_MARBLES - 2.0f * PUSHED_MARBLES));
-    
+
     // Dynamically adjust evaluation weights based on game progress
     int marbleValue, centerValue, cohesionValue, edgeValue, threatValue, mobilityValue;
     getDynamicWeights(gameProgress, marbleValue, centerValue, cohesionValue, edgeValue, threatValue, mobilityValue);
-    
+
     // Calculate base score from marble count
     int score = (blackMarbles - whiteMarbles) * marbleValue;
-    
+
     // Center control (same as previous implementation)
     int blackCenterControl = 0;
     int whiteCenterControl = 0;
@@ -92,12 +92,12 @@ int AbaloneAI::evaluatePosition(const Board& board) {
     }
 
     score += (blackCenterControl - whiteCenterControl) * centerValue;
-    
+
     // Group cohesion
     int blackCohesion = calculateCohesion(board, Occupant::BLACK);
     int whiteCohesion = calculateCohesion(board, Occupant::WHITE);
     score += (blackCohesion - whiteCohesion) * cohesionValue;
-    
+
     // Edge danger
     int blackEdgeDanger = calculateEdgeDanger(board, Occupant::BLACK);
     int whiteEdgeDanger = calculateEdgeDanger(board, Occupant::WHITE);
@@ -107,19 +107,19 @@ int AbaloneAI::evaluatePosition(const Board& board) {
     int blackThreat = calculateThreatPotential(board, Occupant::BLACK);
     int whiteThreat = calculateThreatPotential(board, Occupant::WHITE);
     score += (blackThreat - whiteThreat) * 10;
-    
+
     // Mobility
     int blackMobility = calculateMobility(board, Occupant::BLACK);
     int whiteMobility = calculateMobility(board, Occupant::WHITE);
     score += (blackMobility - whiteMobility) * mobilityValue;
-    
+
     return score;
 }
 
 // Evaluate a move quickly for ordering purposes
 int AbaloneAI::evaluateMove(const Board& board, const Move& move, Occupant side) {
     int score = 0;
-    
+
     // Prioritize captures
     if (move.pushCount > 0) {
         score += 1000 * move.pushCount;  // Higher score for more captures
@@ -128,50 +128,50 @@ int AbaloneAI::evaluateMove(const Board& board, const Move& move, Occupant side)
     // Dynamic weights based on game progress
     int marbleValue, centerValue, cohesionValue, edgeValue, threatValue, mobilityValue;
     getDynamicWeights(0.5f, marbleValue, centerValue, cohesionValue, edgeValue, threatValue, mobilityValue);
-    
+
     // Calculate center of the board (approximately E5 in standard notation)
     int centerIdx = Board::notationToIndex("E5");
-    
+
     // Prioritize moves towards the center
     // We'll use the end positions of the marbles after the move
     Board tempBoard = board;
     tempBoard.applyMove(move);
-    
+
     // Check if the move improves centralization
     double beforeCentralization = 0;
     double afterCentralization = 0;
-    
+
     for (int idx : move.marbleIndices) {
         if (idx >= 0) {
             // Before position - distance from center
             auto beforeCoord = board.s_indexToCoord[idx];
             auto centerCoord = board.s_indexToCoord[centerIdx];
-            int distBefore = std::abs(beforeCoord.first - centerCoord.first) + 
-                            std::abs(beforeCoord.second - centerCoord.second);
+            int distBefore = std::abs(beforeCoord.first - centerCoord.first) +
+                std::abs(beforeCoord.second - centerCoord.second);
             beforeCentralization += distBefore;
-            
+
             // Calculate where this marble ended up (approximately)
             // This is a simplification, as the exact end position depends on the move mechanics
             int endIdx = board.neighbors[idx][move.direction];
             if (endIdx >= 0) {
                 auto afterCoord = board.s_indexToCoord[endIdx];
-                int distAfter = std::abs(afterCoord.first - centerCoord.first) + 
-                               std::abs(afterCoord.second - centerCoord.second);
+                int distAfter = std::abs(afterCoord.first - centerCoord.first) +
+                    std::abs(afterCoord.second - centerCoord.second);
                 afterCentralization += distAfter;
             }
         }
     }
-    
+
     // Add points if the move improves centralization (lower distance is better)
     if (afterCentralization < beforeCentralization) {
         score += (beforeCentralization - afterCentralization) * centerValue;
     }
-    
+
     // Prioritize group-forming moves
     int beforeCohesion = calculateCohesion(board, side);
     int afterCohesion = calculateCohesion(tempBoard, side);
     score += (afterCohesion - beforeCohesion) * cohesionValue;
-    
+
     // Penalize moves that put marbles in danger
     int beforeDanger = calculateEdgeDanger(board, side);
     int afterDanger = calculateEdgeDanger(tempBoard, side);
@@ -191,23 +191,23 @@ int AbaloneAI::evaluateMove(const Board& board, const Move& move, Occupant side)
     if (move.pushCount > 0) {
         score += 50 * move.pushCount;
     }
-    
+
     // Bonus for inline moves (usually more powerful)
     if (move.isInline) {
         score += 20;
     }
-    
+
     // Bonus for moves that go away from the edge if we're already in danger
     if (beforeDanger > 0) {
         score += (beforeDanger - afterDanger) * 20;
     }
-    
+
     return score;
 }
 
 int AbaloneAI::calculateMobility(const Board& board, Occupant side) {
     int mobilityScore = 0;
-    
+
     for (int i = 0; i < Board::NUM_CELLS; i++) {
         if (board.occupant[i] == side) {
             for (int d = 0; d < Board::NUM_DIRECTIONS; d++) {
@@ -218,7 +218,7 @@ int AbaloneAI::calculateMobility(const Board& board, Occupant side) {
             }
         }
     }
-    
+
     return mobilityScore;
 }
 
@@ -259,7 +259,7 @@ int AbaloneAI::calculateEdgeDanger(const Board& board, Occupant side) {
 // Calculate the threat potential of a player
 int AbaloneAI::calculateThreatPotential(const Board& board, Occupant side) {
     int threatScore = 0;
-    
+
     // Check for potential threats in each direction
     for (int i = 0; i < Board::NUM_CELLS; i++) {
         if (board.occupant[i] == side) {
@@ -275,7 +275,7 @@ int AbaloneAI::calculateThreatPotential(const Board& board, Occupant side) {
             }
         }
     }
-    
+
     return threatScore;
 }
 
@@ -292,22 +292,22 @@ void AbaloneAI::updateKillerMove(const Move& move, int depth) {
     // Don't store captures as killer moves (they're already prioritized)
     if (move.pushCount > 0)
         return;
-        
+
     // Don't store the move if it's already the first killer move
     if (killerMoves[depth][0] == move)
         return;
-        
+
     // Shift the existing killer move to the second position
     killerMoves[depth][1] = killerMoves[depth][0];
-    
+
     // Store the new killer move in the first position
     killerMoves[depth][0] = move;
 }
 
 // Helper function to check if a move is a killer move
 bool AbaloneAI::isKillerMove(const Move& move, int depth) const {
-    return (depth < killerMoves.size() && 
-           (killerMoves[depth][0] == move || killerMoves[depth][1] == move));
+    return (depth < killerMoves.size() &&
+        (killerMoves[depth][0] == move || killerMoves[depth][1] == move));
 }
 
 // Helper function to sort moves based on their evaluation
@@ -316,21 +316,21 @@ void AbaloneAI::orderMoves(std::vector<Move>& moves, const Board& board, Occupan
     struct ScoredMove {
         Move move;
         int score;
-        
+
         ScoredMove(const Move& m, int s) : move(m), score(s) {}
-        
+
         // For sorting in descending order (highest score first)
         bool operator<(const ScoredMove& other) const {
             return score > other.score;
         }
     };
-    
+
     std::vector<ScoredMove> scoredMoves;
-    
+
     // Score each move
     for (const Move& move : moves) {
         int moveScore = 0;
-        
+
         // 1. Highest priority: Transposition table move
         if (move == ttMove) {
             moveScore = 100000;  // Very high score
@@ -338,7 +338,7 @@ void AbaloneAI::orderMoves(std::vector<Move>& moves, const Board& board, Occupan
         // 2. Second priority: Killer moves
         else if (isKillerMove(move, maxDepth)) {
             moveScore = 10000;  // High score, but lower than TT move
-            
+
             // First killer move gets higher priority than second
             if (move == killerMoves[maxDepth][0]) {
                 moveScore += 1000;
@@ -348,13 +348,13 @@ void AbaloneAI::orderMoves(std::vector<Move>& moves, const Board& board, Occupan
         else {
             moveScore = evaluateMove(board, move, side);
         }
-        
+
         scoredMoves.push_back(ScoredMove(move, moveScore));
     }
-    
+
     // Sort moves by score
     std::sort(scoredMoves.begin(), scoredMoves.end());
-    
+
     // Update the original vector with sorted moves
     for (size_t i = 0; i < moves.size(); i++) {
         moves[i] = scoredMoves[i].move;
@@ -380,9 +380,11 @@ int AbaloneAI::minimax(Board& board, int depth, int alpha, int beta, bool maximi
     if (transpositionTable.probeEntry(board, depth, score, moveType, bestMove)) {
         if (moveType == MoveType::EXACT) {
             return score;
-        } else if (moveType == MoveType::LOWERBOUND) {
+        }
+        else if (moveType == MoveType::LOWERBOUND) {
             alpha = std::max(alpha, score);
-        } else if (moveType == MoveType::UPPERBOUND) {
+        }
+        else if (moveType == MoveType::UPPERBOUND) {
             beta = std::min(beta, score);
         }
         if (alpha >= beta) {
@@ -419,7 +421,8 @@ int AbaloneAI::minimax(Board& board, int depth, int alpha, int beta, bool maximi
             // Full window search for the first move
             eval = minimax(tempBoard, depth - 1, alpha, beta, !maximizingPlayer);
             firstMove = false;
-        } else {
+        }
+        else {
             // Null window search (PVS)
             eval = minimax(tempBoard, depth - 1, alpha, alpha + 1, !maximizingPlayer);
             if (eval > alpha && eval < beta) {
@@ -434,7 +437,8 @@ int AbaloneAI::minimax(Board& board, int depth, int alpha, int beta, bool maximi
                 localBestMove = move;
             }
             alpha = std::max(alpha, eval);
-        } else {
+        }
+        else {
             if (eval < value) {
                 value = eval;
                 localBestMove = move;
@@ -452,9 +456,11 @@ int AbaloneAI::minimax(Board& board, int depth, int alpha, int beta, bool maximi
     // Store in transposition table
     if (value <= origAlpha) {
         entryType = MoveType::UPPERBOUND;
-    } else if (value >= origBeta) {
+    }
+    else if (value >= origBeta) {
         entryType = MoveType::LOWERBOUND;
-    } else {
+    }
+    else {
         entryType = MoveType::EXACT;
     }
     transpositionTable.storeEntry(board, depth, value, entryType, localBestMove);
@@ -463,10 +469,10 @@ int AbaloneAI::minimax(Board& board, int depth, int alpha, int beta, bool maximi
 }
 
 AbaloneAI::AbaloneAI(int depth, int timeLimitMs, size_t ttSizeInMB)
-    : maxDepth(depth), nodesEvaluated(0), timeLimit(timeLimitMs), 
-      timeoutOccurred(false), transpositionTable(ttSizeInMB),
-        killerMoves(depth + 1) {
-            pruningCount = 0;
+    : maxDepth(depth), nodesEvaluated(0), timeLimit(timeLimitMs),
+    timeoutOccurred(false), transpositionTable(ttSizeInMB),
+    killerMoves(depth + 1) {
+    pruningCount = 0;
 }
 
 std::pair<Move, int> AbaloneAI::findBestMove(Board& board) {
@@ -475,35 +481,34 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board) {
     startTime = std::chrono::high_resolution_clock::now();
 
     // Clear transposition table before a new search
-    
+
     // Periodic cleanup of old entries
-    transpositionTable.manageTTLifecycle();
     transpositionTable.incrementAge();
 
     // Reset killer moves for a new search
     killerMoves = std::vector<std::array<Move, MAX_KILLER_MOVES>>(maxDepth + 1);
-    
+
     Occupant currentPlayer = board.nextToMove;
     bool maximizingPlayer = (currentPlayer == Occupant::BLACK);
     std::vector<Move> possibleMoves = board.generateMoves(currentPlayer);
-    
+
     if (possibleMoves.empty()) {
         Move noMove;
         return std::make_pair(noMove, 0);
     }
-    
+
     // Order the root moves
     Move ttBestMove;
     bool hasTTMove = transpositionTable.getBestMove(board, ttBestMove);
     orderMoves(possibleMoves, board, currentPlayer, hasTTMove ? ttBestMove : Move());
-    
+
     Move bestMove = possibleMoves[0];
     int bestScore = maximizingPlayer ? std::numeric_limits<int>::min() : std::numeric_limits<int>::max();
-    
+
     // Gather statistics for move ordering effectiveness
     int totalMoves = 0;
     int bestMoveIndex = 0;
-    
+
     for (size_t i = 0; i < possibleMoves.size(); i++) {
         if (isTimeUp()) {
             timeoutOccurred = true;
@@ -511,35 +516,35 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board) {
         }
         const Move& move = possibleMoves[i];
         totalMoves++;
-        
+
         Board tempBoard = board;
         tempBoard.applyMove(move);
         int score = minimax(tempBoard, maxDepth - 1,
-                            std::numeric_limits<int>::min(),
-                            std::numeric_limits<int>::max(),
-                            !maximizingPlayer);
+            std::numeric_limits<int>::min(),
+            std::numeric_limits<int>::max(),
+            !maximizingPlayer);
         if ((maximizingPlayer && score > bestScore) || (!maximizingPlayer && score < bestScore)) {
             bestScore = score;
             bestMove = move;
             bestMoveIndex = i;
         }
     }
-    
+
     auto end = std::chrono::high_resolution_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - startTime).count();
     std::cout << "Nodes evaluated: " << nodesEvaluated << std::endl;
     std::cout << "Time taken: " << elapsed << " ms" << std::endl;
     std::cout << "Timeout occurred: " << (timeoutOccurred ? "Yes" : "No") << std::endl;
     std::cout << "Best move score: " << bestScore << std::endl;
-    
+
     // Report move ordering effectiveness
     if (totalMoves > 0) {
-        std::cout << "Move ordering effectiveness: best move was #" << (bestMoveIndex + 1) 
-                  << " out of " << totalMoves << " moves" << std::endl;
+        std::cout << "Move ordering effectiveness: best move was #" << (bestMoveIndex + 1)
+            << " out of " << totalMoves << " moves" << std::endl;
         double effectiveness = 100.0 * (1.0 - static_cast<double>(bestMoveIndex) / totalMoves);
         std::cout << "Move ordering efficiency: " << effectiveness << "%" << std::endl;
     }
-    
+
     return std::make_pair(bestMove, bestScore);
 }
 
@@ -547,50 +552,51 @@ std::pair<Move, int> AbaloneAI::findBestMoveIterativeDeepening(Board& board, int
     nodesEvaluated = 0;
     timeoutOccurred = false;
     startTime = std::chrono::high_resolution_clock::now();
-    
+
     Move bestMove;
     int bestScore = 0;
     bool foundMove = false;
-    
+
     for (int depth = 1; depth <= maxSearchDepth; depth++) {
         std::cout << "Searching at depth " << depth << "..." << std::endl;
-        
+
         // Check if total elapsed time exceeds the time limit
         auto now = std::chrono::high_resolution_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count();
-        
+
         if (elapsed >= timeLimit) {
             std::cout << "Total time limit exceeded. Stopping search." << std::endl;
             break;
         }
-        
+
         // Adjust remaining time for this depth
         int remainingTime = timeLimit - elapsed;
-        
+
         // Temporarily modify the time limit for this depth's search
         int originalTimeLimit = timeLimit;
         timeLimit = remainingTime;
-        
+
         int originalMaxDepth = maxDepth;
         maxDepth = depth;
-        
+
         auto result = findBestMove(board);
-        
+
         // Restore original time limit and max depth
         timeLimit = originalTimeLimit;
         maxDepth = originalMaxDepth;
-        
+
         if (!timeoutOccurred) {
             bestMove = result.first;
             bestScore = result.second;
             foundMove = true;
             std::cout << "Completed depth " << depth << std::endl;
-        } else {
+        }
+        else {
             std::cout << "Timeout at depth " << depth << ", using previous result" << std::endl;
             break;
         }
     }
-    
+
     if (!foundMove) {
         std::cout << "Warning: No complete depth search finished. Using 1-ply search." << std::endl;
         maxDepth = 1;
@@ -604,6 +610,6 @@ std::pair<Move, int> AbaloneAI::findBestMoveIterativeDeepening(Board& board, int
     std::cout << "TT hit rate: " << transpositionTable.getHitRate() << "%" << std::endl;
 
     std::cout << "Pruning count: " << pruningCount << std::endl;
-    
+
     return std::make_pair(bestMove, bestScore);
 }
