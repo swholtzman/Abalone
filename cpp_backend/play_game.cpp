@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
     //       "ai_vs_random" for AI vs random (Black uses AI, White random)
     int winningThreshold = 3;
     int aiDepth = 5;
-    int timeLimitMs = 30000;
+    int timeLimitMs = 3000;
     std::string mode = "ai_vs_random"; // Options: "ai", "random", or "ai_vs_random"
 
     // Optional command line arguments override defaults:

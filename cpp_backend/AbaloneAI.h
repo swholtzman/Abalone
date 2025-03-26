@@ -30,26 +30,26 @@ private:
     // Killer move heuristic - stores two killer moves per depth
     static constexpr int MAX_KILLER_MOVES = 2;
     std::vector<std::array<Move, MAX_KILLER_MOVES>> killerMoves;
-    
+
     // Helper method to update killer moves
     void updateKillerMove(const Move& move, int depth);
-    
+
     // Helper function to check if a move is a killer move
-    bool isKillerMove(const Move& move, int depth) const;  
+    bool isKillerMove(const Move& move, int depth) const;
 
     void getDynamicWeights(float gameProgress, int& marbleValue, int& centerValue, int& cohesionValue, int& edgeValue, int& threatValue, int& mobilityValue);
-    
+
     /**
      * Evaluates the current board position from BLACK's perspective.
      * Higher scores are better for BLACK, lower scores for WHITE.
      */
     int evaluatePosition(const Board& board);
-    
+
     /**
      * Calculates group cohesion for the given side.
      */
     int calculateCohesion(const Board& board, Occupant side);
-    
+
     /**
      * Calculates how many marbles are in edge positions (risk of being pushed off).
      */
@@ -61,7 +61,7 @@ private:
     int calculateThreatPotential(const Board& board, Occupant side);
 
     int calculateMobility(const Board& board, Occupant side);
-    
+
     /**
      * Checks if the time limit has been exceeded.
      */
@@ -81,13 +81,13 @@ private:
 public:
     // Default parameters are specified only here.
     AbaloneAI(int depth = 4, int timeLimitMs = 5000, size_t ttSizeInMB = 64);
-    
+
     /**
      * Finds the best move for the given board position.
      * Returns the best move and its evaluation score.
      */
     std::pair<Move, int> findBestMove(Board& board);
-    
+
     /**
      * Iterative deepening search.
      * Default max search depth is 10.
