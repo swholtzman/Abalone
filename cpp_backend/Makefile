@@ -35,6 +35,8 @@ $(VISUALIZER_TARGET): $(VISUALIZER_SRC)
 visualize:
 	./$(VISUALIZER_TARGET) $(word 1,$(MAKECMDGOALS)) $(word 2,$(MAKECMDGOALS))
 
+# Run play_game with two agents: g++ -std=c++17 play_game.cpp Board.cpp TranspositionTable.cpp AbaloneAI.cpp AbaloneAI2.cpp -o play_game
+
 # Run play_game: g++ -std=c++17 play_game.cpp Board.cpp TranspositionTable.cpp AbaloneAI.cpp -o play_game
 #play_game:
 #	$(CC) $(CFLAGS) play_game.cpp Board.cpp TranspositionTable.cpp AbaloneAI.cpp -o play_game

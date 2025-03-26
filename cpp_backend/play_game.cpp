@@ -1,6 +1,7 @@
 // play_game.cpp
 #include "Board.h"
 #include "AbaloneAI.h"
+#include "AbaloneAI2.h"
 #include <iostream>
 #include <cstdlib>
 #include <fstream>
@@ -30,10 +31,10 @@ int main(int argc, char* argv[]) {
     // mode: "ai" to use AI for both sides,
     //       "random" for random moves for both sides,
     //       "ai_vs_random" for AI vs random (Black uses AI, White random)
-    int winningThreshold = 6;
+    int winningThreshold = 3;
     int aiDepth = 5;
-    int timeLimitMs = 10000;
-    std::string mode = "ai_vs_random"; // Options: "ai", "random", or "ai_vs_random"
+    int timeLimitMs = 3000;
+    std::string mode = "ai_vs_ai2"; // Options: "ai", "random", or "ai_vs_random"
 
     // Optional command line arguments override defaults:
     // Usage: ./play_game <winningThreshold> <aiDepth> <timeLimitMs> <mode>
@@ -130,6 +131,24 @@ int main(int argc, char* argv[]) {
                     int randomIndex = std::rand() % legalMoves.size();
                     chosenMove = legalMoves[randomIndex];
                     std::cout << "White (random) chooses move: "
+                        << Board::moveToNotation(chosenMove, board.nextToMove) << "\n";
+                }
+            }
+            else if (mode == "ai_vs_ai2") {
+                // Both sides use AI, but with a different AbaloneAI agent
+
+                AbaloneAI aiMove(aiDepth, timeLimitMs);
+                AbaloneAI2 aiMove2(aiDepth, timeLimitMs);
+                if (board.nextToMove == Occupant::BLACK) {
+                    auto result = aiMove.findBestMoveIterativeDeepening(board, aiDepth);
+                    chosenMove = result.first;
+                    std::cout << "Black (AI) chooses move: "
+                        << Board::moveToNotation(chosenMove, board.nextToMove) << "\n";
+                }
+                else {
+                    auto result2 = aiMove2.findBestMoveIterativeDeepening(board, aiDepth);
+                    chosenMove = result2.first;
+                    std::cout << "White (AI2) chooses move: "
                         << Board::moveToNotation(chosenMove, board.nextToMove) << "\n";
                 }
             }

@@ -1,5 +1,5 @@
-#ifndef ABALONE_AI_H
-#define ABALONE_AI_H
+#ifndef ABALONE_AI2_H
+#define ABALONE_AI2_H
 
 #include "Board.h"
 #include "TranspositionTable.h"
@@ -8,7 +8,7 @@
 #include <vector>
 #include <array>
 
-class AbaloneAI {
+class AbaloneAI2 {
 private:
     // Maximum search depth
     int maxDepth;
@@ -67,7 +67,7 @@ private:
 
 public:
     // Constructor with default parameters.
-    AbaloneAI(int depth = 4, int timeLimitMs = 5000, size_t ttSizeInMB = 64);
+    AbaloneAI2(int depth = 4, int timeLimitMs = 5000, size_t ttSizeInMB = 64);
 
     // Finds the best move for the given board position.
     std::pair<Move, int> findBestMove(Board& board);
