@@ -423,20 +423,17 @@ string Board::indexToNotation(int idx) {
 void Board::initStandardLayout() {
     occupant.fill(Occupant::EMPTY);
     vector<string> blackPositions = {
-        "A4", "A5",
-        "B4", "B5", "B6",
-        "C4", "C5", "C6", "C7",
-        "D5", "D6", "D7",
-        "E5", "E6"
+        "A1b", "A2b", "A3b", "A4b", "A5b",
+        "B1b", "B2b", "B3b", "B4b", "B5b", "B6b",
+        "C3b", "C4b", "C5b"
     };
     for (auto& cell : blackPositions) {
         setOccupant(cell, Occupant::BLACK);
     }
     vector<string> whitePositions = {
-        "E4", "F4", "F5", "F6", "F7",
-        "G3", "G4", "G5", "G6", "G7",
-        "H4", "H5", "H6",
-        "I5"
+        "G5w", "G6w", "G7w",
+        "H4w", "H5w", "H6w", "H7w", "H8w", "H9w",
+        "I5w", "I6w", "I7w", "I8w", "I9w"
     };
     for (auto& cell : whitePositions) {
         setOccupant(cell, Occupant::WHITE);
@@ -447,45 +444,35 @@ void Board::initStandardLayout() {
 
 void Board::initBelgianDaisyLayout() {
     occupant.fill(Occupant::EMPTY);
-    
     vector<string> blackPositions = {
-        "A1","A2","B1","B2","B3","C2","C3",
-        "G7","G8","H7","H8","H9","I8","I9"
+        "C5","C6","D4","D7","E4","E7","F4","F7","G5","G6"
     };
     for (auto& cell : blackPositions) {
         setOccupant(cell, Occupant::BLACK);
     }
-    
     vector<string> whitePositions = {
-        "A4","A5","B4","B5","B6","C5","C6",
-        "G4","G5","H4","H5","H6","I5","I6"
+        "C4","D3","E3","F3","G4","G7","D8","E8","F8","G8"
     };
     for (auto& cell : whitePositions) {
         setOccupant(cell, Occupant::WHITE);
     }
-    
     updateOccupantCoordinates();
 }
 
 void Board::initGermanDaisyLayout() {
     occupant.fill(Occupant::EMPTY);
-    
     vector<string> blackPositions = {
-        "B1","B2","C1","C2","C3","D2","D3",
-        "F7","F8","G7","G8","G9","H8","H9"
+        "B4","C4","D5","E5","F5","G5","H6"
     };
     for (auto& cell : blackPositions) {
         setOccupant(cell, Occupant::BLACK);
     }
-    
     vector<string> whitePositions = {
-        "B5","B6","C5","C6","C7","D6","D7",
-        "F3","F4","G3","G4","G5","H4","H5"
+        "B5","C5","D4","E4","F4","G4","H5"
     };
     for (auto& cell : whitePositions) {
         setOccupant(cell, Occupant::WHITE);
     }
-    
     updateOccupantCoordinates();
 }
 
