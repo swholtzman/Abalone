@@ -1,13 +1,11 @@
 #include "AbaloneAI.h"
 #include "Board.h"
-#include "Evaluation.h"
 
 #include <limits>
 #include <algorithm>
 #include <chrono>
 #include <iostream>
 
-// Logan Dutton-Anderson
 
 // Evaluate the board position from BLACK's perspective
 // Add this constant
@@ -33,8 +31,6 @@ int AbaloneAI::evaluatePosition(const Board& board) {
     float earlyWeight = 1.0f - gameProgress;   // near 1.0 at start, goes to 0.0 late
     float lateWeight = gameProgress;          // near 0.0 at start, goes to 1.0 late
 
-    // adjust weight
-
     // SCALES: 
 //   - marbleValue: becomes bigger in the late game (focus on finishing / pushing).
 //   - centerValue: more important early, less important late.
@@ -58,22 +54,22 @@ int AbaloneAI::evaluatePosition(const Board& board) {
     //   - you could also do: edgeValue = (int)(15 * (0.8f + 0.2f * lateWeight)) 
     //     if you want to boost it slightly late game.
 
-    int threatValue = 10;  // If you want, you could do a partial scale, or keep it constant
-
     int mobilityValue = (int)(3 * (1.0f - 0.7f * lateWeight));
     //   - at start: factor=1.0 => 3
     //   - at end:   factor=0.3 => ~1
     //   This encourages mobility early, but it does not vanish entirely at the end.
 
+    int formationValue = (int)(12 * (0.8f + 0.2f * earlyWeight));
+    //   - maybe more relevant in mid-early, so we keep it fairly large
+    //   - you can pick any function you like
+
+    int threatValue = 10;  // If you want, you could do a partial scale, or keep it constant
+    int sumitoValue = (int)(15 * (0.5f + 0.5f * lateWeight));
+    //   - sumito advantage can be valuable any time, but is often more important mid-late
+
     int positionValue = (int)(8 * (1.0f - 0.5f * lateWeight));
     //   - for your strategic positions
 
-    // int formationValue = (int)(12 * (0.8f + 0.2f * earlyWeight));
-    // //   - maybe more relevant in mid-early, so we keep it fairly large
-    // //   - you can pick any function you like
-
-    // int sumitoValue = (int)(15 * (0.5f + 0.5f * lateWeight));
-    // //   - sumito advantage can be valuable any time, but is often more important mid-late
 
     // Calculate component values
     int score = (blackMarbles - whiteMarbles) * marbleValue;
@@ -88,7 +84,6 @@ int AbaloneAI::evaluatePosition(const Board& board) {
         Board::notationToIndex("E4"),
         Board::notationToIndex("E6")
     };
-
     for (int idx : centerCells) {
         if (idx >= 0) {
             if (board.occupant[idx] == Occupant::BLACK)
@@ -97,7 +92,6 @@ int AbaloneAI::evaluatePosition(const Board& board) {
                 whiteCenterControl++;
         }
     }
-
     score += (blackCenterControl - whiteCenterControl) * centerValue;
 
     // Group cohesion
@@ -125,17 +119,18 @@ int AbaloneAI::evaluatePosition(const Board& board) {
     int whitePositionalAdv = calculatePositionalAdvantage(board, Occupant::WHITE);
     score += (blackPositionalAdv - whitePositionalAdv) * positionValue;
 
+
     // // Positional advantages that make the bot a pussy
 
-    // // Sumito advantages
-    // int blackSumito = calculateSumitoAdvantages(board, Occupant::BLACK);
-    // int whiteSumito = calculateSumitoAdvantages(board, Occupant::WHITE);
-    // score += (blackSumito - whiteSumito) * sumitoValue;
+    // Sumito advantages
+    int blackSumito = calculateSumitoAdvantages(board, Occupant::BLACK);
+    int whiteSumito = calculateSumitoAdvantages(board, Occupant::WHITE);
+    score += (blackSumito - whiteSumito) * sumitoValue;
 
-    // // Formations
-    // int blackFormations = calculateFormations(board, Occupant::BLACK);
-    // int whiteFormations = calculateFormations(board, Occupant::WHITE);
-    // score += (blackFormations - whiteFormations) * formationValue;
+    // Formations
+    int blackFormations = calculateFormations(board, Occupant::BLACK);
+    int whiteFormations = calculateFormations(board, Occupant::WHITE);
+    score += (blackFormations - whiteFormations) * formationValue;
 
     return score;
 }
@@ -694,6 +689,7 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board) {
             break;
         }
     }
+
     auto end = std::chrono::high_resolution_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - startTime).count();
     std::cout << "Nodes evaluated: " << nodesEvaluated << std::endl;
@@ -760,6 +756,7 @@ std::pair<Move, int> AbaloneAI::findBestMoveIterativeDeepening(Board& board, int
             break;
         }
     }
+
     if (!foundMove) {
         std::cout << "Warning: No complete depth search finished. Using 1-ply search." << std::endl;
         maxDepth = 1;

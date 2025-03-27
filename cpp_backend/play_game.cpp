@@ -33,7 +33,7 @@ int main(int argc, char* argv[]) {
     //       "ai_vs_random" for AI vs random (Black uses AI, White random)
     int winningThreshold = 3;
     int aiDepth = 5;
-    int timeLimitMs = 3000;
+    int timeLimitMs = 6000;
     std::string mode = "ai_vs_ai2"; // Options: "ai", "random", or "ai_vs_random"
 
     // Optional command line arguments override defaults:
@@ -139,7 +139,7 @@ int main(int argc, char* argv[]) {
 
                 AbaloneAI aiMove(aiDepth, timeLimitMs);
                 AbaloneAI2 aiMove2(aiDepth, timeLimitMs);
-                
+
                 if (board.nextToMove == Occupant::BLACK) {
                     // Black's first move is random
                     if (moveCount == 0) {
@@ -148,16 +148,16 @@ int main(int argc, char* argv[]) {
                         std::cout << "Black's first move chosen randomly.\n";
                     }
                     else {
-                        auto result = aiMove.findBestMoveIterativeDeepening(board, aiDepth);
+                        auto result = aiMove2.findBestMoveIterativeDeepening(board, aiDepth);
                         chosenMove = result.first;
-                        std::cout << "Black (AI) chooses move: "
-                                << Board::moveToNotation(chosenMove, board.nextToMove) << "\n";
+                        std::cout << "Wayne - Black (AI) chooses move: "
+                            << Board::moveToNotation(chosenMove, board.nextToMove) << "\n";
                     }
                 }
                 else {
-                    auto result2 = aiMove2.findBestMoveIterativeDeepening(board, aiDepth);
+                    auto result2 = aiMove.findBestMoveIterativeDeepening(board, aiDepth);
                     chosenMove = result2.first;
-                    std::cout << "White (AI2) chooses move: "
+                    std::cout << "Parham - White (AI2) chooses move: "
                         << Board::moveToNotation(chosenMove, board.nextToMove) << "\n";
                 }
             }
