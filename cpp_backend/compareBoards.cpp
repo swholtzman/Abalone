@@ -75,12 +75,12 @@ void compareBoardsAndMoves(const string& desiredFilename,
     const string& movesFilename) {
 
     // First, normalize both files and write them out.
-    writeNormalizedFile(desiredFilename, "test1Normalized.board");
-    writeNormalizedFile(actualBoardFilename, "1-boardsNormalized.txt");
+    writeNormalizedFile(desiredFilename, "testNormalized.board");
+    writeNormalizedFile(actualBoardFilename, "boardsNormalized.txt");
 
     // Read normalized files into vectors.
-    vector<string> normalizedDesired = readLines("test1Normalized.board");
-    vector<string> normalizedActual = readLines("1-boardsNormalized.txt");
+    vector<string> normalizedDesired = readLines("testNormalized.board");
+    vector<string> normalizedActual = readLines("boardsNormalized.txt");
 
     // Also build sets (unique normalized lines) for set operations.
     set<string> desiredSet(normalizedDesired.begin(), normalizedDesired.end());
@@ -105,7 +105,7 @@ void compareBoardsAndMoves(const string& desiredFilename,
         inserter(illegalSet, illegalSet.begin()));
 
     // Next, count line-by-line matches.
-    // For each line in normalizedActual (which came from 1-boardsNormalized.txt),
+    // For each line in normalizedActual (which came from boardsNormalized.txt),
     // count if it exists in desiredSet.
     int matchCount = 0;
     for (const auto& line : normalizedActual) {
@@ -113,7 +113,7 @@ void compareBoardsAndMoves(const string& desiredFilename,
             matchCount++;
     }
     // Missing count as per your definition: 
-    // (total lines in test1Normalized.board) - (count of matching lines from 1-boardsNormalized.txt)
+    // (total lines in testNormalized.board) - (count of matching lines from boardsNormalized.txt)
     int missingCount = normalizedDesired.size() - matchCount;
 
     // Output results.
@@ -126,7 +126,7 @@ void compareBoardsAndMoves(const string& desiredFilename,
     }
     cout << "Count of legal (unique normalized) configurations: " << legalSet.size() << "\n";
 
-    cout << "\n=== Count of lines in 1-boardsNormalized.txt that appear in test1Normalized.board ===\n";
+    cout << "\n=== Count of lines in boardsNormalized.txt that appear in testNormalized.board ===\n";
     cout << matchCount << " out of " << normalizedActual.size() << "\n";
 
     cout << "\n=== Missing Board Configurations (in desired but not in actual) ===\n";

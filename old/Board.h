@@ -7,13 +7,10 @@
 #include <vector>
 #include <set>
 #include <algorithm>
-#include <unordered_set>
 
 //------------------------------------------------------------------------------
 // Occupant and Move Structures
 //------------------------------------------------------------------------------
-
-struct VectorHash;
 
 // Simple occupant type: empty, black, or white.
 enum class Occupant {
@@ -32,13 +29,6 @@ struct Move {
     int direction;
     bool isInline;
     int pushCount;
-
-    bool operator==(const Move& other) const {
-        return (marbleIndices == other.marbleIndices &&
-                direction == other.direction &&
-                isInline == other.isInline &&
-                pushCount == other.pushCount);
-    }
 };
 
 //------------------------------------------------------------------------------
@@ -50,10 +40,6 @@ public:
     static const int NUM_CELLS = 61;     // Exactly 61 valid positions.
     static const int NUM_DIRECTIONS = 6;   // Directions: W, E, NW, NE, SW, SE.
 
-    // Arrays to track player coordinates
-    std::vector<std::pair<int, int>> blackOccupantsCoords;
-    std::vector<std::pair<int, int>> whiteOccupantsCoords;
-
     // Direction offsets (dx, dy) in board coordinates.
     // Order: W=(-1,0), E=(+1,0), NW=(0,+1), NE=(+1,+1), SW=(-1,-1), SE=(0,-1)
     static const std::array<std::pair<int, int>, NUM_DIRECTIONS> DIRECTION_OFFSETS;
@@ -63,13 +49,9 @@ public:
 
     // Board representation: occupant[i] tells who occupies cell index i.
     std::array<Occupant, NUM_CELLS> occupant;
-
-
-
     // Neighbors table: for each cell i, neighbors[i][d] gives the neighbor's index in
     // direction d (or -1 if none exists).
     std::array<std::array<int, NUM_DIRECTIONS>, NUM_CELLS> neighbors;
-
 
     //--------------------------------------------------------------------------
     // Public Methods and Constructors
@@ -85,15 +67,12 @@ public:
     // Converts a cell index to its board notation (e.g., 0 -> "A1").
     static std::string indexToNotation(int idx);
 
-    bool isGroupAligned(const std::vector<int> &group, int &alignedDirection) const;
-
     // Attempts to apply a move on a temporary copy of the board.
     // Returns true if the move is legal (applied without error), false otherwise.
     bool tryMove(const std::vector<int>& group, int direction, Move& move) const;
 
     // Generate candidate column groups for the given side.
     std::set<std::vector<int>> generateColumnGroups(Occupant side) const;
-
 
     // Generate all legal moves for a given side.
     std::vector<Move> generateMoves(Occupant side) const;
@@ -122,7 +101,7 @@ public:
     bool loadFromInputFile(const std::string& filename);
 
     // Sets the occupant of a cell given its board notation.
-    void setOccupant(const std::string& notation, Occupant who, bool updateCoords = false);
+    void setOccupant(const std::string& notation, Occupant who);
 
     // Helper: Sets the occupant of a cell by its index.
     void setOccupant(int index, Occupant who) {
@@ -136,6 +115,7 @@ public:
         return (index >= 0 && index < NUM_CELLS) ? occupant[index] : Occupant::EMPTY;
     }
 
+private:
     //--------------------------------------------------------------------------
     // Static Mapping and Neighbor Calculation
     //--------------------------------------------------------------------------
@@ -146,8 +126,6 @@ public:
     static std::unordered_map<long long, int> s_coordToIndex;
     // Reverse mapping: cell index to coordinate (m,y).
     static std::array<std::pair<int, int>, NUM_CELLS> s_indexToCoord;
-private:
-
 
     // Initializes the coordinate mapping.
     static void initMapping();
@@ -155,14 +133,12 @@ private:
     // Builds the neighbor table using the coordinate mapping.
     void initNeighbors();
 
-    void updateOccupantCoordinates();
-
-    void updateOccupantCoordinates(int oldIndex, int newIndex, Occupant occupantType);
-
-
     //--------------------------------------------------------------------------
     // Group Generation and Alignment Helpers
     //--------------------------------------------------------------------------
+
+    // Converts a group of marble indices into a canonical (sorted) order.
+    static std::vector<int> canonicalizeGroup(const std::vector<int>& group);
 
     // Recursively collects all connected groups (up to size 3) of marbles of a given side,
     // starting from cell 'current'. The current group is stored in 'group', and valid groups
@@ -170,21 +146,14 @@ private:
     void dfsGroup(int current, Occupant side, std::vector<int>& group,
         std::set<std::vector<int>>& result) const;
 
-    void scanCoordinateSet(const std::vector<std::vector<std::pair<int, int>>>& coordinateSet,
-                              Occupant side, std::set<std::vector<int>>& groupSet, int d, bool isHorizontal) const;
+    // Checks if all marbles in 'group' are collinear in one of the allowed directions.
+    // If so, sets 'alignedDirection' (0..5) to that direction and returns true;
+    // otherwise, returns false.
+    bool isGroupAligned(const std::vector<int>& group, int& alignedDirection) const;
 
-
-    void scanHorizontal(const std::vector<std::vector<std::pair<int, int>>> &coordinateSet, Occupant side, int d,
-                        std::set<std::vector<int>> &groups) const;
-
-    void scanNorthEast(const std::vector<std::vector<std::pair<int, int>>> &coordinateSet, Occupant side, int d,
-                       std::set<std::vector<int>> &groups) const;
-
-    void scanNorthWest(const std::vector<std::vector<std::pair<int, int>>> &coordinateSet, Occupant side, int d,
-                       std::set<std::vector<int>> &groups) const;
-
-    std::set<std::vector<int>> generateGroups(Occupant side) const;
-
+    // (Alternate helper) Returns the alignment direction for a contiguous group.
+    // If the group is not aligned, returns -1.
+    int getGroupAlignmentDirection(const std::vector<int>& group) const;
 
     //--------------------------------------------------------------------------
     // Coordinate Conversion Helpers (Private)

@@ -123,10 +123,13 @@ int main(int argc, char* argv[]) {
     }
     
     // Process initial position
-    std::string firstLine, initialGameState;
+    // std::string firstLine, initialGameState;
+    
+    // Process initial position
+    std::string initialGameState;
     
     // Read the first line (next to play)
-    std::getline(initialPositionFile, firstLine);
+    // std::getline(initialPositionFile, firstLine);
     
     // Read the second line (initial game state)
     if (std::getline(initialPositionFile, initialGameState)) {
@@ -136,7 +139,7 @@ int main(int argc, char* argv[]) {
         outputFile << "Initial Abalone Game Board:" << std::endl << std::endl;
         displayBoardToFile(initialBoard, outputFile);
         outputFile << "\nInitial Game State: " << initialGameState << std::endl;
-        outputFile << "Current Player: " << (firstLine == "b" ? "Black" : "White") << std::endl;
+        // outputFile << "Current Player: " << (firstLine == "b" ? "Black" : "White") << std::endl;
         outputFile << "\n--------------------------------------------------\n\n";
     } else {
         std::cerr << "Error: Initial position file does not have a game state line" << std::endl;
@@ -144,7 +147,7 @@ int main(int argc, char* argv[]) {
     }
     
     // Process possible moves
-    outputFile << "Possible Moves:" << std::endl << std::endl;
+    // outputFile << "Possible Moves:" << std::endl << std::endl;
     
     std::string moveGameState;
     int moveCount = 1;

@@ -91,7 +91,6 @@ int main(int argc, char* argv[]) {
     
     ofstream movesFile(baseName + ".move");
     ofstream boardsFile(baseName + ".board");
-    ofstream boardsFile2(baseName + ".txt");
     
     // For each move:
     for (auto& m : moves) {
@@ -106,7 +105,6 @@ int main(int argc, char* argv[]) {
         // Write the board state.
         string occupantStr = copy.toBoardString();
         boardsFile << occupantStr << "\n";
-        boardsFile2 << occupantStr << "\n";
     }
     
     return 0;
