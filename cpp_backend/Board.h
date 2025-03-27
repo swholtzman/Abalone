@@ -54,6 +54,8 @@ public:
     std::vector<std::pair<int, int>> blackOccupantsCoords;
     std::vector<std::pair<int, int>> whiteOccupantsCoords;
 
+    static std::unordered_map<long long, int> s_coordToIndex;
+
     // Direction offsets (dx, dy) in board coordinates.
     // Order: W=(-1,0), E=(+1,0), NW=(0,+1), NE=(+1,+1), SW=(-1,-1), SE=(0,-1)
     static const std::array<std::pair<int, int>, NUM_DIRECTIONS> DIRECTION_OFFSETS;
@@ -146,7 +148,7 @@ private:
     // Flag to indicate if the coordinate mapping has been initialized.
     static bool s_mappingInitialized;
     // Mapping from a packed coordinate (m,y) to a cell index.
-    static std::unordered_map<long long, int> s_coordToIndex;
+
 
     // Initializes the coordinate mapping.
     static void initMapping();

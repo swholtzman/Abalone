@@ -39,6 +39,10 @@ private:
     // Helper function to check if a move is a killer move
     bool isKillerMove(const Move& move, int depth) const;
 
+    long long packCoord(int m, int y);
+
+    int evaluateCounterDefensively(const Board &board);
+
     // Evaluation functions
     int evaluatePosition(const Board& board);
     int evaluateMove(const Board& board, const Move& move, Occupant side);

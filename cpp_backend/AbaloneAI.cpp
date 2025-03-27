@@ -5,12 +5,79 @@
 #include <limits>
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <iostream>
 
 
 // Evaluate the board position from BLACK's perspective
 // Add this constant
 const int STARTING_MARBLES = 14; // Standard Abalone has 14 marbles per side
+
+
+
+long long AbaloneAI::packCoord(int m, int y) {
+    return (static_cast<long long>(m) << 32) ^ (static_cast<long long>(y) & 0xffffffff);
+}
+
+
+
+int AbaloneAI::evaluateCounterDefensively(const Board& board) {
+    double black_points = 0;
+    double white_points = 0;
+
+    const int reversed_points[] = {5, 4, 3, 2, 1};
+
+    for (const auto& black_marble : board.blackOccupantsCoords) {
+        black_points += 10;
+        int squared_sum = std::pow( black_marble.first, 2) + std::pow( black_marble.second, 2);
+        int square_root = static_cast<int>(std::sqrt(squared_sum));
+        if (square_root >= 0 && square_root < 5)
+            black_points += reversed_points[square_root];
+
+        long long key = packCoord(black_marble.first, black_marble.second);
+        int marble_index = Board::s_coordToIndex.at(key);  // safer with `.at()` or check existence
+
+        for (int i = 0; i < Board::NUM_DIRECTIONS; ++i) {
+            int neighborIndex = board.neighbors[marble_index][i];
+            if (neighborIndex >= 0) {
+                if (board.occupant[neighborIndex] == Occupant::BLACK) {
+                    black_points += 1;
+                }
+            } else {
+                black_points -= 1;
+                white_points += 1;
+            }
+        }
+    }
+
+    for (const auto& white_marble : board.whiteOccupantsCoords) {
+        white_points += 10;
+        int squared_sum = std::pow( white_marble.first, 2) + std::pow( white_marble.second, 2);
+        int square_root = static_cast<int>(std::sqrt(squared_sum));
+        if (square_root >= 0 && square_root < 5)
+            white_points += reversed_points[square_root];
+
+        long long key = packCoord(white_marble.first, white_marble.second);
+        int marble_index = Board::s_coordToIndex.at(key);
+
+        for (int i = 0; i < Board::NUM_DIRECTIONS; ++i) {
+            int neighborIndex = board.neighbors[marble_index][i];
+            if (neighborIndex >= 0) {
+                if (board.occupant[neighborIndex] == Occupant::WHITE) {
+                    white_points += 1;
+                }
+            } else {
+                white_points -= 1;
+                black_points += 1;
+            }
+        }
+    }
+
+    return static_cast<int>(black_points - white_points);
+}
+
+
+
 
 // Modify evaluatePosition to adjust weights based on game phase
 int AbaloneAI::evaluatePosition(const Board& board) {
