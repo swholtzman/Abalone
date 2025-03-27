@@ -3,6 +3,7 @@
 #include <chrono>
 #include <iostream>
 #include <cstring>
+#include <cstring>
 
 // Zobrist key initialization
 bool TranspositionTable::s_zobristInitialized = false;
@@ -30,9 +31,11 @@ void TranspositionTable::initZobristKeys() {
     // Initialize only once
     if (s_zobristInitialized) return;
 
+
     // Initialize with random values using a good random number generator
     std::mt19937_64 rng(std::chrono::steady_clock::now().time_since_epoch().count());
     std::uniform_int_distribution<uint64_t> dist;
+
 
     for (int i = 0; i < Board::NUM_CELLS; ++i) {
         for (int j = 0; j < 3; ++j) { // 3 = EMPTY, BLACK, WHITE
@@ -40,8 +43,10 @@ void TranspositionTable::initZobristKeys() {
         }
     }
 
+
     // Additional key for the side to move
     m_sideToMoveKey = dist(rng);
+
 
     s_zobristInitialized = true;
 }
@@ -55,6 +60,7 @@ void TranspositionTable::clearTable() {
 uint64_t TranspositionTable::computeHash(const Board& board) {
     uint64_t hash = 0;
 
+
     // Hash the occupants
     for (int i = 0; i < Board::NUM_CELLS; ++i) {
         Occupant occ = board.getOccupant(i);
@@ -64,10 +70,12 @@ uint64_t TranspositionTable::computeHash(const Board& board) {
         }
     }
 
+
     // Hash the side to move
     if (board.nextToMove == Occupant::WHITE) {
         hash ^= m_sideToMoveKey;
     }
+
 
     return hash;
 }
@@ -75,11 +83,13 @@ uint64_t TranspositionTable::computeHash(const Board& board) {
 // Store a position in the transposition table
 void TranspositionTable::storeEntry(const Board& board, int depth, int score, MoveType moveType, const Move& bestMove) {
     uint64_t hash = computeHash(board);
-    size_t index = hash & (m_table.size() - 1);  // Faster than modulo
+    size_t index = hash % m_table.size();
 
     TTEntry& entry = m_table[index];
 
-    // Always replace strategy with refinements
+    // Always replace with the following exceptions:
+    // 1. If it's the same position but we have a deeper search stored
+    // 2. If the existing entry is from the current search and has higher depth
     bool shouldReplace = true;
 
     if (entry.isOccupied && entry.key == hash) {

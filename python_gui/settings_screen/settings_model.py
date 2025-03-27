@@ -3,14 +3,14 @@ class SettingsModel:
     def __init__(
         self,
         board_layout="Standard",
-        your_colour="Black",
+        host_colour="Black",
         moves_per_team=50,
         time_limit_black=30,
         time_limit_white=30,
         is_visible=False
     ):
         self._board_layout = board_layout
-        self._your_colour = your_colour
+        self._host_colour = host_colour
         self._moves_per_team = moves_per_team
         self._time_limit_black = time_limit_black
         self._time_limit_white = time_limit_white
@@ -25,12 +25,12 @@ class SettingsModel:
         self._board_layout = value
 
     @property
-    def your_colour(self):
-        return self._your_colour
+    def host_colour(self):
+        return self._host_colour
 
-    @your_colour.setter
-    def your_colour(self, value):
-        self._your_colour = value
+    @host_colour.setter
+    def host_colour(self, value):
+        self._host_colour = value
 
     @property
     def moves_per_team(self):

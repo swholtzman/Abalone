@@ -618,6 +618,7 @@ bool Board::s_mappingInitialized = false;
 unordered_map<long long, int> Board::s_coordToIndex;
 array<pair<int, int>, Board::NUM_CELLS> Board::s_indexToCoord;
 
+
 // static long long packCoord(int m, int y) {
 //     return (static_cast<long long>(m) << 32) ^ (static_cast<long long>(y) & 0xffffffff);
 // }

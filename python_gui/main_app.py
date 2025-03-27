@@ -4,6 +4,8 @@ from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtGui import QFontDatabase, QFont
 
 from intro_screen.intro_view import IntroView
+from python_gui.game_screen.game_view import GameView
+from python_gui.utils.game_config import GameConfig
 from settings_screen.settings_controller import SettingsController
 
 class MainApp(QtWidgets.QMainWindow):
@@ -30,6 +32,15 @@ class MainApp(QtWidgets.QMainWindow):
         self.stacked_widget.addWidget(settings_view)
         self.frames["Settings"] = settings_view
 
+        # Create the GameView (via controller + view)
+        self.game_view = GameView(
+            parent=self,
+            main_app_callback=self.on_quit_game
+        )
+
+        self.stacked_widget.addWidget(self.game_view)
+        self.frames["Game View"] = self.game_view
+
         self.show_screen("Intro")
 
     def show_screen(self, screen_name):
@@ -37,12 +48,19 @@ class MainApp(QtWidgets.QMainWindow):
             self.stacked_widget.setCurrentWidget(self.frames[screen_name])
 
     def on_start_game(self, settings_model):
-        print("User pressed Start Game!")
-        print("Board Layout:", settings_model.board_layout)
-        print("Your Colour:", settings_model.your_colour)
-        print("Moves Per Team:", settings_model.moves_per_team)
-        print("Time Limit Black:", settings_model.time_limit_black)
-        print("Time Limit White:", settings_model.time_limit_white)
+        game_config = GameConfig(
+            board_layout=settings_model.board_layout,
+            match_type=settings_model.match_type,
+            host_colour=settings_model.host_colour,
+            moves_per_team=settings_model.moves_per_team,
+            time_limit_black=settings_model.time_limit_black,
+            time_limit_white=settings_model.time_limit_white
+        )
+        self.game_view.set_config(game_config)
+        self.show_screen("Game View")
+
+    def on_quit_game(self, settings_model):
+        self.show_screen("Intro")
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
