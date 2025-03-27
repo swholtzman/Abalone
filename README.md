@@ -58,12 +58,13 @@ Before attempting to run, you must open your project after connecting to a WSL e
 
 ## HOW TO RUN:
 
+FIRST RUN: cd cpp_backend
+
 WITH MAKE: make abalone
 
-WITHOUT MAKE: g++ -std=c++17 main.cpp Board.
-cpp -o abalone
-
 ./abalone Test1.input  // type out what input file you want to use
+
+Will return SSG to Test1.board and moves to Test1.move
 
 ## With DEBUG messages:
 
