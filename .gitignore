@@ -8,4 +8,5 @@ testNormalized.board
 temp.input
 *.txt
 *.move
-venv
+venv".idea/" 
+"cmake-build-debug/" 
