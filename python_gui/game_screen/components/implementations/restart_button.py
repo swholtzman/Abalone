@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING
 
-from python_gui.game_screen.components.button import BaseButton
+from game_screen.components.button import BaseButton
 
 if TYPE_CHECKING:
-    from python_gui.game_screen.game_view import GameView
+    from game_screen.game_view import GameView
 
 
 class RestartButton(BaseButton):

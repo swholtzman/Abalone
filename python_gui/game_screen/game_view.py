@@ -1,17 +1,17 @@
 from pathlib import Path
 from PyQt5 import QtWidgets, QtCore
 
-from python_gui.agent_secretary import AgentSecretary
-from python_gui.factories.scoreboard_factory import ScoreboardFactory
-from python_gui.game_screen.components.implementations.pause_button import PauseButton
-from python_gui.game_screen.components.implementations.quit_button import QuitButton
-from python_gui.game_screen.components.implementations.restart_button import RestartButton
-from python_gui.game_screen.components.implementations.undo_button import UndoButton
-from python_gui.game_screen.game_board import GameBoard
-from python_gui.game_screen.info_panel.info_panel_model import InfoPanelModel
-from python_gui.game_screen.info_panel.info_panel_view import InfoPanelView
-from python_gui.game_screen.move_history.move_history_model import MoveHistoryModel
-from python_gui.game_screen.move_history.move_history_view import MoveHistoryView
+from agent_secretary import AgentSecretary
+from factories.scoreboard_factory import ScoreboardFactory
+from game_screen.components.implementations.pause_button import PauseButton
+from game_screen.components.implementations.quit_button import QuitButton
+from game_screen.components.implementations.restart_button import RestartButton
+from game_screen.components.implementations.undo_button import UndoButton
+from game_screen.game_board import GameBoard
+from game_screen.info_panel.info_panel_model import InfoPanelModel
+from game_screen.info_panel.info_panel_view import InfoPanelView
+from game_screen.move_history.move_history_model import MoveHistoryModel
+from game_screen.move_history.move_history_view import MoveHistoryView
 
 class GameView(QtWidgets.QWidget):
     def __init__(self, parent=None, main_app_callback=None):

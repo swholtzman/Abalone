@@ -4,8 +4,8 @@ from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtGui import QFontDatabase, QFont
 
 from intro_screen.intro_view import IntroView
-from python_gui.game_screen.game_view import GameView
-from python_gui.utils.game_config import GameConfig
+from game_screen.game_view import GameView
+from utils.game_config import GameConfig
 from settings_screen.settings_controller import SettingsController
 
 class MainApp(QtWidgets.QMainWindow):
