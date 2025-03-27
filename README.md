@@ -2,6 +2,15 @@
 Abalone game created to develop an effective AI bot system with heuristics for optimized gameplay strategies.
 
 ## Patch Notes
+### Path 1.1.4
+- Pushed March 27, 2025 4:18am ; Sam Holtzman
+- all peripherals implemented
+- buttons need work 
+  - size not large enough
+  - functionality needs fixing 
+    - Undo to only undo the last move made
+    - pause to switch to play when it is pressed
+
 ### Path 1.1.3
 - Pushed March 25, 2025 10:11am ; Sam Holtzman
 - scoreboards implemented. 
