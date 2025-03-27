@@ -7,6 +7,7 @@
 #include <chrono>
 #include <iostream>
 
+// Logan Dutton-Anderson
 
 // Evaluate the board position from BLACK's perspective
 // Add this constant
