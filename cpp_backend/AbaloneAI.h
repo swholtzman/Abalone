@@ -5,8 +5,6 @@
 #include "TranspositionTable.h"
 #include <chrono>
 #include <utility>
-#include <vector>
-#include <array>
 
 class AbaloneAI {
 private:
@@ -33,10 +31,8 @@ private:
     static constexpr int MAX_KILLER_MOVES = 2;
     std::vector<std::array<Move, MAX_KILLER_MOVES>> killerMoves;
 
-
     // Helper method to update killer moves
     void updateKillerMove(const Move& move, int depth);
-
 
     // Helper function to check if a move is a killer move
     bool isKillerMove(const Move& move, int depth) const;
@@ -71,14 +67,19 @@ private:
      */
     bool isTimeUp();
 
-    // The minimax algorithm with alpha-beta pruning.
+    /**
+     * The minimax algorithm with alpha-beta pruning.
+     */
     int minimax(Board& board, int depth, int alpha, int beta, bool maximizingPlayer);
 
-    // Order moves based on evaluation and transposition table move
+    // Evaluate a move quickly for node ordering
+    int evaluateMove(const Board& board, const Move& move, Occupant side);
+
+    // Order moves based on evaluation and TT move
     void orderMoves(std::vector<Move>& moves, const Board& board, Occupant side, const Move& ttMove);
 
 public:
-    // Constructor with default parameters.
+    // Default parameters are specified only here.
     AbaloneAI(int depth = 4, int timeLimitMs = 5000, size_t ttSizeInMB = 64);
 
     /**
