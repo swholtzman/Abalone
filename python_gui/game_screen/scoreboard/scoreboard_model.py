@@ -15,6 +15,7 @@ class ScoreboardModel:
         self._initial_time = turn_time  # store the original turn_time
         self._turn_time = turn_time
         self._is_active = is_active
+        self._total_time_spent = 0.0
 
     @property
     def player(self):
@@ -65,3 +66,11 @@ class ScoreboardModel:
     @is_active.setter
     def is_active(self, value):
         self._is_active = value
+
+    @property
+    def total_time_spent(self):
+        return self._total_time_spent
+
+    @total_time_spent.setter
+    def total_time_spent(self, value):
+        self._total_time_spent = value

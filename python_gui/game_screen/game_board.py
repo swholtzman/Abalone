@@ -1,3 +1,5 @@
+import time
+
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtGui import QColor, QBrush
 from PyQt5.QtSvg import QGraphicsSvgItem
@@ -66,6 +68,10 @@ class GameBoard:
         self.white_scoreboard_view = None
 
         self._create_board()
+
+        self.turn_start_time = time.time()  # Track turn start
+        self.move_callback = None  # Callback to GameView
+        self.ai_update_callback = None
 
     def _create_board(self):
         """Use TileFactory to create a tile (model+view) for each board coordinate."""
@@ -416,48 +422,60 @@ class GameBoard:
 
         first_sel = self._selected_tiles[0]
         color_of_selection = self._tiles[first_sel][0].player_color
+        scoreboard_model = (self.black_scoreboard_model if color_of_selection.lower() == "black"
+                            else self.white_scoreboard_model)
 
-        # 1) Increment that color’s moves by 1
-        if color_of_selection.lower() == "black":
-            self.black_scoreboard_model.num_moves_made += 1
-            self.black_scoreboard_view.refresh()
-        else:
-            self.white_scoreboard_model.num_moves_made += 1
-            self.white_scoreboard_view.refresh()
+        # Calculate time taken for this move
+        time_taken = scoreboard_model.initial_time - scoreboard_model.turn_time
+        scoreboard_model.total_time_spent += time_taken
+        scoreboard_model.num_moves_made += 1
 
-        # 2) Single-tile vs multi-tile
+        # Determine move details
         num_selected = len(self._selected_tiles)
         if num_selected == 1:
             src = self._selected_tiles[0]
+            from_coords = [src]
+            to_coords = [destination_coord]
+            captured = []
             self._move_single(src, destination_coord)
         else:
-            # Find which direction is being used
+            alignment_dir, sorted_tiles, is_collinear = self._analyze_selection(self._selected_tiles)
+            if not is_collinear:
+                return
             possible_moves = self._get_moves_for_selection(self._selected_tiles)
-            chosen_move = None
-            for mv in possible_moves:
-                if destination_coord in mv["highlight_coords"]:
-                    chosen_move = mv
-                    break
+            chosen_move = next((mv for mv in possible_moves if destination_coord in mv["highlight_coords"]), None)
             if not chosen_move:
                 return
-
-            direction = chosen_move["direction"]
-            dx, dy = self.DIRECTIONS[direction]
-            alignment_dir, sorted_tiles, _ = self._analyze_selection(self._selected_tiles)
-            is_inline = self._is_inline(alignment_dir, (dx, dy))
-
-            if is_inline:
-                # pass color_of_selection to apply_inline_move
-                self._apply_inline_move(sorted_tiles, dx, dy, color_of_selection)
+            dx, dy = self.DIRECTIONS[chosen_move["direction"]]
+            from_coords = sorted_tiles
+            to_coords = self._compute_destination(sorted_tiles, dx, dy)
+            if self._is_inline(alignment_dir, (dx, dy)):
+                captured = self._apply_inline_move(sorted_tiles, dx, dy, color_of_selection)
             else:
                 self._apply_sidestep_move(sorted_tiles, dx, dy)
+                captured = []
 
-        # 3) Clear selection
+        # Format move description
+        from_str = [self._coord_to_str(*coord) for coord in from_coords]
+        to_str = [self._coord_to_str(*coord) for coord in to_coords]
+        captured_str = [self._coord_to_str(*coord) for coord in captured]
+        player = self.current_player
+        opponent = "White" if player == "Black" else "Black"
+        move_description = f"{player} moved {{{', '.join(from_str)}}} to {{{', '.join(to_str)}}}"
+        if captured:
+            move_description += f", Capturing {opponent} from {', '.join(captured_str)}"
+        move_description += f";\n\tThe agent took {time_taken:.2f} seconds; Move time total: {scoreboard_model.total_time_spent:.2f} seconds;\n—"
+
+        # Send move description to GameView
+        if self.move_callback:
+            self.move_callback(move_description)
+
+        # Clear selections
         self._selected_tiles.clear()
         self._clear_options()
         self._clear_selected()
 
-        # 4) Switch turn and toggle scoreboard states
+        # Switch turn
         if self.current_player == "Black":
             self.current_player = "White"
             self.black_scoreboard_view.set_active(False)
@@ -466,8 +484,146 @@ class GameBoard:
             self.current_player = "Black"
             self.white_scoreboard_view.set_active(False)
             self.black_scoreboard_view.set_active(True)
-
         print(f"Turn ended. Now it's {self.current_player}'s turn.")
+
+        if self.ai_update_callback:
+            self.ai_update_callback(self.get_board_state())
+
+        # Generate and print board state
+        print(self._generate_board_state())
+
+    # def confirm_move(self, destination_coord):
+    #     if not self._selected_tiles:
+    #         return
+    #
+    #     first_sel = self._selected_tiles[0]
+    #     color_of_selection = self._tiles[first_sel][0].player_color
+    #     scoreboard_model = (self.black_scoreboard_model if color_of_selection.lower() == "black"
+    #                         else self.white_scoreboard_model)
+    #     scoreboard_view = (self.black_scoreboard_view if color_of_selection.lower() == "black"
+    #                        else self.white_scoreboard_view)
+    #
+    #     # Determine move details
+    #     num_selected = len(self._selected_tiles)
+    #     if num_selected == 1:
+    #         src = self._selected_tiles[0]
+    #         from_coords = [src]
+    #         to_coords = [destination_coord]
+    #         captured = []
+    #         self._move_single(src, destination_coord)
+    #     else:
+    #         possible_moves = self._get_moves_for_selection(self._selected_tiles)
+    #         chosen_move = next((mv for mv in possible_moves if destination_coord in mv["highlight_coords"]), None)
+    #         if not chosen_move:
+    #             return
+    #         dx, dy = self.DIRECTIONS[chosen_move["direction"]]
+    #         alignment_dir, sorted_tiles, _ = self._analyze_selection(self._selected_tiles)
+    #         is_inline = self._is_inline(alignment_dir, (dx, dy))
+    #         from_coords = sorted_tiles
+    #         to_coords = self._compute_destination(sorted_tiles, dx, dy)
+    #         if is_inline:
+    #             captured = self._apply_inline_move(sorted_tiles, dx, dy, color_of_selection)
+    #         else:
+    #             captured = []
+    #             self._apply_sidestep_move(sorted_tiles, dx, dy)
+    #
+    #     # Update scoreboard
+    #     scoreboard_model.num_moves_made += 1
+    #     time_taken = scoreboard_model.turn_time_settings - scoreboard_model.turn_time
+    #     scoreboard_model.total_time_spent += time_taken
+    #     scoreboard_view.refresh()
+    #
+    #     # Create move dictionary
+    #     move_dict = {
+    #         "player": self.current_player,
+    #         "from": [self._coord_to_str(*coord) for coord in from_coords],
+    #         "to": [self._coord_to_str(*coord) for coord in to_coords],
+    #         "captured": [self._coord_to_str(*coord) for coord in captured],
+    #         "time_taken": time_taken,
+    #         "total_time": scoreboard_model.total_time_spent
+    #     }
+    #
+    #     # Send move data to GameView
+    #     if self.move_callback:
+    #         self.move_callback(move_dict)
+    #
+    #     # Output board state for C++ algorithm
+    #     print(self._generate_board_state_output())
+    #
+    #     # Clear selections and switch turn
+    #     self._selected_tiles.clear()
+    #     self._clear_options()
+    #     self._clear_selected()
+    #     if self.current_player == "Black":
+    #         self.current_player = "White"
+    #         self.black_scoreboard_view.set_active(False)
+    #         self.white_scoreboard_view.set_active(True)
+    #     else:
+    #         self.current_player = "Black"
+    #         self.white_scoreboard_view.set_active(False)
+    #         self.black_scoreboard_view.set_active(True)
+    #     self.turn_start_time = time.time()  # Reset for next turn
+    #
+    #     print(f"Turn ended. Now it's {self.current_player}'s turn.")
+
+    # def confirm_move(self, destination_coord):
+    #     if not self._selected_tiles:
+    #         return
+    #
+    #     first_sel = self._selected_tiles[0]
+    #     color_of_selection = self._tiles[first_sel][0].player_color
+    #
+    #     # 1) Increment that color’s moves by 1
+    #     if color_of_selection.lower() == "black":
+    #         self.black_scoreboard_model.num_moves_made += 1
+    #         self.black_scoreboard_view.refresh()
+    #     else:
+    #         self.white_scoreboard_model.num_moves_made += 1
+    #         self.white_scoreboard_view.refresh()
+    #
+    #     # 2) Single-tile vs multi-tile
+    #     num_selected = len(self._selected_tiles)
+    #     if num_selected == 1:
+    #         src = self._selected_tiles[0]
+    #         self._move_single(src, destination_coord)
+    #     else:
+    #         # Find which direction is being used
+    #         possible_moves = self._get_moves_for_selection(self._selected_tiles)
+    #         chosen_move = None
+    #         for mv in possible_moves:
+    #             if destination_coord in mv["highlight_coords"]:
+    #                 chosen_move = mv
+    #                 break
+    #         if not chosen_move:
+    #             return
+    #
+    #         direction = chosen_move["direction"]
+    #         dx, dy = self.DIRECTIONS[direction]
+    #         alignment_dir, sorted_tiles, _ = self._analyze_selection(self._selected_tiles)
+    #         is_inline = self._is_inline(alignment_dir, (dx, dy))
+    #
+    #         if is_inline:
+    #             # pass color_of_selection to apply_inline_move
+    #             self._apply_inline_move(sorted_tiles, dx, dy, color_of_selection)
+    #         else:
+    #             self._apply_sidestep_move(sorted_tiles, dx, dy)
+    #
+    #     # 3) Clear selection
+    #     self._selected_tiles.clear()
+    #     self._clear_options()
+    #     self._clear_selected()
+    #
+    #     # 4) Switch turn and toggle scoreboard states
+    #     if self.current_player == "Black":
+    #         self.current_player = "White"
+    #         self.black_scoreboard_view.set_active(False)
+    #         self.white_scoreboard_view.set_active(True)
+    #     else:
+    #         self.current_player = "Black"
+    #         self.white_scoreboard_view.set_active(False)
+    #         self.black_scoreboard_view.set_active(True)
+    #
+    #     print(f"Turn ended. Now it's {self.current_player}'s turn.")
 
     def _apply_inline_move(self, sorted_tiles, dx, dy, moving_color):
         """
@@ -475,7 +631,7 @@ class GameBoard:
         """
         # 1) Push opponents if needed
         front = self._get_front_most(sorted_tiles, dx, dy)
-        self._push_opponents_if_any(front, dx, dy, moving_color)
+        captured = self._push_opponents_if_any(front, dx, dy, moving_color)
 
         # 2) Compute all new positions
         new_positions = {coord: (coord[0] + dx, coord[1] + dy) for coord in sorted_tiles}
@@ -498,24 +654,26 @@ class GameBoard:
                 src_model.player_color = None
                 src_view.refresh()
 
+        return captured
+
     def _push_opponents_if_any(self, front_coord, dx, dy, capturing_color):
         """
         If there's an opponent chain in front of 'front_coord', push it if possible.
         Possibly leads to capturing if they go off-board.
         """
+        captured = []
         next_col = front_coord[0] + dx
         next_row = front_coord[1] + dy
         if (next_col, next_row) not in self._tiles:
-            return  # no push needed
+            return captured
 
         next_model, _ = self._tiles[(next_col, next_row)]
         if not next_model.is_occupied:
-            return  # no occupant => no push
+            return captured
 
-        # We gather the chain
         chain = self._gather_chain((next_col, next_row), dx, dy)
         if not chain:
-            return
+            return captured
 
         # We move from the last in chain outwards
         chain_reversed = chain[::-1]  # push them from back->front
@@ -526,6 +684,7 @@ class GameBoard:
             if (new_col, new_row) not in self._tiles:
                 # Off-board => capture
                 # occupant removed:
+                captured.append(col_row)
                 self._tiles[col_row][0].is_occupied = False
                 self._tiles[col_row][0].player_color = None
                 self._tiles[col_row][1].refresh()
@@ -542,6 +701,8 @@ class GameBoard:
 
                 new_v.refresh()
                 old_v.refresh()
+
+        return captured
 
     def _apply_sidestep_move(self, sorted_tiles, dx, dy):
         """
@@ -694,3 +855,44 @@ class GameBoard:
         else:
             self.white_scoreboard_model.score += 1
             self.white_scoreboard_view.refresh()
+
+    @staticmethod
+    def _coord_to_str(col, row):
+        """Convert (col, row) to display format, e.g., (1,5) -> 'A5'."""
+        col_letter = chr(ord('A') + col - 1)
+        return f"{col_letter}{row}"
+
+    def _generate_board_state_output(self):
+        """Generate board state for C++ algorithm after a move."""
+        player_char = 'b' if self.current_player.lower() == "black" else 'w'
+        occupied_tiles = []
+        for (col, row), (model, _) in self._tiles.items():
+            if model.is_occupied:
+                tile_str = f"{self._coord_to_str(col, row)}{model.player_color[0].lower()}"
+                occupied_tiles.append(tile_str)
+        return f"{player_char}\n{','.join(occupied_tiles)}"
+
+    def _generate_board_state(self):
+        """Generate board state string for C++ algorithm (e.g., 'w\\nA1b,A2b,...')."""
+        player_char = 'b' if self.current_player.lower() == "black" else 'w'
+        occupied = []
+        for (col, row), (model, _) in self._tiles.items():
+            if model.is_occupied:
+                tile_str = self._coord_to_str(col, row) + model.player_color[0].lower()
+                occupied.append(tile_str)
+        # occupied.sort(key=lambda x: (int(x[1]), x[0]))  # Sort by row (x[1]) then column (x[0])
+        for tile in occupied:
+            if not (tile[0].isalpha() and tile[1].isdigit() and tile[2] in 'wb'):
+                raise ValueError(f"Invalid tile string format: {tile}")
+        occupied.sort(key=lambda x: (int(x[1:-1]), x[0]))  # Sort by row (x[1:-1]) then column (x[0])
+        return f"{player_char}\n{','.join(occupied)}"
+
+    def get_board_state(self):
+        return self._generate_board_state()
+
+    def set_move_callback(self, callback):
+        """Set the callback function to notify GameView of moves."""
+        self.move_callback = callback
+
+    def set_ai_update_callback(self, callback):
+        self.ai_update_callback = callback

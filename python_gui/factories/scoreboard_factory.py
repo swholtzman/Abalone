@@ -1,4 +1,5 @@
-# scoreboard_factory.py
+from PIL.ImageEnhance import Color
+
 from python_gui.game_screen.scoreboard.scoreboard_model import ScoreboardModel
 from python_gui.game_screen.scoreboard.scoreboard_view import ScoreboardView
 
@@ -9,7 +10,7 @@ class ScoreboardFactory:
                           num_moves_made: int,
                           turn_time: float,
                           is_active: bool,
-                          svg_path: str):
+                          background_color: str,):
         model = ScoreboardModel(
             player=player,
             score=score,
@@ -17,5 +18,5 @@ class ScoreboardFactory:
             turn_time=turn_time,
             is_active=is_active
         )
-        view = ScoreboardView(model=model, svg_path=svg_path)
+        view = ScoreboardView(model=model, background_color=background_color)
         return model, view
