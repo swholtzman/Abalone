@@ -119,7 +119,7 @@ class SettingsView(QtWidgets.QWidget):
         button_shadow.setOffset(0, 4)
         button_shadow.setColor(QtGui.QColor(0, 0, 0, 90))
         self.start_button.setGraphicsEffect(button_shadow)
-        self.start_button.setFixedWidth(800)  # Matches the center_frame width
+        self.start_button.setFixedWidth(800)
         self.start_button.setFixedHeight(72)
 
         self.start_button.clicked.connect(self.on_start_game)
@@ -127,7 +127,8 @@ class SettingsView(QtWidgets.QWidget):
 
         main_layout.addStretch()  # Push content to center vertically.
 
-    def _create_labeled_dropdown(self, parent, layout, label_text, dropdown_values, default_value):
+    @staticmethod
+    def _create_labeled_dropdown(parent, layout, label_text, dropdown_values, default_value):
         container = QtWidgets.QWidget(parent)
         container.setFixedWidth(685)  # 80% of a 800px-wide center_frame
         container_layout = QtWidgets.QVBoxLayout(container)
@@ -135,7 +136,7 @@ class SettingsView(QtWidgets.QWidget):
         container_layout.setSpacing(8)
 
         label = QtWidgets.QLabel(label_text, container)
-        label.setStyleSheet("color: white; background: transparent; font-size: 18px;")
+        label.setStyleSheet("color: white; background: transparent; font-size: 16px;")
         container_layout.addWidget(label, alignment=QtCore.Qt.AlignLeft)
 
         # White rectangle frame with rounded corners
@@ -147,18 +148,18 @@ class SettingsView(QtWidgets.QWidget):
             }
         """)
         frame_layout = QtWidgets.QHBoxLayout(frame)
-        frame_layout.setContentsMargins(10, 5, 10, 5)
-        frame.setFixedHeight(44)
+        frame_layout.setContentsMargins(8, 5, 8, 5)
+        frame.setFixedHeight(40)
 
         combo = QtWidgets.QComboBox(frame)
         combo.addItems(dropdown_values)
         combo.setCurrentText(default_value)
         # Style for the inner text
-        combo.setStyleSheet("color: #150700; font-size: 18px;")
+        combo.setStyleSheet("color: #150700; font-size: 16px;")
         combo.setEditable(True)
         combo.lineEdit().setAlignment(QtCore.Qt.AlignCenter)
         combo.setEditable(False)
-        combo.setFixedHeight(44)
+        combo.setFixedHeight(40)
 
         frame_layout.addWidget(combo)
         container_layout.addWidget(frame)
@@ -167,15 +168,16 @@ class SettingsView(QtWidgets.QWidget):
 
         return combo
 
-    def _create_labeled_intinput(self, parent, layout, label_text, default_value, max_value):
+    @staticmethod
+    def _create_labeled_intinput(parent, layout, label_text, default_value, max_value):
         container = QtWidgets.QWidget(parent)
         container.setFixedWidth(685)
         container_layout = QtWidgets.QVBoxLayout(container)
         container_layout.setContentsMargins(0, 0, 0, 0)
-        container_layout.setSpacing(10)
+        container_layout.setSpacing(8)
 
         label = QtWidgets.QLabel(label_text, container)
-        label.setStyleSheet("color: white; background: transparent; font-size: 18px;")
+        label.setStyleSheet("color: white; background: transparent; font-size: 16px;")
         container_layout.addWidget(label, alignment=QtCore.Qt.AlignLeft)
 
         # White rectangle frame with rounded corners
@@ -187,14 +189,14 @@ class SettingsView(QtWidgets.QWidget):
             }
         """)
         frame_layout = QtWidgets.QHBoxLayout(frame)
-        frame_layout.setContentsMargins(10, 5, 10, 5)
-        frame.setFixedHeight(44)
+        frame_layout.setContentsMargins(8, 5, 8, 5)
+        frame.setFixedHeight(40)
 
         spin = QtWidgets.QSpinBox(frame)
         spin.setRange(0, max_value)
         spin.setValue(default_value)
-        spin.setStyleSheet("color: #150700; font-size: 18px; qproperty-alignment: AlignCenter;")
-        spin.setFixedHeight(44)
+        spin.setStyleSheet("color: #150700; font-size: 16px; qproperty-alignment: AlignCenter;")
+        spin.setFixedHeight(40)
 
         frame_layout.addWidget(spin)
         container_layout.addWidget(frame)

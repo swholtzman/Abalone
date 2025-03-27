@@ -423,20 +423,17 @@ string Board::indexToNotation(int idx) {
 void Board::initStandardLayout() {
     occupant.fill(Occupant::EMPTY);
     vector<string> blackPositions = {
-        "A4", "A5",
-        "B4", "B5", "B6",
-        "C4", "C5", "C6", "C7",
-        "D5", "D6", "D7",
-        "E5", "E6"
+        "A1b", "A2b", "A3b", "A4b", "A5b",
+        "B1b", "B2b", "B3b", "B4b", "B5b", "B6b",
+        "C3b", "C4b", "C5b"
     };
     for (auto& cell : blackPositions) {
         setOccupant(cell, Occupant::BLACK);
     }
     vector<string> whitePositions = {
-        "E4", "F4", "F5", "F6", "F7",
-        "G3", "G4", "G5", "G6", "G7",
-        "H4", "H5", "H6",
-        "I5"
+        "G5w", "G6w", "G7w",
+        "H4w", "H5w", "H6w", "H7w", "H8w", "H9w",
+        "I5w", "I6w", "I7w", "I8w", "I9w"
     };
     for (auto& cell : whitePositions) {
         setOccupant(cell, Occupant::WHITE);
@@ -620,6 +617,7 @@ void Board::setOccupant(const string& notation, Occupant who, bool updateCoords)
 bool Board::s_mappingInitialized = false;
 unordered_map<long long, int> Board::s_coordToIndex;
 array<pair<int, int>, Board::NUM_CELLS> Board::s_indexToCoord;
+
 
 // static long long packCoord(int m, int y) {
 //     return (static_cast<long long>(m) << 32) ^ (static_cast<long long>(y) & 0xffffffff);

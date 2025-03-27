@@ -54,6 +54,8 @@ public:
     std::vector<std::pair<int, int>> blackOccupantsCoords;
     std::vector<std::pair<int, int>> whiteOccupantsCoords;
 
+    static std::unordered_map<long long, int> s_coordToIndex;
+
     // Direction offsets (dx, dy) in board coordinates.
     // Order: W=(-1,0), E=(+1,0), NW=(0,+1), NE=(+1,+1), SW=(-1,-1), SE=(0,-1)
     static const std::array<std::pair<int, int>, NUM_DIRECTIONS> DIRECTION_OFFSETS;
@@ -70,6 +72,8 @@ public:
     // direction d (or -1 if none exists).
     std::array<std::array<int, NUM_DIRECTIONS>, NUM_CELLS> neighbors;
 
+    // Reverse mapping: cell index to coordinate (m,y).
+    static std::array<std::pair<int, int>, NUM_CELLS> s_indexToCoord;
 
     //--------------------------------------------------------------------------
     // Public Methods and Constructors
@@ -136,6 +140,7 @@ public:
         return (index >= 0 && index < NUM_CELLS) ? occupant[index] : Occupant::EMPTY;
     }
 
+private:
     //--------------------------------------------------------------------------
     // Static Mapping and Neighbor Calculation
     //--------------------------------------------------------------------------
@@ -143,10 +148,6 @@ public:
     // Flag to indicate if the coordinate mapping has been initialized.
     static bool s_mappingInitialized;
     // Mapping from a packed coordinate (m,y) to a cell index.
-    static std::unordered_map<long long, int> s_coordToIndex;
-    // Reverse mapping: cell index to coordinate (m,y).
-    static std::array<std::pair<int, int>, NUM_CELLS> s_indexToCoord;
-private:
 
 
     // Initializes the coordinate mapping.

@@ -59,4 +59,4 @@ diff:
 
 # Clean generated files
 clean:
-	rm -f $(TARGET) $(COMPARE_TARGET)
+	rm -f $(TARGET) $(COMPARE_TARGET) $(VISUALIZER_TARGET) play_game

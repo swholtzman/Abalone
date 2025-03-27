@@ -11,6 +11,7 @@ class TileModel:
         self._is_occupied = is_occupied
         self._player_color = player_color
         self._is_option = is_option
+        self._is_selected = False
 
     @property
     def tile_id(self):
@@ -43,3 +44,11 @@ class TileModel:
     @is_option.setter
     def is_option(self, value):
         self._is_option = value
+
+    @property
+    def is_selected(self):
+        return self._is_selected
+
+    @is_selected.setter
+    def is_selected(self, value):
+        self._is_selected = value
