@@ -3,6 +3,7 @@
 #include <chrono>
 #include <iostream>
 #include <cstring>
+#include <cstring>
 
 // Zobrist key initialization
 bool TranspositionTable::s_zobristInitialized = false;
@@ -30,9 +31,11 @@ void TranspositionTable::initZobristKeys() {
     // Initialize only once
     if (s_zobristInitialized) return;
 
+
     // Initialize with random values using a good random number generator
     std::mt19937_64 rng(std::chrono::steady_clock::now().time_since_epoch().count());
     std::uniform_int_distribution<uint64_t> dist;
+
 
     for (int i = 0; i < Board::NUM_CELLS; ++i) {
         for (int j = 0; j < 3; ++j) { // 3 = EMPTY, BLACK, WHITE
@@ -40,8 +43,10 @@ void TranspositionTable::initZobristKeys() {
         }
     }
 
+
     // Additional key for the side to move
     m_sideToMoveKey = dist(rng);
+
 
     s_zobristInitialized = true;
 }
@@ -55,6 +60,7 @@ void TranspositionTable::clearTable() {
 uint64_t TranspositionTable::computeHash(const Board& board) {
     uint64_t hash = 0;
 
+
     // Hash the occupants
     for (int i = 0; i < Board::NUM_CELLS; ++i) {
         Occupant occ = board.getOccupant(i);
@@ -64,10 +70,12 @@ uint64_t TranspositionTable::computeHash(const Board& board) {
         }
     }
 
+
     // Hash the side to move
     if (board.nextToMove == Occupant::WHITE) {
         hash ^= m_sideToMoveKey;
     }
+
 
     return hash;
 }
@@ -85,11 +93,25 @@ void TranspositionTable::storeEntry(const Board& board, int depth, int score, Mo
     bool shouldReplace = true;
 
     if (entry.isOccupied && entry.key == hash) {
-        // Same position - check depth
-        if (entry.depth > depth && entry.age == m_currentAge) {
-            // Keep existing entry - it's deeper and from current search
-            shouldReplace = false;
+        // Same position
+        if (entry.age == m_currentAge) {
+            // Same search - prefer deeper searches or exact nodes
+            if (entry.depth > depth && entry.type == MoveType::EXACT) {
+                shouldReplace = false;
+            }
+            else if (entry.depth == depth) {
+                // Equal depth, prefer more accurate node types
+                if (entry.type == MoveType::EXACT && moveType != MoveType::EXACT) {
+                    shouldReplace = false;
+                }
+            }
         }
+    }
+
+    // For entries that are almost done with their search, always keep them
+    if (entry.isOccupied && entry.key == hash &&
+        entry.depth >= depth + 3 && entry.age == m_currentAge - 1) {
+        shouldReplace = false;
     }
 
     if (shouldReplace) {
@@ -99,7 +121,11 @@ void TranspositionTable::storeEntry(const Board& board, int depth, int score, Mo
         entry.type = moveType;
         entry.bestMove = bestMove;
         entry.isOccupied = true;
-        entry.age = m_currentAge;  // Update age to current search
+        entry.age = m_currentAge;
+    }
+    else if (entry.key == hash && entry.bestMove.marbleIndices.empty() && !bestMove.marbleIndices.empty()) {
+        // Always update the best move if we didn't have one
+        entry.bestMove = bestMove;
     }
 }
 

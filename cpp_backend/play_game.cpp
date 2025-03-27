@@ -30,9 +30,9 @@ int main(int argc, char* argv[]) {
     // mode: "ai" to use AI for both sides,
     //       "random" for random moves for both sides,
     //       "ai_vs_random" for AI vs random (Black uses AI, White random)
-    int winningThreshold = 6;
+    int winningThreshold = 3;
     int aiDepth = 5;
-    int timeLimitMs = 10000;
+    int timeLimitMs = 3000;
     std::string mode = "ai_vs_random"; // Options: "ai", "random", or "ai_vs_random"
 
     // Optional command line arguments override defaults:
