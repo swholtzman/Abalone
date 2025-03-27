@@ -21,8 +21,8 @@ class AgentSecretary:
         print(f"Sending board state to C++ agent: {board_state}")
         start_time = time.time()
         # Simulate delay
-        delay = random.uniform(0, 5)
-        time.sleep(delay)
+        # delay = random.uniform(0, 5)
+        # time.sleep(delay)
         # Generate random move
         next_move = self.generate_random_move()
         end_time = time.time()
@@ -30,6 +30,8 @@ class AgentSecretary:
         self.last_move_time = move_time
         self.agent_total_time += move_time
         return next_move, move_time
+
+    # function
 
     @staticmethod
     def generate_random_move():

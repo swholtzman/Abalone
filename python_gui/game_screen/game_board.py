@@ -57,6 +57,8 @@ class GameBoard:
             self.rows[row].sort()
         self.sorted_rows = sorted(self.rows.keys(), reverse=True)
 
+        self._game_states = []
+
         self._tile_factory = TileFactory(tile_size=55, gameboard=self)
         self._tiles = {}
         self._selected_tiles = []
@@ -420,6 +422,21 @@ class GameBoard:
         if not self._selected_tiles:
             return
 
+        current_state = {
+            "board_state": {coord: (model.is_occupied, model.player_color) for coord, (model, _) in
+                            self._tiles.items()},
+            "current_player": self.current_player,
+            "turn_time": (self.black_scoreboard_model.turn_time if self.current_player == "Black"
+                          else self.white_scoreboard_model.turn_time),
+            "black_score": self.black_scoreboard_model.score,
+            "white_score": self.white_scoreboard_model.score,
+            "black_total_time": self.black_scoreboard_model.total_time_spent,
+            "white_total_time": self.white_scoreboard_model.total_time_spent,
+            "black_num_moves": self.black_scoreboard_model.num_moves_made,
+            "white_num_moves": self.white_scoreboard_model.num_moves_made,
+        }
+        self._game_states.append(current_state)
+
         first_sel = self._selected_tiles[0]
         color_of_selection = self._tiles[first_sel][0].player_color
         scoreboard_model = (self.black_scoreboard_model if color_of_selection.lower() == "black"
@@ -492,138 +509,60 @@ class GameBoard:
         # Generate and print board state
         print(self._generate_board_state())
 
-    # def confirm_move(self, destination_coord):
-    #     if not self._selected_tiles:
-    #         return
-    #
-    #     first_sel = self._selected_tiles[0]
-    #     color_of_selection = self._tiles[first_sel][0].player_color
-    #     scoreboard_model = (self.black_scoreboard_model if color_of_selection.lower() == "black"
-    #                         else self.white_scoreboard_model)
-    #     scoreboard_view = (self.black_scoreboard_view if color_of_selection.lower() == "black"
-    #                        else self.white_scoreboard_view)
-    #
-    #     # Determine move details
-    #     num_selected = len(self._selected_tiles)
-    #     if num_selected == 1:
-    #         src = self._selected_tiles[0]
-    #         from_coords = [src]
-    #         to_coords = [destination_coord]
-    #         captured = []
-    #         self._move_single(src, destination_coord)
-    #     else:
-    #         possible_moves = self._get_moves_for_selection(self._selected_tiles)
-    #         chosen_move = next((mv for mv in possible_moves if destination_coord in mv["highlight_coords"]), None)
-    #         if not chosen_move:
-    #             return
-    #         dx, dy = self.DIRECTIONS[chosen_move["direction"]]
-    #         alignment_dir, sorted_tiles, _ = self._analyze_selection(self._selected_tiles)
-    #         is_inline = self._is_inline(alignment_dir, (dx, dy))
-    #         from_coords = sorted_tiles
-    #         to_coords = self._compute_destination(sorted_tiles, dx, dy)
-    #         if is_inline:
-    #             captured = self._apply_inline_move(sorted_tiles, dx, dy, color_of_selection)
-    #         else:
-    #             captured = []
-    #             self._apply_sidestep_move(sorted_tiles, dx, dy)
-    #
-    #     # Update scoreboard
-    #     scoreboard_model.num_moves_made += 1
-    #     time_taken = scoreboard_model.turn_time_settings - scoreboard_model.turn_time
-    #     scoreboard_model.total_time_spent += time_taken
-    #     scoreboard_view.refresh()
-    #
-    #     # Create move dictionary
-    #     move_dict = {
-    #         "player": self.current_player,
-    #         "from": [self._coord_to_str(*coord) for coord in from_coords],
-    #         "to": [self._coord_to_str(*coord) for coord in to_coords],
-    #         "captured": [self._coord_to_str(*coord) for coord in captured],
-    #         "time_taken": time_taken,
-    #         "total_time": scoreboard_model.total_time_spent
-    #     }
-    #
-    #     # Send move data to GameView
-    #     if self.move_callback:
-    #         self.move_callback(move_dict)
-    #
-    #     # Output board state for C++ algorithm
-    #     print(self._generate_board_state_output())
-    #
-    #     # Clear selections and switch turn
-    #     self._selected_tiles.clear()
-    #     self._clear_options()
-    #     self._clear_selected()
-    #     if self.current_player == "Black":
-    #         self.current_player = "White"
-    #         self.black_scoreboard_view.set_active(False)
-    #         self.white_scoreboard_view.set_active(True)
-    #     else:
-    #         self.current_player = "Black"
-    #         self.white_scoreboard_view.set_active(False)
-    #         self.black_scoreboard_view.set_active(True)
-    #     self.turn_start_time = time.time()  # Reset for next turn
-    #
-    #     print(f"Turn ended. Now it's {self.current_player}'s turn.")
+    def undo_last_move(self):
+        if not self._game_states:
+            return  # No moves to undo
 
-    # def confirm_move(self, destination_coord):
-    #     if not self._selected_tiles:
-    #         return
-    #
-    #     first_sel = self._selected_tiles[0]
-    #     color_of_selection = self._tiles[first_sel][0].player_color
-    #
-    #     # 1) Increment that color’s moves by 1
-    #     if color_of_selection.lower() == "black":
-    #         self.black_scoreboard_model.num_moves_made += 1
-    #         self.black_scoreboard_view.refresh()
-    #     else:
-    #         self.white_scoreboard_model.num_moves_made += 1
-    #         self.white_scoreboard_view.refresh()
-    #
-    #     # 2) Single-tile vs multi-tile
-    #     num_selected = len(self._selected_tiles)
-    #     if num_selected == 1:
-    #         src = self._selected_tiles[0]
-    #         self._move_single(src, destination_coord)
-    #     else:
-    #         # Find which direction is being used
-    #         possible_moves = self._get_moves_for_selection(self._selected_tiles)
-    #         chosen_move = None
-    #         for mv in possible_moves:
-    #             if destination_coord in mv["highlight_coords"]:
-    #                 chosen_move = mv
-    #                 break
-    #         if not chosen_move:
-    #             return
-    #
-    #         direction = chosen_move["direction"]
-    #         dx, dy = self.DIRECTIONS[direction]
-    #         alignment_dir, sorted_tiles, _ = self._analyze_selection(self._selected_tiles)
-    #         is_inline = self._is_inline(alignment_dir, (dx, dy))
-    #
-    #         if is_inline:
-    #             # pass color_of_selection to apply_inline_move
-    #             self._apply_inline_move(sorted_tiles, dx, dy, color_of_selection)
-    #         else:
-    #             self._apply_sidestep_move(sorted_tiles, dx, dy)
-    #
-    #     # 3) Clear selection
-    #     self._selected_tiles.clear()
-    #     self._clear_options()
-    #     self._clear_selected()
-    #
-    #     # 4) Switch turn and toggle scoreboard states
-    #     if self.current_player == "Black":
-    #         self.current_player = "White"
-    #         self.black_scoreboard_view.set_active(False)
-    #         self.white_scoreboard_view.set_active(True)
-    #     else:
-    #         self.current_player = "Black"
-    #         self.white_scoreboard_view.set_active(False)
-    #         self.black_scoreboard_view.set_active(True)
-    #
-    #     print(f"Turn ended. Now it's {self.current_player}'s turn.")
+        last_state = self._game_states.pop()
+
+        # Restore board state
+        for coord, (is_occupied, player_color) in last_state["board_state"].items():
+            model, view = self._tiles[coord]
+            model.is_occupied = is_occupied
+            model.player_color = player_color
+            view.refresh()
+
+        # Restore current player
+        self.current_player = last_state["current_player"]
+
+        # Restore turn_time for the current player
+        if self.current_player == "Black":
+            self.black_scoreboard_model.turn_time = last_state["turn_time"]
+        else:
+            self.white_scoreboard_model.turn_time = last_state["turn_time"]
+
+        # Restore scores
+        self.black_scoreboard_model.score = last_state["black_score"]
+        self.white_scoreboard_model.score = last_state["white_score"]
+
+        # Restore total time spent
+        self.black_scoreboard_model.total_time_spent = last_state["black_total_time"]
+        self.white_scoreboard_model.total_time_spent = last_state["white_total_time"]
+
+        # Restore number of moves
+        self.black_scoreboard_model.num_moves_made = last_state["black_num_moves"]
+        self.white_scoreboard_model.num_moves_made = last_state["white_num_moves"]
+
+        # Update scoreboard views
+        self.black_scoreboard_view.refresh()
+        self.white_scoreboard_view.refresh()
+
+        # Set active player
+        if self.current_player == "Black":
+            self.black_scoreboard_view.set_active(True)
+            self.white_scoreboard_view.set_active(False)
+        else:
+            self.white_scoreboard_view.set_active(True)
+            self.black_scoreboard_view.set_active(False)
+
+        # Clear selections
+        self._selected_tiles.clear()
+        self._clear_options()
+        self._clear_selected()
+
+        # Update AI information if callback exists
+        if self.ai_update_callback:
+            self.ai_update_callback(self.get_board_state())
 
     def _apply_inline_move(self, sorted_tiles, dx, dy, moving_color):
         """
