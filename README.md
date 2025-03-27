@@ -1,102 +1,23 @@
 # Abalone
 Abalone game created to develop an effective AI bot system with heuristics for optimized gameplay strategies.
 
-## Patch Notes
-### Path 1.1.5
-- Pushed March 27, 2025 2:42pm ; Sam Holtzman
-- Undo button fixed
-
-### Path 1.1.4
-- Pushed March 27, 2025 4:18am ; Sam Holtzman
-- all peripherals implemented
-- buttons need work 
-  - size not large enough
-  - functionality needs fixing 
-    - Undo to only undo the last move made
-    - pause to switch to play when it is pressed
-
-### Path 1.1.3
-- Pushed March 25, 2025 10:11am ; Sam Holtzman
-- scoreboards implemented. 
-
-### Path 1.1.2
-- Pushed March 24, 2025 3:46pm ; Sam Holtzman
-- repaired crashing but introduced while removing unused params in tile_view.py __init__()
-
-### Path 1.1.1
-- Pushed March 24, 2025 2:48pm ; Sam Holtzman
-- Game now playable
-- resolved some warnings
-- resolved some typos
-- removed some redundant comments
-
-### Patch 1.0.9
-- Pushed March 24, 2025 2:42pm ; Sam Holtzman
-- game_board.py updates; game is play-able
-- settings_view.py updates; fixed settings margins
-- Need to implement further UI items such as scoreboards, clock, etc
-
-### Patch 1.0.8
-- Pushed March 20, 2025 1:56am ; Sam Holtzman
-- Significant UI logic advancements
-- Move logic has started, but need to actually assess valid moves
-- Need to allow for multi-select without crashing
-- Need to implement further UI items such as scoreboards, clock, etc
-
-### Patch 1.0.7
-- Pushed March 13, 2025 11:15pm ; Wayne Chen
-- Updated the code for reading input file in main.cpp
-
-### Patch 1.0.6
-- Pushed March 12, 2025 4:00pm ; Wayne Chen
-- Updated cpp files to use namespace
-- Renamed the output files in main.cpp
-- Updated readme file
-
-### Patch 1.0.5
-- Pushed March 11, 2025 11:10am ; Wayne Chen
-- Added a timer in main.cpp
-- Added starting_position_input
-- Added some edge_cases_input
-
-### Patch 1.0.4
-- Pushed March 9, 2025 07:55pm ; Wayne Chen
-- Added board_visualizer.cpp
-- Updated makefile with visualizer commands
-- Updated readme with visualizer commands and formatting
-
-### Patch 1.0.3
-- Pushed March 9, 2025 11:36pm ; Wayne Chen
-- Merged Logan's repo with Project repo
-- Added makefile
-- Updated readme with makefile commands
-
-### Patch 1.0.2
-- Pushed March 9, 2025 1:37am ; Sam Holtzman
-- Added python directory with empty files
-- Added initial UML diagram (in public directory)
-- Moved C++ items into focussed directory
-    - Suggest to move boards and other non C++ files into "resources" sub-directory inside cpp_directory 
-        - Didnt want to do this incase current structure is necessary
-
-### Patch 1.0.1
-- Pushed March 7, 2025 9:06pm ; Wayne Chen
-- Merged Logan's repo with Project repo
-- Added patch notes back
-- Updated gitignore
-
-### Patch 1.0.0
-- Pushed March 6, 2025 2:25pm ; Sam Holtzman
-- Initial Project Setup
-    -  Added file / directory structure
-
 # IMPORTANT (WINDOW USERS ONLY):
 
 Before attempting to run, you must open your project after connecting to a WSL environment.
 
 # Instructions
 
-## HOW TO RUN:
+## How to SIMULATE a Game:
+
+- cd cpp_backend
+- make all
+- check play_game.cpp if you want to change any configurations
+- make play_game (or g++ -std=c++17 play_game.cpp Board.cpp TranspositionTable.cpp AbaloneAI.cpp -o play_game)
+- ./play_game (start the simulation)
+- after the game is finished, all moves it made will be in "moves_made.txt"
+- you can also visualize the gameplay in "visualize_output.txt"
+
+## HOW TO RUN Abalone:
 
 WITH MAKE: make abalone
 
