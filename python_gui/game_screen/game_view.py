@@ -30,7 +30,7 @@ class GameView(QtWidgets.QWidget):
         )
         white_model, white_sb = ScoreboardFactory.create_scoreboard(
             player="White", score=0, num_moves_made=0, turn_time=60.0, is_active=False,
-            background_color="#FFFFFF"
+            background_color="#CaC9Cd"
         )
         self.black_scoreboard_model = black_model
         self.black_scoreboard_view = black_sb
