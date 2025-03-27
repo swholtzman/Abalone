@@ -139,11 +139,20 @@ int main(int argc, char* argv[]) {
 
                 AbaloneAI aiMove(aiDepth, timeLimitMs);
                 AbaloneAI2 aiMove2(aiDepth, timeLimitMs);
+                
                 if (board.nextToMove == Occupant::BLACK) {
-                    auto result = aiMove.findBestMoveIterativeDeepening(board, aiDepth);
-                    chosenMove = result.first;
-                    std::cout << "Black (AI) chooses move: "
-                        << Board::moveToNotation(chosenMove, board.nextToMove) << "\n";
+                    // Black's first move is random
+                    if (moveCount == 0) {
+                        int randomIndex = std::rand() % legalMoves.size();
+                        chosenMove = legalMoves[randomIndex];
+                        std::cout << "Black's first move chosen randomly.\n";
+                    }
+                    else {
+                        auto result = aiMove.findBestMoveIterativeDeepening(board, aiDepth);
+                        chosenMove = result.first;
+                        std::cout << "Black (AI) chooses move: "
+                                << Board::moveToNotation(chosenMove, board.nextToMove) << "\n";
+                    }
                 }
                 else {
                     auto result2 = aiMove2.findBestMoveIterativeDeepening(board, aiDepth);
