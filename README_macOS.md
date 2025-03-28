@@ -146,5 +146,9 @@ python3.13 main_app.py
   pip install --upgrade pip
   pip install pybind11 cmake
   ```
+  or
+  ```bash
+  pip install "pybind11[global]"
+  ```
 
 Let me know if you need any help!

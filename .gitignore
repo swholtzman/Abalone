@@ -10,6 +10,11 @@ temp.input
 !CMakeLists.txt
 *.move
 venv
+venv".idea/" 
+venv
+__pycache__/
+*.pyc
+move_history.json
 
 build/
 CMakeFiles/
