@@ -9,4 +9,8 @@ temp.input
 *.txt
 *.move
 venv".idea/" 
+venv
+__pycache__/
+*.pyc
+move_history.json
 "cmake-build-debug/" 

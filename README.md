@@ -20,8 +20,10 @@ Before attempting to run, you must open your project after connecting to a WSL e
 ## How to RUN GUI:
 
 - cd python_gui
-- python -m venv venv
+- python (or python3) -m venv venv
 - WINDOW: venv\Scripts\activate, MAC: source venv/bin/activate
+- pip install PyQt5
+- pip install Pillow
 - python (or python3) main_app.py 
 
 ## HOW TO RUN Abalone:

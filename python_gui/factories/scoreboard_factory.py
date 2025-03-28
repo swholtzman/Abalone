@@ -1,7 +1,7 @@
 from PIL.ImageEnhance import Color
 
-from python_gui.game_screen.scoreboard.scoreboard_model import ScoreboardModel
-from python_gui.game_screen.scoreboard.scoreboard_view import ScoreboardView
+from game_screen.scoreboard.scoreboard_model import ScoreboardModel
+from game_screen.scoreboard.scoreboard_view import ScoreboardView
 
 class ScoreboardFactory:
     @staticmethod

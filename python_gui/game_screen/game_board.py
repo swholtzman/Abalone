@@ -4,7 +4,7 @@ from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtGui import QColor, QBrush
 from PyQt5.QtSvg import QGraphicsSvgItem
 
-from python_gui.factories.tile_factory import TileFactory
+from factories.tile_factory import TileFactory
 
 
 class GameBoard:

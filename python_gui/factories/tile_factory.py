@@ -1,5 +1,5 @@
-from python_gui.game_screen.components.tile.tile_model import TileModel
-from python_gui.game_screen.components.tile.tile_view import TileView
+from game_screen.components.tile.tile_model import TileModel
+from game_screen.components.tile.tile_view import TileView
 
 class TileFactory(object):
     def __init__(self, tile_size=55, gameboard=None):
