@@ -95,6 +95,20 @@ pip install PyQt5
 
 ## 5. Setting Up the Project
 
+### 1. Make Setup Script Executable
+Before running the setup script, you need to make it executable:
+
+```bash
+chmod +x setup_and_run.sh
+```
+
+### 2. Build the Project
+Run the setup script to clean and build the project:
+
+```bash
+./setup_and_run.sh
+```
+
 ### 1. Build the Project
 Run the setup script to clean and build the project:
 

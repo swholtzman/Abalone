@@ -51,14 +51,14 @@ class AgentSecretary:
 
 # Test function here if you want to know where the connection between cpp and python is
 
-    # if __name__ == "__main__":
-    #     ai = abalone_ai.AbaloneAI()
-    #     board_state = """b
-    # C5b,D5b,E4b,E5b,E6b,F5b,F6b,F7b,F8b,G6b,H6b,C3w,C4w,D3w,D4w,D6w,E7w,F4w,G5w,G7w,G8w,G9w,H7w,H8w,H9w
-    # """
-    #     ai.parse_board_state(board_state)
-    #     move = ai.find_best_move()
+    if __name__ == "__main__":
+        ai = abalone_ai.AbaloneAI()
+        board_state = """b
+    C5b,D5b,E4b,E5b,E6b,F5b,F6b,F7b,F8b,G6b,H6b,C3w,C4w,D3w,D4w,D6w,E7w,F4w,G5w,G7w,G8w,G9w,H7w,H8w,H9w
+    """
+        ai.parse_board_state(board_state)
+        move = ai.find_best_move()
 
-    #     print("[TEST] Move from AI:", move)
-    #     print("[TEST] Updated board state:")
-    #     print(ai.get_current_board_string())
+        print("[TEST] Move from AI:", move)
+        print("[TEST] Updated board state:")
+        print(ai.get_current_board_string())

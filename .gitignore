@@ -9,3 +9,11 @@ temp.input
 *.txt
 *.move
 venv
+
+# CMake build directory
+build/
+CMakeFiles/
+*.cmake
+*.make
+*.o
+*.so
