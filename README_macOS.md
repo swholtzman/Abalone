@@ -1,6 +1,6 @@
 # Abalone AI Setup on macOS
 
-This guide will help you set up the project on macOS, including installing Python 3.13, G++, CMake, and PyQt5, and setting up the development environment.
+This guide will help you set up the project on macOS, including installing Python 3.13, G++, CMake, PyQt5, and pybind11, and setting up the development environment.
 
 ## 1. Install Python 3.13
 
@@ -86,11 +86,11 @@ Activate the virtual environment:
 source venv/bin/activate
 ```
 
-### 2. Install PyQt5 and Other Dependencies
-Install PyQt5 and any other required Python packages:
+### 2. Install Dependencies
+Install required Python packages:
 
 ```bash
-pip install PyQt5
+pip install PyQt5 pybind11 cmake
 ```
 
 ## 5. Setting Up the Project
@@ -109,19 +109,12 @@ Run the setup script to clean and build the project:
 ./setup_and_run.sh
 ```
 
-### 1. Build the Project
-Run the setup script to clean and build the project:
-
-```bash
-./setup_and_run.sh
-```
-
 The script will:
 - Clean the build/ directory
 - Rebuild the project using Python 3.13
 - Run the Python script
 
-### 2. Running the Project Manually (if needed)
+### 3. Running the Project Manually (if needed)
 If you want to run it manually:
 
 Navigate to the python_gui/ directory:
@@ -143,6 +136,15 @@ python3.13 main_app.py
   ```bash
   pip install --upgrade pip
   pip install PyQt5
+  ```
+- **Setup script permissions**: Make sure the setup script is executable:
+  ```bash
+  chmod +x setup_and_run.sh
+  ```
+- **pybind11 installation**: If you have issues installing pybind11, try:
+  ```bash
+  pip install --upgrade pip
+  pip install pybind11 cmake
   ```
 
 Let me know if you need any help!

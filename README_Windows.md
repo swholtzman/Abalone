@@ -1,6 +1,6 @@
 # Abalone AI Setup on Windows
 
-This guide will help you set up the project on Windows, including installing Python 3.13, G++ (via MinGW or MSYS2), CMake, and PyQt5, and setting up the development environment.
+This guide will help you set up the project on Windows, including installing Python 3.13, G++ (via MinGW or MSYS2), CMake, PyQt5, and pybind11, and setting up the development environment.
 
 ## 1. Install Python 3.13
 
@@ -85,11 +85,11 @@ Activate the virtual environment:
 venv\Scripts\activate
 ```
 
-### 2. Install PyQt5 and Other Dependencies
-Install PyQt5 and any other required Python packages:
+### 2. Install Dependencies
+Install required Python packages:
 
 ```cmd
-pip install PyQt5
+pip install PyQt5 pybind11 cmake
 ```
 
 ## 5. Setting Up the Project
@@ -128,6 +128,15 @@ python main_app.py
   ```cmd
   pip install --upgrade pip
   pip install PyQt5
+  ```
+- **pybind11 installation**: If you have issues installing pybind11, try:
+  ```cmd
+  pip install --upgrade pip
+  pip install pybind11 cmake
+  ```
+- **Setup script permissions (macOS/Linux)**: If you're on macOS or Linux, you may need to make the setup script executable by running:
+  ```bash
+  chmod +x setup_and_run.sh
   ```
 
 Let me know if you need any help!

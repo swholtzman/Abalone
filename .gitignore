@@ -10,10 +10,14 @@ temp.input
 *.move
 venv
 
-# CMake build directory
+
 build/
 CMakeFiles/
 *.cmake
 *.make
 *.o
 *.so
+*.dylib
+*.a
+*.out
+" > .gitignore
