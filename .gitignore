@@ -7,9 +7,9 @@ play_game
 testNormalized.board
 temp.input
 *.txt
+!CMakeLists.txt
 *.move
 venv
-
 
 build/
 CMakeFiles/
@@ -20,4 +20,3 @@ CMakeFiles/
 *.dylib
 *.a
 *.out
-" > .gitignore
