@@ -10,12 +10,19 @@ Before attempting to run, you must open your project after connecting to a WSL e
 ## How to SIMULATE a Game:
 
 - cd cpp_backend
-- make all
+- make all (compile abalone, compareBoard, and board_visualizer)
 - check play_game.cpp if you want to change any configurations
 - make play_game (or g++ -std=c++17 play_game.cpp Board.cpp TranspositionTable.cpp AbaloneAI.cpp -o play_game)
 - ./play_game (start the simulation)
 - after the game is finished, all moves it made will be in "moves_made.txt"
 - you can also visualize the gameplay in "visualize_output.txt"
+
+## How to RUN GUI:
+
+- cd python_gui
+- python -m venv venv
+- WINDOW: venv\Scripts\activate, MAC: source venv/bin/activate
+- python (or python3) main_app.py 
 
 ## HOW TO RUN Abalone:
 
