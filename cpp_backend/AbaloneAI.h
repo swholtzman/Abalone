@@ -37,7 +37,10 @@ private:
     // Helper function to check if a move is a killer move
     bool isKillerMove(const Move& move, int depth) const;
 
-    void getDynamicWeights(float gameProgress, int& marbleValue, int& centerValue, int& cohesionValue, int& edgeValue, int& threatValue, int& mobilityValue);
+    void getDynamicWeights(float gameProgress, int& marbleValue, 
+        int& centerValue, int& cohesionValue, 
+        int& edgeValue, int& threatValue, 
+        int& mobilityValue, int& blackMarbles, int& whiteMarbles, Occupant currentPlayer);
 
     /**
      * Evaluates the current board position from BLACK's perspective.

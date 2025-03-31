@@ -5,13 +5,16 @@
 #include <chrono>
 #include <iostream>
 
-// Evaluate the board position from BLACK's perspective
 // Add this constant
 const int STARTING_MARBLES = 14; // Standard Abalone has 14 marbles per side
-const int PUSHED_MARBLES = 6;
+const int PUSHED_MARBLES = 6; // Assuming 6 marbles pushed off the board
 
-// Get dynamic weights based on game progress
-void AbaloneAI::getDynamicWeights(float gameProgress, int& marbleValue, int& centerValue, int& cohesionValue, int& edgeValue, int& threatValue, int& mobilityValue) {
+// Get dynamic weights based on game progress and marble advantage
+void AbaloneAI::getDynamicWeights(float gameProgress, int& marbleValue, 
+    int& centerValue, int& cohesionValue, 
+    int& edgeValue, int& threatValue, 
+    int& mobilityValue, int& blackMarbles, int& whiteMarbles, Occupant currentPlayer) {
+        
     // Default weights
     marbleValue = MARBLE_VALUE;
     centerValue = 20;
@@ -19,7 +22,16 @@ void AbaloneAI::getDynamicWeights(float gameProgress, int& marbleValue, int& cen
     edgeValue = 10;
     threatValue = 5;
     mobilityValue = 0;
-
+    
+    // Determine if current player has an advantage
+    bool hasAdvantage = false;
+    
+    if (currentPlayer == Occupant::BLACK) {
+        hasAdvantage = (blackMarbles > whiteMarbles);
+    } else {
+        hasAdvantage = (whiteMarbles > blackMarbles);
+    }
+    
     // Progressive weight adjustment based on game phase
     if (gameProgress < 0.2f) {
         // Early game: focus on preservation and positioning
@@ -42,6 +54,16 @@ void AbaloneAI::getDynamicWeights(float gameProgress, int& marbleValue, int& cen
         cohesionValue += 10;
         edgeValue += 10;
         threatValue += 10;
+    }
+    
+    // If current player has more marbles than opponent, prioritize center control over pushing
+    if (hasAdvantage) {
+        // Increase center control value significantly
+        centerValue += 15;
+        // Slightly reduce threat value (which is related to pushing)
+        threatValue -= 2;
+        // Increase cohesion to maintain solid formations
+        cohesionValue += 5;
     }
 }
 
@@ -67,7 +89,9 @@ int AbaloneAI::evaluatePosition(const Board& board) {
 
     // Dynamically adjust evaluation weights based on game progress
     int marbleValue, centerValue, cohesionValue, edgeValue, threatValue, mobilityValue;
-    getDynamicWeights(gameProgress, marbleValue, centerValue, cohesionValue, edgeValue, threatValue, mobilityValue);
+    getDynamicWeights(gameProgress, marbleValue, centerValue, 
+        cohesionValue, edgeValue, threatValue, mobilityValue, 
+        blackMarbles, whiteMarbles, board.nextToMove);
 
     // Calculate base score from marble count
     int score = (blackMarbles - whiteMarbles) * marbleValue;
@@ -120,6 +144,19 @@ int AbaloneAI::evaluatePosition(const Board& board) {
 int AbaloneAI::evaluateMove(const Board& board, const Move& move, Occupant side) {
     int score = 0;
 
+    // Count marbles for each side
+    int blackMarbles = 0;
+    int whiteMarbles = 0;
+    for (int i = 0; i < Board::NUM_CELLS; i++) {
+        if (board.occupant[i] == Occupant::EMPTY)
+            continue;
+
+        if (board.occupant[i] == Occupant::BLACK)
+            blackMarbles++;
+        else if (board.occupant[i] == Occupant::WHITE)
+            whiteMarbles++;
+    }
+
     // Prioritize captures
     if (move.pushCount > 0) {
         score += 1000 * move.pushCount;  // Higher score for more captures
@@ -127,7 +164,9 @@ int AbaloneAI::evaluateMove(const Board& board, const Move& move, Occupant side)
 
     // Dynamic weights based on game progress
     int marbleValue, centerValue, cohesionValue, edgeValue, threatValue, mobilityValue;
-    getDynamicWeights(0.5f, marbleValue, centerValue, cohesionValue, edgeValue, threatValue, mobilityValue);
+    getDynamicWeights(0.5f, marbleValue, centerValue, cohesionValue, 
+        edgeValue, threatValue, mobilityValue,
+        blackMarbles, whiteMarbles, side);
 
     // Calculate center of the board (approximately E5 in standard notation)
     int centerIdx = Board::notationToIndex("E5");
