@@ -54,6 +54,10 @@ public:
 
     double getHitRate();
 
+    void saveZobristKeysTxt(const std::string &filename);
+
+    bool loadZobristKeysTxt(const std::string &filename);
+
 private:
     // Initialize Zobrist keys
     void initZobristKeys();

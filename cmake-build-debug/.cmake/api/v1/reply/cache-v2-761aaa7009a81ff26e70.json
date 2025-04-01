@@ -11,7 +11,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/user/OneDrive/Desktop/CST/Comp 3981 intro to ai/Abalone/cmake-build-debug"
+			"value" : "C:/Users/user/OneDrive/Desktop/Ai Project 2/Abalone/cmake-build-debug"
 		},
 		{
 			"name" : "Abalone_IS_TOP_LEVEL",
@@ -35,7 +35,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/user/OneDrive/Desktop/CST/Comp 3981 intro to ai/Abalone"
+			"value" : "C:/Users/user/OneDrive/Desktop/Ai Project 2/Abalone"
 		},
 		{
 			"name" : "CMAKE_ADDR2LINE",
@@ -91,7 +91,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "c:/Users/user/OneDrive/Desktop/CST/Comp 3981 intro to ai/Abalone/cmake-build-debug"
+			"value" : "c:/Users/user/OneDrive/Desktop/Ai Project 2/Abalone/cmake-build-debug"
 		},
 		{
 			"name" : "CMAKE_CACHE_MAJOR_VERSION",
@@ -190,7 +190,7 @@
 					"value" : "CXX compiler"
 				}
 			],
-			"type" : "STRING",
+			"type" : "FILEPATH",
 			"value" : "C:/Program Files/JetBrains/CLion 2024.2.1/bin/mingw/bin/g++.exe"
 		},
 		{
@@ -334,7 +334,7 @@
 					"value" : "C compiler"
 				}
 			],
-			"type" : "STRING",
+			"type" : "FILEPATH",
 			"value" : "C:/Program Files/JetBrains/CLion 2024.2.1/bin/mingw/bin/gcc.exe"
 		},
 		{
@@ -611,7 +611,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/user/OneDrive/Desktop/CST/Comp 3981 intro to ai/Abalone/cmake-build-debug/CMakeFiles/pkgRedirects"
+			"value" : "C:/Users/user/OneDrive/Desktop/Ai Project 2/Abalone/cmake-build-debug/CMakeFiles/pkgRedirects"
 		},
 		{
 			"name" : "CMAKE_GENERATOR",
@@ -683,7 +683,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "C:/Users/user/OneDrive/Desktop/CST/Comp 3981 intro to ai/Abalone"
+			"value" : "C:/Users/user/OneDrive/Desktop/Ai Project 2/Abalone"
 		},
 		{
 			"name" : "CMAKE_INSTALL_PREFIX",
