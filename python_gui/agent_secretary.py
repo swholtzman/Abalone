@@ -8,7 +8,7 @@ import abalone_ai
 print(abalone_ai.__file__)
 
 class AgentSecretary:
-    def __init__(self, game_view, depth=4, time_limit_ms=5000, tt_size_mb=64):
+    def __init__(self, game_view, depth=6, time_limit_ms=10000, tt_size_mb=64):
         self.game_view = game_view
         self.last_move_time = 0.0
         self.agent_total_time = 0.0
@@ -22,21 +22,25 @@ class AgentSecretary:
             "Black": self.game_view.black_scoreboard_model.turn_time_settings,
             "White": self.game_view.white_scoreboard_model.turn_time_settings
         }
-
+    
     def send_state_to_agent(self, board_state):
         print(f"[DEBUG] Board state string: {board_state}")
         start_time = time.time()
 
         self.ai.parse_board_state(board_state)
-        next_move = self.ai.find_best_move()
+        move, updated_board = self.ai.find_best_move()  # Get both values
 
-        print(f"[DEBUG] Move from C++: {next_move}")
+        print(f"[DEBUG] Move from C++: {move}")
+        print(f"[DEBUG] Updated board: {updated_board}")
+
+        # Store updated board in case other methods want it later
+        self.latest_board = updated_board
 
         move_time = time.time() - start_time
         self.last_move_time = move_time
         self.agent_total_time += move_time
-        return next_move, move_time
 
+        return move, move_time  # Return only 2 values to avoid unpacking error
     # function
 
     @staticmethod

@@ -11,8 +11,12 @@ temp.input
 *.move
 venv
 
+__pycache__/
+.vscode/
 build/
 CMakeFiles/
+/main_app.*
+Info.plist
 *.cmake
 *.make
 *.o

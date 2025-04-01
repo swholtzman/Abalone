@@ -47,15 +47,13 @@ public:
         }
     }
 
-    std::string find_best_move() {
+    std::tuple<std::string, std::string> find_best_move() {
         auto result = ai.findBestMoveIterativeDeepening(board);
-    
-        // Get the player color *before* applying the move
         Occupant side = board.nextToMove;
-        std::string formatted_move = board.moveToNotation(result.first, side);
-    
+        std::string moveStr = board.moveToNotation(result.first, side);
         board.applyMove(result.first);
-        return formatted_move;
+        std::string updatedBoard = board.toBoardString();
+        return std::make_tuple(moveStr, updatedBoard);
     }
 
     std::string get_current_board_string() const {

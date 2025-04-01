@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <chrono>
 #include <iostream>
+#include <thread>
+#include <future>
 
 // Evaluate the board position from BLACK's perspective
 // Add this constant
@@ -480,12 +482,7 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board) {
     timeoutOccurred = false;
     startTime = std::chrono::high_resolution_clock::now();
 
-    // Clear transposition table before a new search
-
-    // Periodic cleanup of old entries
     transpositionTable.incrementAge();
-
-    // Reset killer moves for a new search
     killerMoves = std::vector<std::array<Move, MAX_KILLER_MOVES>>(maxDepth + 1);
 
     Occupant currentPlayer = board.nextToMove;
@@ -493,11 +490,9 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board) {
     std::vector<Move> possibleMoves = board.generateMoves(currentPlayer);
 
     if (possibleMoves.empty()) {
-        Move noMove;
-        return std::make_pair(noMove, 0);
+        return std::make_pair(Move(), 0);
     }
 
-    // Order the root moves
     Move ttBestMove;
     bool hasTTMove = transpositionTable.getBestMove(board, ttBestMove);
     orderMoves(possibleMoves, board, currentPlayer, hasTTMove ? ttBestMove : Move());
@@ -505,45 +500,61 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board) {
     Move bestMove = possibleMoves[0];
     int bestScore = maximizingPlayer ? std::numeric_limits<int>::min() : std::numeric_limits<int>::max();
 
-    // Gather statistics for move ordering effectiveness
-    int totalMoves = 0;
-    int bestMoveIndex = 0;
+// Sets thread count to 8 
+// ======================
+// WARNING!!! THIS IS SYSTEM SPECIFIC
+// ======================
+    int threadCount = std::min(8, (int)possibleMoves.size());
+    std::vector<std::future<std::pair<int, Move>>> futures;
+    
+    for (int i = 0; i < threadCount; ++i) {
+        futures.push_back(std::async(std::launch::async, [&, i]() {
+            const Move& move = possibleMoves[i];
+            Board tempBoard = board;
+            tempBoard.applyMove(move);
+            int score = this->minimax(tempBoard, maxDepth - 1,
+                                      std::numeric_limits<int>::min(),
+                                      std::numeric_limits<int>::max(),
+                                      !maximizingPlayer);
+            return std::make_pair(score, move);
+        }));
+    }
 
-    for (size_t i = 0; i < possibleMoves.size(); i++) {
+//  // Changes thread count
+//     std::vector<std::future<std::pair<int, Move>>> futures;
+//     int threadCount = std::min((int)possibleMoves.size(), static_cast<int>(std::thread::hardware_concurrency()));
+    
+//     for (const Move& move : possibleMoves) {
+//         futures.push_back(std::async(std::launch::async, [&board, move, this, maximizingPlayer]() {
+//             Board tempBoard = board;
+//             tempBoard.applyMove(move);
+//             int score = this->minimax(tempBoard, maxDepth - 1,
+//                                       std::numeric_limits<int>::min(),
+//                                       std::numeric_limits<int>::max(),
+//                                       !maximizingPlayer);
+//             return std::make_pair(score, move);
+//         }));
+//     }
+
+    for (auto& f : futures) {
         if (isTimeUp()) {
             timeoutOccurred = true;
             break;
         }
-        const Move& move = possibleMoves[i];
-        totalMoves++;
-
-        Board tempBoard = board;
-        tempBoard.applyMove(move);
-        int score = minimax(tempBoard, maxDepth - 1,
-            std::numeric_limits<int>::min(),
-            std::numeric_limits<int>::max(),
-            !maximizingPlayer);
+        auto [score, move] = f.get();
         if ((maximizingPlayer && score > bestScore) || (!maximizingPlayer && score < bestScore)) {
             bestScore = score;
             bestMove = move;
-            bestMoveIndex = i;
         }
     }
 
     auto end = std::chrono::high_resolution_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - startTime).count();
+
     std::cout << "Nodes evaluated: " << nodesEvaluated << std::endl;
     std::cout << "Time taken: " << elapsed << " ms" << std::endl;
     std::cout << "Timeout occurred: " << (timeoutOccurred ? "Yes" : "No") << std::endl;
     std::cout << "Best move score: " << bestScore << std::endl;
-
-    // Report move ordering effectiveness
-    if (totalMoves > 0) {
-        std::cout << "Move ordering effectiveness: best move was #" << (bestMoveIndex + 1)
-            << " out of " << totalMoves << " moves" << std::endl;
-        double effectiveness = 100.0 * (1.0 - static_cast<double>(bestMoveIndex) / totalMoves);
-        std::cout << "Move ordering efficiency: " << effectiveness << "%" << std::endl;
-    }
 
     return std::make_pair(bestMove, bestScore);
 }

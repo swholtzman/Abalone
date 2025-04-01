@@ -27,4 +27,4 @@ make
 # 3. Run your Python script
 cd ../python_gui
 # CHANGE THIS TO main_app.py WHEN FINISHED
-python3.13 agent_secretary.py
+python3.13 main_app.py

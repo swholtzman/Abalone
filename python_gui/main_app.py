@@ -2,6 +2,7 @@ import sys
 import os
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtGui import QFontDatabase, QFont
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from intro_screen.intro_view import IntroView
 from python_gui.game_screen.game_view import GameView
