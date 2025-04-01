@@ -15,16 +15,21 @@ fi
 rm -rf build
 mkdir -p build && cd build
 
-# Dynamically find Python executable
-PYTHON_EXEC=$(which python3.13)
+# Get the Python executable from the activated venv
+PYTHON_EXEC=$(which python)
 
-# Run cmake with the correct Python executable
-cmake .. -DPython3_EXECUTABLE="$PYTHON_EXEC"
+# Get pybind11 CMake directory
+PYBIND11_CMAKE_DIR=$(python -c "import pybind11; print(pybind11.get_cmake_dir())")
+
+# Run cmake with the correct Python executable and pybind11_DIR
+cmake .. -DPython3_EXECUTABLE="$PYTHON_EXEC" -Dpybind11_DIR="$PYBIND11_CMAKE_DIR"
 
 # Build the project
 make
 
-# 3. Run your Python script
-cd ../python_gui
-# CHANGE THIS TO main_app.py WHEN FINISHED
-python3.13 agent_secretary.py
+# 3. Set PYTHONPATH to include the build directory
+export PYTHONPATH="/Users/samholtzman/Documents/GitHub/Abalone/build:$PYTHONPATH"
+
+# 4. Run your Python script
+cd ..  # Back to Abalone/
+python -m python_gui.main_app

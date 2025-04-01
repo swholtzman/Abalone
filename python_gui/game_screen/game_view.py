@@ -1,5 +1,5 @@
 from pathlib import Path
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets
 
 from python_gui.agent_secretary import AgentSecretary
 from python_gui.factories.scoreboard_factory import ScoreboardFactory
@@ -12,6 +12,8 @@ from python_gui.game_screen.info_panel.info_panel_model import InfoPanelModel
 from python_gui.game_screen.info_panel.info_panel_view import InfoPanelView
 from python_gui.game_screen.move_history.move_history_model import MoveHistoryModel
 from python_gui.game_screen.move_history.move_history_view import MoveHistoryView
+from python_gui.victory_screen.win_screen import WinScreen
+
 
 class GameView(QtWidgets.QWidget):
     def __init__(self, parent=None, main_app_callback=None):
@@ -109,6 +111,10 @@ class GameView(QtWidgets.QWidget):
         # Add to main layout below game board
         main_layout.addLayout(button_layout)
 
+        self.win_screen = WinScreen(self)
+        self.win_screen.setGeometry(0, 0, self.width(), self.height())
+        self.win_screen.hide()
+
         self._config = None
 
     def pause_game(self):
@@ -123,12 +129,20 @@ class GameView(QtWidgets.QWidget):
     def quit_game(self):
         self.quit_button.on_click()
 
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if hasattr(self, 'win_screen'):
+            self.win_screen.setGeometry(0, 0, self.width(), self.height())
+
+    def on_win_screen_clicked(self):
+        self.reset_game()
+        self.main_app_callback()
+
     def update_ai_information(self, board_state):
         """Update the AI Information panel with data from AgentSecretary."""
         next_move, move_time = self.agent_secretary.send_state_to_agent(board_state)
         self.info_panel_model.next_move = next_move
         self.info_panel_model.move_time = move_time
-        self.info_panel_model.last_move_time = self.agent_secretary.last_move_time
         self.info_panel_model.agent_total_time = self.agent_secretary.agent_total_time
         self.info_panel_view.refresh()
 
@@ -137,23 +151,37 @@ class GameView(QtWidgets.QWidget):
         self.move_history_model.add_move(move_description)
         self.move_history_view.refresh()
 
+        # Check for winning condition
+        if self.black_scoreboard_model.score >= 6 or self.white_scoreboard_model.score >= 6:
+            self.show_win_screen()
+
+    def show_win_screen(self):
+        """Display the winning screen for the given winner."""
+        self.win_screen.show()
+        self.win_screen.raise_()
+
     def set_config(self, config_data):
-        """
-        Called when the user finalizes the game config (layout type, time limits, etc.)
-        """
+        """Called when the user finalizes the game config."""
         self._config = config_data
         board_layout = config_data.board_layout
         host_colour = config_data.host_colour
         time_limit_black = config_data.time_limit_black
         time_limit_white = config_data.time_limit_white
 
-        # Set scoreboard times
+        # Reset game state
+        self.black_scoreboard_model.reset()
+        self.white_scoreboard_model.reset()
         self.black_scoreboard_model.turn_time_settings = time_limit_black
         self.white_scoreboard_model.turn_time_settings = time_limit_white
+        self.black_scoreboard_model.is_active = True  # Black starts
+        self.white_scoreboard_model.is_active = False
         self.black_scoreboard_view.refresh()
         self.white_scoreboard_view.refresh()
 
-        # Decide on the opponent color
+        self.move_history_model.clear()
+        self.game_board.current_player = "Black"
+
+        # Set board layout
         opponent_color = "White" if host_colour.lower() == "black" else "Black"
         self.game_board.set_layout(board_layout, host_color=host_colour, opponent_color=opponent_color)
 
@@ -164,3 +192,22 @@ class GameView(QtWidgets.QWidget):
     def get_board_state(self):
         """Retrieve the current board state."""
         return self.game_board.get_board_state()
+
+    def reset_game(self):
+        """Reset all game state to initial conditions."""
+        # Reset scoreboards
+        self.black_scoreboard_model.reset()
+        self.white_scoreboard_model.reset()
+        self.black_scoreboard_model.is_active = True  # Black starts
+        self.white_scoreboard_model.is_active = False
+        self.black_scoreboard_view.refresh()
+        self.white_scoreboard_view.refresh()
+
+        # Clear move history
+        self.move_history_model.clear()
+
+        # Reset game board
+        self.game_board.clear_board()
+
+        # Hide winning screen
+        self.win_screen.hide()

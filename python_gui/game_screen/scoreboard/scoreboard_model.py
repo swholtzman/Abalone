@@ -74,3 +74,11 @@ class ScoreboardModel:
     @total_time_spent.setter
     def total_time_spent(self, value):
         self._total_time_spent = value
+
+    def reset(self):
+        self._score = 0
+        self._num_moves_made = 0
+        self._initial_time = 0
+        self._turn_time = 0
+        self._is_active = False
+        self._total_time_spent = 0.0

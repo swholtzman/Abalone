@@ -47,3 +47,7 @@ class MoveHistoryModel:
                 json.dump(self._moves, f, indent=2)
         except Exception as e:
             print(f"Error writing to {self._log_file}: {e}")
+
+    def clear(self):
+        self._moves = []
+        self._write_to_file()

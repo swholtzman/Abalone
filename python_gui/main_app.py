@@ -1,12 +1,12 @@
 import sys
 import os
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets
 from PyQt5.QtGui import QFontDatabase, QFont
 
-from intro_screen.intro_view import IntroView
+from python_gui.intro_screen.intro_view import IntroView
 from python_gui.game_screen.game_view import GameView
 from python_gui.utils.game_config import GameConfig
-from settings_screen.settings_controller import SettingsController
+from python_gui.settings_screen.settings_controller import SettingsController
 
 class MainApp(QtWidgets.QMainWindow):
     def __init__(self):
@@ -59,7 +59,7 @@ class MainApp(QtWidgets.QMainWindow):
         self.game_view.set_config(game_config)
         self.show_screen("Game View")
 
-    def on_quit_game(self, settings_model):
+    def on_quit_game(self):
         self.show_screen("Intro")
 
 if __name__ == "__main__":

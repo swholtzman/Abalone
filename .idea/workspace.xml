@@ -23,14 +23,22 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="78b3a9d5-048c-4cf1-b738-3aedf66aacb0" name="Changes" comment="minor aesthetic fixes">
-      <change afterPath="$PROJECT_DIR$/pybind.cmake" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pybind_testing.cpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pybind_testing.py" afterDir="false" />
+    <list default="true" id="78b3a9d5-048c-4cf1-b738-3aedf66aacb0" name="Changes" comment="### Path 1.1.5&#10;- Pushed March 27, 2025 2:42pm ; Sam Holtzman&#10;- Undo button fixed">
+      <change afterPath="$PROJECT_DIR$/public/resources/images/victory.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/python_gui/game_screen/components/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/python_gui/victory_screen/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/python_gui/victory_screen/win_screen.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/python_gui/agent_secretary.py" beforeDir="false" afterPath="$PROJECT_DIR$/python_gui/agent_secretary.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/python_gui/game_screen/components/implementations/undo_button.py" beforeDir="false" afterPath="$PROJECT_DIR$/python_gui/game_screen/components/implementations/undo_button.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/python_gui/factories/scoreboard_factory.py" beforeDir="false" afterPath="$PROJECT_DIR$/python_gui/factories/scoreboard_factory.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/python_gui/game_screen/components/tile/tile_view.py" beforeDir="false" afterPath="$PROJECT_DIR$/python_gui/game_screen/components/tile/tile_view.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/python_gui/game_screen/game_board.py" beforeDir="false" afterPath="$PROJECT_DIR$/python_gui/game_screen/game_board.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/python_gui/game_screen/game_view.py" beforeDir="false" afterPath="$PROJECT_DIR$/python_gui/game_screen/game_view.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/python_gui/game_screen/info_panel/info_panel_view.py" beforeDir="false" afterPath="$PROJECT_DIR$/python_gui/game_screen/info_panel/info_panel_view.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/python_gui/game_screen/move_history/move_history_model.py" beforeDir="false" afterPath="$PROJECT_DIR$/python_gui/game_screen/move_history/move_history_model.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/python_gui/game_screen/scoreboard/scoreboard_model.py" beforeDir="false" afterPath="$PROJECT_DIR$/python_gui/game_screen/scoreboard/scoreboard_model.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/python_gui/main_app.py" beforeDir="false" afterPath="$PROJECT_DIR$/python_gui/main_app.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/setup_and_run.sh" beforeDir="false" afterPath="$PROJECT_DIR$/setup_and_run.sh" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -89,6 +97,8 @@
   &quot;keyToString&quot;: {
     &quot;Python.game_board.executor&quot;: &quot;Run&quot;,
     &quot;Python.main_app.executor&quot;: &quot;Run&quot;,
+    &quot;Python.python --version.executor&quot;: &quot;Run&quot;,
+    &quot;Python.python -m venv venv.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.RadMigrateCodeStyle&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
@@ -103,6 +113,7 @@
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
@@ -110,6 +121,14 @@
     <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/public/resources/images" />
     </key>
+  </component>
+  <component name="RunAnythingCache">
+    <option name="myCommands">
+      <command value="pip install PyQt5" />
+      <command value="pip install --upgrade pip" />
+      <command value="pip install pybind11 cmake" />
+      <command value="pip install &quot;pybind11[global]&quot;" />
+    </option>
   </component>
   <component name="RunManager" selected="Python.main_app">
     <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
@@ -131,8 +150,9 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
+      <option name="SDK_NAME" value="Python 3.11 (PyCharmMiscProject)" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/python_gui" />
-      <option name="IS_MODULE_SDK" value="true" />
+      <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
@@ -145,9 +165,62 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="python --version" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="Abalone" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="--version" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="python -m venv venv" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="Abalone" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="venv" />
+      <option name="PARAMETERS" value="venv" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="true" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Python.python --version" />
+      <item itemvalue="Python.python -m venv venv" />
+      <item itemvalue="Python.main_app" />
+    </list>
     <recent_temporary>
       <list>
         <item itemvalue="Python.main_app" />
+        <item itemvalue="Python.python -m venv venv" />
+        <item itemvalue="Python.python --version" />
       </list>
     </recent_temporary>
   </component>
@@ -171,7 +244,11 @@
       <workItem from="1742922427452" duration="222000" />
       <workItem from="1742922659799" duration="103000" />
       <workItem from="1743016888772" duration="18086000" />
-      <workItem from="1743074995759" duration="8746000" />
+      <workItem from="1743074995759" duration="15084000" />
+      <workItem from="1743316461269" duration="170000" />
+      <workItem from="1743461148856" duration="9217000" />
+      <workItem from="1743473245938" duration="145000" />
+      <workItem from="1743473399251" duration="2151000" />
     </task>
     <task id="LOCAL-00001" summary="Black moves first">
       <option name="closed" value="true" />
@@ -229,7 +306,23 @@
       <option name="project" value="LOCAL" />
       <updated>1743075939594</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="### Path 1.1.5&#10;- Pushed March 27, 2025 2:42pm ; Sam Holtzman&#10;- Undo button fixed">
+      <option name="closed" value="true" />
+      <created>1743111765260</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1743111765260</updated>
+    </task>
+    <task id="LOCAL-00009" summary="### Path 1.1.5&#10;- Pushed March 27, 2025 2:42pm ; Sam Holtzman&#10;- Undo button fixed">
+      <option name="closed" value="true" />
+      <created>1743111772399</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1743111772399</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -244,32 +337,14 @@
     <MESSAGE value="### Path 1.1.4&#10;- Pushed March 27, 2025 4:18am ; Sam Holtzman&#10;- all peripherals implemented&#10;- buttons need work &#10;  - size not large enough&#10;  - functionality needs fixing &#10;    - Undo to only undo the last move made&#10;    - pause to switch to play when it is pressed" />
     <MESSAGE value="readme updated" />
     <MESSAGE value="minor aesthetic fixes" />
-    <option name="LAST_COMMIT_MESSAGE" value="minor aesthetic fixes" />
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/python_gui/factories/tile_factory.py</url>
-          <line>15</line>
-          <option name="timeStamp" value="32" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/python_gui/game_screen/components/tile/tile_view.py</url>
-          <line>53</line>
-          <option name="timeStamp" value="33" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/python_gui/game_screen/components/tile/tile_view.py</url>
-          <line>47</line>
-          <option name="timeStamp" value="34" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
+    <MESSAGE value="### Path 1.1.5&#10;- Pushed March 27, 2025 2:42pm ; Sam Holtzman&#10;- Undo button fixed" />
+    <option name="LAST_COMMIT_MESSAGE" value="### Path 1.1.5&#10;- Pushed March 27, 2025 2:42pm ; Sam Holtzman&#10;- Undo button fixed" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/Abalone$python___version.coverage" NAME="python --version Coverage Results" MODIFIED="1743473262131" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/Abalone$tkinter_test.coverage" NAME="tkinter_test Coverage Results" MODIFIED="1742253753062" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python_gui" />
-    <SUITE FILE_PATH="coverage/Abalone$main_app.coverage" NAME="main_app Coverage Results" MODIFIED="1743111660150" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python_gui" />
+    <SUITE FILE_PATH="coverage/Abalone$python__m_venv_venv.coverage" NAME="python -m venv venv Coverage Results" MODIFIED="1743473491609" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/Abalone$main_app.coverage" NAME="main_app Coverage Results" MODIFIED="1743473520552" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python_gui" />
     <SUITE FILE_PATH="coverage/Abalone$intro_view.coverage" NAME="intro_view Coverage Results" MODIFIED="1742255977251" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python_gui/intro_screen" />
     <SUITE FILE_PATH="coverage/Abalone$game_board.coverage" NAME="game_board Coverage Results" MODIFIED="1742852781544" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python_gui/game_screen" />
   </component>

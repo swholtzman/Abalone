@@ -1,4 +1,4 @@
-from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5 import QtWidgets, QtGui
 
 class InfoPanelView(QtWidgets.QWidget):
     def __init__(self, parent, model):

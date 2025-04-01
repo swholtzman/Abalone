@@ -1,7 +1,6 @@
 import time
 
 from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtGui import QColor, QBrush
 from PyQt5.QtSvg import QGraphicsSvgItem
 
 from python_gui.factories.tile_factory import TileFactory
@@ -42,12 +41,13 @@ class GameBoard:
         svg_item.setPos(scene_center - svg_rect.center())
         self.scene.addItem(svg_item)
 
+        # MARKER FOR BOARD DISPLAY DEBUGGING
         # Optionally, add a visual marker at the scene center (for debugging).
-        center_marker = QtWidgets.QGraphicsEllipseItem(0, 0, 10, 10)
-        center_marker.setBrush(QBrush(QColor("red")))
-        # Position so that its center is exactly at the scene center.
-        center_marker.setPos(scene_center - QtCore.QPointF(5, 5))
-        self.scene.addItem(center_marker)
+        # center_marker = QtWidgets.QGraphicsEllipseItem(0, 0, 10, 10)
+        # center_marker.setBrush(QBrush(QColor("red")))
+        # # Position so that its center is exactly at the scene center.
+        # center_marker.setPos(scene_center - QtCore.QPointF(5, 5))
+        # self.scene.addItem(center_marker)
 
         # Precompute row groupings for centering each row:
         self.rows = {}
@@ -74,6 +74,12 @@ class GameBoard:
         self.turn_start_time = time.time()  # Track turn start
         self.move_callback = None  # Callback to GameView
         self.ai_update_callback = None
+
+    def clear_board(self):
+        self._selected_tiles = []
+        self._clear_options()
+        self._clear_selected()
+        self.current_player = "Black"
 
     def _create_board(self):
         """Use TileFactory to create a tile (model+view) for each board coordinate."""
@@ -204,19 +210,37 @@ class GameBoard:
 # MOVE LOGIC IN PROGRESS
 
     def on_tile_clicked(self, col_row, shift_pressed):
-        """
-        Called by a TileView when the user clicks that tile.
-        We handle selection logic (possibly partial code).
-        """
         tile_model, tile_view = self._tiles[col_row]
 
-        # CASE 1: If user clicks an option tile, that means they are confirming the move
+        # CASE 1: If the tile is already selected, deselect it according to rules
+        if col_row in self._selected_tiles:
+            index = self._selected_tiles.index(col_row)
+            if len(self._selected_tiles) == 1:
+                # Single tile selected (e.g., A), clicking it clears selection
+                self._selected_tiles.clear()
+            elif len(self._selected_tiles) == 2:
+                # Two tiles (e.g., A, B), remove the clicked one
+                self._selected_tiles.pop(index)
+            elif len(self._selected_tiles) == 3:
+                if index == 0:
+                    # Clicking A in A, B, C: remove A, keep B, C
+                    self._selected_tiles.pop(0)
+                elif index == 1:
+                    # Clicking B in A, B, C: remove B and C, keep A
+                    self._selected_tiles = self._selected_tiles[:1]
+                elif index == 2:
+                    # Clicking C in A, B, C: remove C, keep A, B
+                    self._selected_tiles.pop(2)
+            self._mark_selected_tiles()
+            self._highlight_valid_moves()
+            return
+
+        # CASE 2: If tile is an option and not selected, confirm the move
         if tile_model.is_option:
-            # We handle the "confirm move" logic
             self.confirm_move(col_row)
             return
 
-        # CASE 2: Otherwise, we do normal selection
+        # CASE 3: Normal selection - ignore if not current player's tile
         if tile_model.player_color != self.current_player:
             if not shift_pressed:
                 self._selected_tiles.clear()
@@ -224,38 +248,64 @@ class GameBoard:
                 self._clear_selected()
             return
 
-        # SHIFT vs Non-SHIFT logic for selection:
-        if not shift_pressed:
-            self._selected_tiles = [col_row]
-        else:
-            new_selection = self._selected_tiles + [col_row]
-            if self._is_valid_selection(new_selection):
-                self._selected_tiles = new_selection
+        # CASE 4: Add to selection
+        if shift_pressed:
+            if self._selected_tiles:
+                # Try auto-selecting inline tiles
+                new_selection = self._auto_select_inline(self._selected_tiles, col_row)
+                if new_selection and self._is_valid_selection(new_selection):
+                    self._selected_tiles = new_selection
+                else:
+                    # If auto-select fails, append the new tile if valid
+                    new_selection = self._selected_tiles + [col_row]
+                    if self._is_valid_selection(new_selection):
+                        self._selected_tiles = new_selection
             else:
-                pass  # ignore or beep
+                # First tile in Shift-selection
+                self._selected_tiles.append(col_row)
+        else:
+            # Non-Shift click replaces selection
+            self._selected_tiles = [col_row]
 
         self._mark_selected_tiles()
         self._highlight_valid_moves()
 
-    @staticmethod
-    def _is_valid_selection(coords_list):
-        """
-        Check if coords_list:
-          1) has up to 3 tiles
-          2) all same color
-          3) contiguous and collinear in one of the 6 directions
-        This is just a skeleton example.
-        """
+    def _is_valid_selection(self, coords_list):
+        # Check maximum size
         if len(coords_list) > 3:
             return False
 
-        # All same color? We can skip if we only add from on_tile_clicked with color check.
-        # So let's assume yes if we got here.
+        if len(coords_list) == 1:
+            return True
 
-        # Check collinearity & adjacency. For 2 or 3 tiles, they must form a line in one of the DIRECTIONS
-        # This can be done by sorting them in some coordinate order and verifying consistent steps.
-        # We'll skip the actual logic here and just assume it's correct for brevity.
+        # Check all tiles are the same color
+        color = self._tiles[coords_list[0]][0].player_color
+        if not all(self._tiles[coord][0].player_color == color for coord in coords_list):
+            return False
+
+        # Check collinearity and adjacency
+        if len(coords_list) == 2:
+            return self._are_adjacent(coords_list[0], coords_list[1])
+
+        if len(coords_list) == 3:
+            # Sort tiles by coordinates to determine direction
+            sorted_coords = sorted(coords_list, key=lambda x: (x[0], x[1]))
+            vec1 = (sorted_coords[1][0] - sorted_coords[0][0], sorted_coords[1][1] - sorted_coords[0][1])
+            vec2 = (sorted_coords[2][0] - sorted_coords[1][0], sorted_coords[2][1] - sorted_coords[1][1])
+            # Check if vectors are equal (same direction) or opposite (to handle reverse order)
+            if vec1 == vec2 or (vec1[0] == -vec2[0] and vec1[1] == -vec2[1]):
+                return (self._are_adjacent(sorted_coords[0], sorted_coords[1]) and
+                        self._are_adjacent(sorted_coords[1], sorted_coords[2]))
+            return False
+
         return True
+
+    @staticmethod
+    def _are_adjacent(coord1, coord2):
+        dx = abs(coord1[0] - coord2[0])
+        dy = abs(coord1[1] - coord2[1])
+        # Valid directions based on your DIRECTIONS dict
+        return (dx, dy) in [(1, 0), (0, 1), (1, 1), (0, 0)]  # (0, 0) excluded in practice by selection logic
 
     def _highlight_valid_moves(self):
         """Clear all is_option, then set is_option for any tile that is a valid move destination."""
@@ -673,6 +723,45 @@ class GameBoard:
         That is, if the move direction equals the alignment direction or its exact opposite.
         """
         return move_direction == alignment_dir or move_direction == (-alignment_dir[0], -alignment_dir[1])
+
+    def _auto_select_inline(self, current_selection, new_tile):
+        if len(current_selection) != 1:
+            return None  # Auto-select only works when starting with one tile
+
+        start_tile = current_selection[0]
+        end_tile = new_tile
+
+        # Calculate direction from start to end
+        dx = end_tile[0] - start_tile[0]
+        dy = end_tile[1] - start_tile[1]
+
+        if dx == 0 and dy == 0:
+            return None  # Same tile, no auto-selection
+
+        # Normalize direction to unit step
+        step_x = 0 if dx == 0 else dx // abs(dx)
+        step_y = 0 if dy == 0 else dy // abs(dy)
+
+        # Check if direction matches allowed DIRECTIONS
+        if (step_x, step_y) not in self.DIRECTIONS.values():
+            return None
+
+        # Build the selection from start to end
+        selection = [start_tile]
+        current = (start_tile[0] + step_x, start_tile[1] + step_y)
+        while current != end_tile:
+            if (current not in self._tiles or
+                    not self._tiles[current][0].is_occupied or
+                    self._tiles[current][0].player_color != self.current_player):
+                return None  # Invalid: tile missing, unoccupied, or wrong color
+            selection.append(current)
+            current = (current[0] + step_x, current[1] + step_y)
+
+        selection.append(end_tile)
+        if len(selection) > 3:
+            return None  # Exceeds maximum selection size
+
+        return selection
 
     @staticmethod
     def _get_front_most(sorted_tiles, dx, dy):

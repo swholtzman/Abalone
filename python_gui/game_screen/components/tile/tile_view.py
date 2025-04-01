@@ -9,10 +9,6 @@ class TileView(QGraphicsItem):
         self.gameboard = gameboard
         self.diameter = diameter
 
-        # Center the tile at (center_x, center_y)
-        # half = diameter / 4
-        # self.setPos(center_x - half, center_y - half)
-
         self._bounding_rect = QRectF(0, 0, diameter, diameter)
 
     def boundingRect(self):
