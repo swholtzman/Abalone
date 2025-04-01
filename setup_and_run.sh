@@ -17,9 +17,9 @@ python3.13 -m venv venv
 source venv/bin/activate
 
 # 3. Upgrade pip and install dependencies
-echo "Installing dependencies: pyqt5 and pillow..."
+echo "Installing dependencies: pyqt5, pillow, pybind11, and cmake..."
 pip install --upgrade pip
-pip install pyqt5 pillow
+pip install pyqt5 pillow pybind11 cmake
 
 # 4. Clean and build the project
 rm -rf build
