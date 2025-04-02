@@ -16,8 +16,12 @@ __pycache__/
 *.pyc
 move_history.json
 
+__pycache__/
+.vscode/
 build/
 CMakeFiles/
+/main_app.*
+Info.plist
 *.cmake
 *.make
 *.o
