@@ -5,11 +5,15 @@
 #include <chrono>
 #include <iostream>
 
-// Add this constant
+// Add these constants
 const int STARTING_MARBLES = 14; // Standard Abalone has 14 marbles per side
 const int PUSHED_MARBLES = 6; // Assuming 6 marbles pushed off the board
+const int AGGRESSION_THRESHOLD = 3; // Start being more aggressive after this many moves
 
-// Get dynamic weights based on game progress and marble advantage
+// Track move count
+int AbaloneAI::moveCount = 0;
+
+// Get dynamic weights based on game progress, marble advantage, and move count
 void AbaloneAI::getDynamicWeights(float gameProgress, int& marbleValue, 
     int& centerValue, int& cohesionValue, 
     int& edgeValue, int& threatValue, 
@@ -22,15 +26,6 @@ void AbaloneAI::getDynamicWeights(float gameProgress, int& marbleValue,
     edgeValue = 10;
     threatValue = 5;
     mobilityValue = 0;
-    
-    // Determine if current player has an advantage
-    bool hasAdvantage = false;
-    
-    if (currentPlayer == Occupant::BLACK) {
-        hasAdvantage = (blackMarbles > whiteMarbles);
-    } else {
-        hasAdvantage = (whiteMarbles > blackMarbles);
-    }
     
     // Progressive weight adjustment based on game phase
     if (gameProgress < 0.2f) {
@@ -56,18 +51,53 @@ void AbaloneAI::getDynamicWeights(float gameProgress, int& marbleValue,
         threatValue += 10;
     }
     
-    // If current player has more marbles than opponent, prioritize center control over pushing
-    if (hasAdvantage) {
-        // Increase center control value significantly
-        centerValue += 15;
-        // Slightly reduce threat value (which is related to pushing)
-        threatValue -= 2;
-        // Increase cohesion to maintain solid formations
-        cohesionValue += 5;
+    // Apply additional aggression after AGGRESSION_THRESHOLD moves
+    if (moveCount > AGGRESSION_THRESHOLD) {
+
+        // std::cout << "Aggressive play activated after " << moveCount << " moves." << std::endl;
+
+        // Increase threat value significantly
+        threatValue += 10;
+        
+        // Reduce the importance of defensive positioning
+        edgeValue -= 5;
+        
+        // Increase value of mobility for more aggressive moves
+        mobilityValue += 10;
+        
+        // Value marbles less (willing to sacrifice for position)
+        marbleValue -= 5;
+        
+        // Emphasize pushing opponent marbles
+        if (currentPlayer == Occupant::BLACK) {
+            // If AI is playing black, play safer if we have a material disadvantage
+            if (blackMarbles > whiteMarbles) {
+                // Play more conservatively if we have more marbles
+                threatValue -= 5;
+                marbleValue += 5;
+            } else {
+                if (blackMarbles < whiteMarbles) {
+                    threatValue += 5;
+                    marbleValue -= 5;
+                }
+            }
+        } else {
+            // If AI is playing white, play safer if we have a material disadvantage
+            if (whiteMarbles > blackMarbles) {
+                // Play more conservatively if we have more marbles
+                threatValue -= 5;
+                marbleValue += 5;
+            } else {
+                if (whiteMarbles < blackMarbles) {
+                    threatValue += 5;
+                    marbleValue -= 5;
+                }
+            }
+        }
     }
 }
 
-// Modify evaluatePosition to adjust weights based on game phase
+// Modify evaluatePosition to adjust weights based on game phase and move count
 int AbaloneAI::evaluatePosition(const Board& board) {
     nodesEvaluated++;
 
@@ -87,7 +117,7 @@ int AbaloneAI::evaluatePosition(const Board& board) {
     // Determine game phase based on marble count
     float gameProgress = 1.0f - ((blackMarbles + whiteMarbles) / (2.0f * STARTING_MARBLES - 2.0f * PUSHED_MARBLES));
 
-    // Dynamically adjust evaluation weights based on game progress
+    // Dynamically adjust evaluation weights based on game progress and move count
     int marbleValue, centerValue, cohesionValue, edgeValue, threatValue, mobilityValue;
     getDynamicWeights(gameProgress, marbleValue, centerValue, 
         cohesionValue, edgeValue, threatValue, mobilityValue, 
@@ -127,12 +157,12 @@ int AbaloneAI::evaluatePosition(const Board& board) {
     int whiteEdgeDanger = calculateEdgeDanger(board, Occupant::WHITE);
     score -= (blackEdgeDanger - whiteEdgeDanger) * edgeValue;
 
-    // Threat potential
+    // Threat potential - increased importance for aggressive play
     int blackThreat = calculateThreatPotential(board, Occupant::BLACK);
     int whiteThreat = calculateThreatPotential(board, Occupant::WHITE);
-    score += (blackThreat - whiteThreat) * 10;
+    score += (blackThreat - whiteThreat) * threatValue;
 
-    // Mobility
+    // Mobility - more important for aggressive play
     int blackMobility = calculateMobility(board, Occupant::BLACK);
     int whiteMobility = calculateMobility(board, Occupant::WHITE);
     score += (blackMobility - whiteMobility) * mobilityValue;
@@ -157,12 +187,16 @@ int AbaloneAI::evaluateMove(const Board& board, const Move& move, Occupant side)
             whiteMarbles++;
     }
 
-    // Prioritize captures
+    // Prioritize captures even more after AGGRESSION_THRESHOLD moves
     if (move.pushCount > 0) {
-        score += 1000 * move.pushCount;  // Higher score for more captures
+        int captureBonus = 1000 * move.pushCount;
+        if (moveCount > AGGRESSION_THRESHOLD) {
+            captureBonus *= 1.5; // 50% bonus for aggressive captures
+        }
+        score += captureBonus;
     }
 
-    // Dynamic weights based on game progress
+    // Dynamic weights based on game progress and move count
     int marbleValue, centerValue, cohesionValue, edgeValue, threatValue, mobilityValue;
     getDynamicWeights(0.5f, marbleValue, centerValue, cohesionValue, 
         edgeValue, threatValue, mobilityValue,
@@ -216,24 +250,38 @@ int AbaloneAI::evaluateMove(const Board& board, const Move& move, Occupant side)
     int afterDanger = calculateEdgeDanger(tempBoard, side);
     score -= (afterDanger - beforeDanger) * edgeValue;
 
-    // Calculate threat potential
+    // Calculate threat potential - higher value for aggressive play
     int beforeThreat = calculateThreatPotential(board, side);
     int afterThreat = calculateThreatPotential(tempBoard, side);
-    score += (afterThreat - beforeThreat) * threatValue;
+    int threatBonus = (afterThreat - beforeThreat) * threatValue;
+    
+    // Increase the threat bonus after AGGRESSION_THRESHOLD moves
+    if (moveCount > AGGRESSION_THRESHOLD) {
+        threatBonus *= 1.5; // 50% higher threat bonus
+    }
+    score += threatBonus;
 
     // Calculate mobility
     int beforeMobility = calculateMobility(board, side);
     int afterMobility = calculateMobility(tempBoard, side);
     score += (afterMobility - beforeMobility) * mobilityValue;
 
-    // Bonus for pushing opponent marbles off the edge
+    // Extra bonus for pushing opponent marbles off the edge
     if (move.pushCount > 0) {
-        score += 50 * move.pushCount;
+        int pushBonus = 50 * move.pushCount;
+        if (moveCount > AGGRESSION_THRESHOLD) {
+            pushBonus *= 2; // Double the bonus after threshold
+        }
+        score += pushBonus;
     }
 
-    // Bonus for inline moves (usually more powerful)
+    // Increase bonus for inline moves when playing aggressively
     if (move.isInline) {
-        score += 20;
+        int inlineBonus = 20;
+        if (moveCount > AGGRESSION_THRESHOLD) {
+            inlineBonus = 40; // Double the bonus for inline moves
+        }
+        score += inlineBonus;
     }
 
     // Bonus for moves that go away from the edge if we're already in danger
@@ -241,8 +289,32 @@ int AbaloneAI::evaluateMove(const Board& board, const Move& move, Occupant side)
         score += (beforeDanger - afterDanger) * 20;
     }
 
+    // After AGGRESSION_THRESHOLD, add bonus for moves that approach opponent marbles
+    if (moveCount > AGGRESSION_THRESHOLD) {
+        // Check if we're moving toward opponent pieces
+        for (int idx : move.marbleIndices) {
+            int targetIdx = board.neighbors[idx][move.direction];
+            if (targetIdx >= 0) {
+                Occupant opponent = (side == Occupant::BLACK) ? Occupant::WHITE : Occupant::BLACK;
+                // Check cells in the movement direction for opponent pieces
+                int nextIdx = board.neighbors[targetIdx][move.direction];
+                if (nextIdx >= 0 && board.occupant[nextIdx] == opponent) {
+                    score += 30; // Bonus for approaching opponent pieces
+                }
+            }
+        }
+    }
+
     return score;
 }
+
+// Increments the move counter when a move is applied
+void AbaloneAI::incrementMoveCount() {
+    moveCount++;
+    std::cout << "Move count: " << moveCount << std::endl;
+}
+
+
 
 int AbaloneAI::calculateMobility(const Board& board, Occupant side) {
     int mobilityScore = 0;
@@ -643,6 +715,9 @@ std::pair<Move, int> AbaloneAI::findBestMoveIterativeDeepening(Board& board, int
         bestMove = result.first;
         bestScore = result.second;
     }
+
+    // incrementMoveCount(); // Increment move count after finding the best move
+    incrementMoveCount(); // Increment move count after finding the best move
 
     // At the end of search, print TT usage statistics
     std::cout << "Transposition table usage: " << transpositionTable.getUsage() << "%" << std::endl;

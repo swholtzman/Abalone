@@ -8,6 +8,9 @@
 
 class AbaloneAI {
 private:
+    // Static move counter to track game progress
+    static int moveCount;
+
     // Maximum search depth
     int maxDepth;
     // Number of positions evaluated
@@ -96,6 +99,10 @@ public:
      * Default max search depth is 10.
      */
     std::pair<Move, int> findBestMoveIterativeDeepening(Board& board, int maxSearchDepth = 10);
+
+    // Increment the move counter
+    void incrementMoveCount();
+
 };
 
 #endif // ABALONE_AI_H
