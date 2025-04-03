@@ -1,16 +1,52 @@
 #include "AbaloneAI.h"
 #include "Board.h"
-#include "Evaluation.h"
-
 #include <limits>
 #include <algorithm>
 #include <chrono>
 #include <iostream>
-
+#include <thread>
+#include <future>
+#include <stack>
 
 // Evaluate the board position from BLACK's perspective
 // Add this constant
 const int STARTING_MARBLES = 14; // Standard Abalone has 14 marbles per side
+const int PUSHED_MARBLES = 6;
+
+// Get dynamic weights based on game progress
+void AbaloneAI::getDynamicWeights(float gameProgress, int& marbleValue, int& centerValue, int& cohesionValue, int& edgeValue, int& threatValue, int& mobilityValue) {
+    marbleValue = MARBLE_VALUE;
+    centerValue = 20;
+    cohesionValue = 5;
+    edgeValue = 10;
+    threatValue = 5;
+    mobilityValue = 2;
+
+    // Early game
+    if (gameProgress < 0.333f) {
+        marbleValue += 10;
+        centerValue += 20;
+        cohesionValue += 10;
+        edgeValue += 5;
+
+    // Midgame
+    } else if (gameProgress <= 0.666f) {
+        marbleValue += 5;
+        centerValue += 10;
+        cohesionValue += 5;
+        edgeValue += 10;
+        threatValue += 5;
+        mobilityValue += 5;
+
+    // Late game
+    } else {
+        marbleValue += 10;
+        centerValue -= 5;
+        cohesionValue += 15;
+        edgeValue += 15;
+        threatValue += 10;
+    }
+}
 
 // Modify evaluatePosition to adjust weights based on game phase
 int AbaloneAI::evaluatePosition(const Board& board) {
@@ -20,64 +56,28 @@ int AbaloneAI::evaluatePosition(const Board& board) {
     int blackMarbles = 0;
     int whiteMarbles = 0;
     for (int i = 0; i < Board::NUM_CELLS; i++) {
+        if (board.occupant[i] == Occupant::EMPTY)
+            continue;
+
         if (board.occupant[i] == Occupant::BLACK)
             blackMarbles++;
         else if (board.occupant[i] == Occupant::WHITE)
             whiteMarbles++;
     }
 
-    // Determine game phase (early, mid, late)
-    float gameProgress = 1.0f - ((blackMarbles + whiteMarbles) / (float)(2 * STARTING_MARBLES));
+    // Determine game phase based on marble count
+    int minMarbles = std::min(blackMarbles, whiteMarbles);
+    float gameProgress = static_cast<float>(STARTING_MARBLES - minMarbles) / PUSHED_MARBLES;
+    gameProgress = std::max(0.0f, std::min(gameProgress, 1.0f));  // Clamp to [0,1]
 
-    float earlyWeight = 1.0f - gameProgress;   // near 1.0 at start, goes to 0.0 late
-    float lateWeight = gameProgress;          // near 0.0 at start, goes to 1.0 late
+    // Dynamically adjust evaluation weights based on game progress
+    int marbleValue, centerValue, cohesionValue, edgeValue, threatValue, mobilityValue;
+    getDynamicWeights(gameProgress, marbleValue, centerValue, cohesionValue, edgeValue, threatValue, mobilityValue);
 
-    // adjust weight
-
-    // SCALES: 
-//   - marbleValue: becomes bigger in the late game (focus on finishing / pushing).
-//   - centerValue: more important early, less important late.
-//   - cohesionValue: more important early, somewhat less late.
-//   - edgeValue: potentially more important in mid-late, but you can also
-//     do a mild increase if you want. In the snippet, we keep it constant to show an example.
-
-    int marbleValue = (int)(MARBLE_VALUE * (0.5f + 1.5f * lateWeight));
-    //   - when gameProgress=0 (start), factor = 0.5 => half the usual MARBLE_VALUE
-    //   - when gameProgress=1 (late), factor = 2.0 => double the usual MARBLE_VALUE
-
-    int centerValue = (int)(10 * (1.0f - 0.6f * lateWeight));
-    //   - at start: factor = 1.0 => 10
-    //   - at end:   factor = 0.4 => 4
-
-    int cohesionValue = (int)(5 * (1.0f - 0.5f * lateWeight));
-    //   - at start: factor = 1.0 => 5
-    //   - at end:   factor = 0.5 => 2 or 3
-
-    int edgeValue = 15;
-    //   - you could also do: edgeValue = (int)(15 * (0.8f + 0.2f * lateWeight)) 
-    //     if you want to boost it slightly late game.
-
-    int threatValue = 10;  // If you want, you could do a partial scale, or keep it constant
-
-    int mobilityValue = (int)(3 * (1.0f - 0.7f * lateWeight));
-    //   - at start: factor=1.0 => 3
-    //   - at end:   factor=0.3 => ~1
-    //   This encourages mobility early, but it does not vanish entirely at the end.
-
-    int positionValue = (int)(8 * (1.0f - 0.5f * lateWeight));
-    //   - for your strategic positions
-
-    // int formationValue = (int)(12 * (0.8f + 0.2f * earlyWeight));
-    // //   - maybe more relevant in mid-early, so we keep it fairly large
-    // //   - you can pick any function you like
-
-    // int sumitoValue = (int)(15 * (0.5f + 0.5f * lateWeight));
-    // //   - sumito advantage can be valuable any time, but is often more important mid-late
-
-    // Calculate component values
+    // Calculate base score from marble count
     int score = (blackMarbles - whiteMarbles) * marbleValue;
 
-    // Center control
+    // Center control (same as previous implementation)
     int blackCenterControl = 0;
     int whiteCenterControl = 0;
     std::vector<int> centerCells = {
@@ -87,7 +87,6 @@ int AbaloneAI::evaluatePosition(const Board& board) {
         Board::notationToIndex("E4"),
         Board::notationToIndex("E6")
     };
-
     for (int idx : centerCells) {
         if (idx >= 0) {
             if (board.occupant[idx] == Occupant::BLACK)
@@ -105,36 +104,19 @@ int AbaloneAI::evaluatePosition(const Board& board) {
     score += (blackCohesion - whiteCohesion) * cohesionValue;
 
     // Edge danger
-    int blackEdgeDanger = calculateEdgeDanger(board, Occupant::BLACK);
-    int whiteEdgeDanger = calculateEdgeDanger(board, Occupant::WHITE);
-    score -= (blackEdgeDanger - whiteEdgeDanger) * edgeValue;
+    int blackEdgeVulnerability = calculateEdgeDanger(board, Occupant::BLACK);
+    int whiteEdgeVulnerability = calculateEdgeDanger(board, Occupant::WHITE);
+    score -= (blackEdgeVulnerability - whiteEdgeVulnerability) * edgeValue;
 
     // Threat potential
-    int blackThreats = calculateThreatPotential(board, Occupant::BLACK);
-    int whiteThreats = calculateThreatPotential(board, Occupant::WHITE);
-    score += (blackThreats - whiteThreats) * threatValue;
+    int blackThreat = calculateThreatPotential(board, Occupant::BLACK);
+    int whiteThreat = calculateThreatPotential(board, Occupant::WHITE);
+    score += (blackThreat - whiteThreat) * threatValue;
 
-    // mobility
+    // Mobility
     int blackMobility = calculateMobility(board, Occupant::BLACK);
     int whiteMobility = calculateMobility(board, Occupant::WHITE);
     score += (blackMobility - whiteMobility) * mobilityValue;
-
-    // positional advantage
-    int blackPositionalAdv = calculatePositionalAdvantage(board, Occupant::BLACK);
-    int whitePositionalAdv = calculatePositionalAdvantage(board, Occupant::WHITE);
-    score += (blackPositionalAdv - whitePositionalAdv) * positionValue;
-
-    // // Positional advantages that make the bot a pussy
-
-    // // Sumito advantages
-    // int blackSumito = calculateSumitoAdvantages(board, Occupant::BLACK);
-    // int whiteSumito = calculateSumitoAdvantages(board, Occupant::WHITE);
-    // score += (blackSumito - whiteSumito) * sumitoValue;
-
-    // // Formations
-    // int blackFormations = calculateFormations(board, Occupant::BLACK);
-    // int whiteFormations = calculateFormations(board, Occupant::WHITE);
-    // score += (blackFormations - whiteFormations) * formationValue;
 
     return score;
 }
@@ -147,6 +129,10 @@ int AbaloneAI::evaluateMove(const Board& board, const Move& move, Occupant side)
     if (move.pushCount > 0) {
         score += 1000 * move.pushCount;  // Higher score for more captures
     }
+
+    // Dynamic weights based on game progress
+    int marbleValue, centerValue, cohesionValue, edgeValue, threatValue, mobilityValue;
+    getDynamicWeights(0.5f, marbleValue, centerValue, cohesionValue, edgeValue, threatValue, mobilityValue);
 
     // Calculate center of the board (approximately E5 in standard notation)
     int centerIdx = Board::notationToIndex("E5");
@@ -183,24 +169,28 @@ int AbaloneAI::evaluateMove(const Board& board, const Move& move, Occupant side)
 
     // Add points if the move improves centralization (lower distance is better)
     if (afterCentralization < beforeCentralization) {
-        score += (beforeCentralization - afterCentralization) * 10;
+        score += (beforeCentralization - afterCentralization) * centerValue;
     }
 
     // Prioritize group-forming moves
     int beforeCohesion = calculateCohesion(board, side);
     int afterCohesion = calculateCohesion(tempBoard, side);
-    score += (afterCohesion - beforeCohesion) * 5;
+    score += (afterCohesion - beforeCohesion) * cohesionValue;
 
     // Penalize moves that put marbles in danger
     int beforeDanger = calculateEdgeDanger(board, side);
     int afterDanger = calculateEdgeDanger(tempBoard, side);
-    score -= (afterDanger - beforeDanger) * 15;
+    score -= (afterDanger - beforeDanger) * edgeValue;
 
-    // Prioritize moves that increase threat potential
-    int beforeThreats = calculateThreatPotential(board, side);
-    int afterThreats = calculateThreatPotential(tempBoard, side);
-    score += (afterThreats - beforeThreats) * 10;
+    // Calculate threat potential
+    int beforeThreat = calculateThreatPotential(board, side);
+    int afterThreat = calculateThreatPotential(tempBoard, side);
+    score += (afterThreat - beforeThreat) * threatValue;
 
+    // Calculate mobility
+    int beforeMobility = calculateMobility(board, side);
+    int afterMobility = calculateMobility(tempBoard, side);
+    score += (afterMobility - beforeMobility) * mobilityValue;
 
     // Bonus for pushing opponent marbles off the edge
     if (move.pushCount > 0) {
@@ -220,60 +210,6 @@ int AbaloneAI::evaluateMove(const Board& board, const Move& move, Occupant side)
     return score;
 }
 
-int AbaloneAI::calculateCohesion(const Board& board, Occupant side) {
-    int cohesion = 0;
-    for (int i = 0; i < Board::NUM_CELLS; i++) {
-        if (board.occupant[i] == side) {
-            for (int d = 0; d < Board::NUM_DIRECTIONS; d++) {
-                int neighbor = board.neighbors[i][d];
-                if (neighbor >= 0 && board.occupant[neighbor] == side)
-                    cohesion++;
-            }
-        }
-    }
-    return cohesion;
-}
-
-int AbaloneAI::calculateEdgeDanger(const Board& board, Occupant side) {
-    int edgeCount = 0;
-    for (int i = 0; i < Board::NUM_CELLS; i++) {
-        if (board.occupant[i] == side) {
-            bool onEdge = false;
-            for (int d = 0; d < Board::NUM_DIRECTIONS; d++) {
-                if (board.neighbors[i][d] < 0) {  // neighbor off-board
-                    onEdge = true;
-                    break;
-                }
-            }
-            if (onEdge)
-                edgeCount++;
-        }
-    }
-    return edgeCount;
-}
-
-int AbaloneAI::calculateThreatPotential(const Board& board, Occupant side) {
-    int threatScore = 0;
-
-    // Check for potential threats in each direction
-    for (int i = 0; i < Board::NUM_CELLS; i++) {
-        if (board.occupant[i] == side) {
-            for (int d = 0; d < Board::NUM_DIRECTIONS; d++) {
-                int neighbor = board.neighbors[i][d];
-                if (neighbor >= 0 && board.occupant[neighbor] == Occupant::EMPTY) {
-                    // Check if the next cell is an opponent
-                    int nextNeighbor = board.neighbors[neighbor][d];
-                    if (nextNeighbor >= 0 && board.occupant[nextNeighbor] != side) {
-                        threatScore++;
-                    }
-                }
-            }
-        }
-    }
-
-    return threatScore;
-}
-
 int AbaloneAI::calculateMobility(const Board& board, Occupant side) {
     int mobilityScore = 0;
 
@@ -281,7 +217,6 @@ int AbaloneAI::calculateMobility(const Board& board, Occupant side) {
         if (board.occupant[i] == side) {
             for (int d = 0; d < Board::NUM_DIRECTIONS; d++) {
                 int neighbor = board.neighbors[i][d];
-                // Count empty neighbors (simple mobility)
                 if (neighbor >= 0 && board.occupant[neighbor] == Occupant::EMPTY) {
                     mobilityScore++;
                 }
@@ -292,136 +227,74 @@ int AbaloneAI::calculateMobility(const Board& board, Occupant side) {
     return mobilityScore;
 }
 
-
-
-int AbaloneAI::calculatePositionalAdvantage(const Board& board, Occupant side) {
-    int positionScore = 0;
-
-    // Define strategic positions (beyond just center)
-    std::vector<int> strategicPositions = {
-        // Example positions - you would customize these
-        Board::notationToIndex("D4"), Board::notationToIndex("F4"),
-        Board::notationToIndex("C5"), Board::notationToIndex("G5"),
-        Board::notationToIndex("D6"), Board::notationToIndex("F6")
-    };
-
-    // Count control of strategic positions
-    for (int idx : strategicPositions) {
-        if (idx >= 0 && board.occupant[idx] == side) {
-            positionScore += 8;
+// Calculate the cohesion of a group of marbles
+int AbaloneAI::calculateCohesion(const Board& board, Occupant side) {
+    std::vector<bool> visited(Board::NUM_CELLS, false);
+    int maxSize = 0;
+    for (int i = 0; i < Board::NUM_CELLS; i++) {
+        if (board.occupant[i] == side && !visited[i]) {
+            int size = 0;
+            std::stack<int> s;
+            s.push(i);
+            visited[i] = true;
+            while (!s.empty()) {
+                int cell = s.top();
+                s.pop();
+                size++;
+                for (int d = 0; d < Board::NUM_DIRECTIONS; d++) {
+                    int n = board.neighbors[cell][d];
+                    if (n >= 0 && board.occupant[n] == side && !visited[n]) {
+                        s.push(n);
+                        visited[n] = true;
+                    }
+                }
+            }
+            maxSize = std::max(maxSize, size);
         }
     }
-
-    return positionScore;
+    return maxSize;
 }
 
-int AbaloneAI::calculateSumitoAdvantages(const Board& board, Occupant side) {
-    int sumitoScore = 0;
+// Calculate the number of marbles on the edge of the board
+int AbaloneAI::calculateEdgeDanger(const Board& board, Occupant side) {
+    int vulnerability = 0;
+    for (int i = 0; i < Board::NUM_CELLS; i++) {
+        if (board.occupant[i] == side) {
+            bool onEdge = false;
+            for (int d = 0; d < Board::NUM_DIRECTIONS; d++) {
+                if (board.neighbors[i][d] < 0) {
+                    onEdge = true;
+                    break;
+                }
+            }
+            if (onEdge) {
+                int support = 0;
+                for (int d = 0; d < Board::NUM_DIRECTIONS; d++) {
+                    int n = board.neighbors[i][d];
+                    if (n >= 0 && board.occupant[n] == side) support++;
+                }
+                vulnerability += std::max(0, 3 - support);
+            }
+        }
+    }
+    return vulnerability;
+}
+
+// Calculate the threat potential of a player
+int AbaloneAI::calculateThreatPotential(const Board& board, Occupant side) {
     Occupant opponent = (side == Occupant::BLACK) ? Occupant::WHITE : Occupant::BLACK;
-
+    int vulnerability = 0;
     for (int i = 0; i < Board::NUM_CELLS; i++) {
-        if (board.occupant[i] != side) continue;
-
-        for (int d = 0; d < Board::NUM_DIRECTIONS; d++) {
-            // Count friendly marbles in a row
-            int friendlyCount = 1;
-            int currentIdx = i;
-
-            while (friendlyCount < 3) { // Maximum 3 marbles can push in Abalone
-                int nextIdx = board.neighbors[currentIdx][d];
-                if (nextIdx < 0 || board.occupant[nextIdx] != side) break;
-                friendlyCount++;
-                currentIdx = nextIdx;
+        if (board.occupant[i] == opponent && board.isOnEdge(i)) {
+            int support = 0;
+            for (int d = 0; d < Board::NUM_DIRECTIONS; d++) {
+                int n = board.neighbors[i][d];
+                if (n >= 0 && board.occupant[n] == opponent) support++;
             }
-
-            // Now check for opponent marbles in the opposite direction
-            if (friendlyCount >= 2) { // Need at least 2 marbles to push
-                int oppositeDir = (d + 3) % 6; // Assuming 6 directions, get opposite
-                int oppositeIdx = board.neighbors[i][oppositeDir];
-
-                if (oppositeIdx >= 0 && board.occupant[oppositeIdx] == opponent) {
-                    // Count opponent marbles
-                    int opponentCount = 1;
-                    currentIdx = oppositeIdx;
-
-                    while (true) {
-                        int nextIdx = board.neighbors[currentIdx][oppositeDir];
-                        if (nextIdx < 0 || board.occupant[nextIdx] != opponent) break;
-                        opponentCount++;
-                        currentIdx = nextIdx;
-                    }
-
-                    // Check if we have sumito advantage (can push opponent)
-                    if (friendlyCount > opponentCount) {
-                        // Higher score for pushing more marbles or being close to edge
-                        int edgeDistance = 0;
-                        currentIdx = oppositeIdx;
-                        while (opponentCount-- > 0) {
-                            edgeDistance++;
-                            int nextIdx = board.neighbors[currentIdx][oppositeDir];
-                            if (nextIdx < 0) {
-                                // Can push off the edge!
-                                sumitoScore += 100;
-                                break;
-                            }
-                            currentIdx = nextIdx;
-                        }
-
-                        // Regular sumito advantage
-                        sumitoScore += (10 - edgeDistance * 3);
-                    }
-                }
-            }
+            vulnerability += std::max(0, 3 - support);  // Penalize low support
         }
     }
-
-    return sumitoScore;
-}
-
-// Add this function to recognize and reward strong formations
-int AbaloneAI::calculateFormations(const Board& board, Occupant side) {
-    int formationScore = 0;
-
-    // Check for lines of 3 or more marbles in each direction
-    for (int i = 0; i < Board::NUM_CELLS; i++) {
-        if (board.occupant[i] != side) continue;
-
-        for (int d = 0; d < Board::NUM_DIRECTIONS; d++) {
-            // Count consecutive marbles in this direction
-            int count = 1;
-            int currentIdx = i;
-
-            while (true) {
-                int nextIdx = board.neighbors[currentIdx][d];
-                if (nextIdx < 0 || board.occupant[nextIdx] != side) break;
-                count++;
-                currentIdx = nextIdx;
-            }
-
-            // Reward formations of 3+ marbles (stronger with more marbles)
-            if (count >= 3) {
-                formationScore += (count - 2) * 5;
-
-                // Extra bonus for formations not on the edge
-                bool isEdgeFormation = false;
-                for (int j = 0; j < count; j++) {
-                    for (int dir = 0; dir < Board::NUM_DIRECTIONS; dir++) {
-                        if (board.neighbors[currentIdx][dir] < 0) {
-                            isEdgeFormation = true;
-                            break;
-                        }
-                    }
-                    if (isEdgeFormation) break;
-                }
-
-                if (!isEdgeFormation) {
-                    formationScore += count * 2;
-                }
-            }
-        }
-    }
-
-    return formationScore;
+    return vulnerability;
 }
 
 bool AbaloneAI::isTimeUp() {
@@ -494,6 +367,10 @@ void AbaloneAI::orderMoves(std::vector<Move>& moves, const Board& board, Occupan
             moveScore = evaluateMove(board, move, side);
         }
 
+        for (int idx : move.marbleIndices) {
+            moveScore += historyTable[idx][move.direction];
+        }
+
         scoredMoves.push_back(ScoredMove(move, moveScore));
     }
 
@@ -507,23 +384,28 @@ void AbaloneAI::orderMoves(std::vector<Move>& moves, const Board& board, Occupan
 }
 
 int AbaloneAI::minimax(Board& board, int depth, int alpha, int beta, bool maximizingPlayer) {
+    Occupant currentPlayer = maximizingPlayer ? Occupant::BLACK : Occupant::WHITE;
+
     if (isTimeUp()) {
         timeoutOccurred = true;
         return evaluatePosition(board);
     }
-    if (depth == 0)
+    if (depth == 0) {
+        std::vector<Move> captureMoves = board.generateCaptureMoves(currentPlayer);
+        if (!captureMoves.empty()) {
+            return quiescenceSearch(board, alpha, beta, currentPlayer);
+        }
         return evaluatePosition(board);
+    }
 
-    // Check transposition table first
+    // Transposition Table Check
     int origAlpha = alpha;
     int origBeta = beta;
     Move bestMove;
     int score;
     MoveType moveType;
 
-    // Check if the current board position is already stored in the transposition table
     if (transpositionTable.probeEntry(board, depth, score, moveType, bestMove)) {
-        // TT hit - use stored information
         if (moveType == MoveType::EXACT) {
             return score;
         }
@@ -533,104 +415,103 @@ int AbaloneAI::minimax(Board& board, int depth, int alpha, int beta, bool maximi
         else if (moveType == MoveType::UPPERBOUND) {
             beta = std::min(beta, score);
         }
-
         if (alpha >= beta) {
             pruningCount++;
             return score;
         }
     }
 
-    Occupant currentPlayer = maximizingPlayer ? Occupant::BLACK : Occupant::WHITE;
+    // Generate possible moves
     std::vector<Move> possibleMoves = board.generateMoves(currentPlayer);
 
-    // Game over check: no legal moves
-    if (possibleMoves.empty())
+    if (possibleMoves.empty()) {
         return maximizingPlayer ? std::numeric_limits<int>::min() : std::numeric_limits<int>::max();
+    }
 
-    // Get best move from TT (for move ordering)
+    // Move ordering
     Move ttBestMove;
     bool hasTTMove = transpositionTable.getBestMove(board, ttBestMove);
-
-    // Order moves using the new ordering function
     orderMoves(possibleMoves, board, currentPlayer, hasTTMove ? ttBestMove : Move());
 
     MoveType entryType = MoveType::UPPERBOUND;
     Move localBestMove;
+    int value = maximizingPlayer ? std::numeric_limits<int>::min() : std::numeric_limits<int>::max();
 
-    if (maximizingPlayer) {
-        int value = std::numeric_limits<int>::min();
-        for (const Move& move : possibleMoves) {
-            Board tempBoard = board;
-            tempBoard.applyMove(move);
-            int eval = minimax(tempBoard, depth - 1, alpha, beta, false);
+    // PVS: Principal Variation Search
+    bool firstMove = true;
+    for (const Move& move : possibleMoves) {
+        Board tempBoard = board;
+        tempBoard.applyMove(move);
 
+        int eval;
+        if (firstMove) {
+            // Full window search for the first move
+            eval = minimax(tempBoard, depth - 1, alpha, beta, !maximizingPlayer);
+            firstMove = false;
+        }
+        else {
+            // Null window search (PVS)
+            eval = minimax(tempBoard, depth - 1, alpha, alpha + 1, !maximizingPlayer);
+            if (eval > alpha && eval < beta) {
+                // Full re-search if null-window fails
+                eval = minimax(tempBoard, depth - 1, alpha, beta, !maximizingPlayer);
+            }
+        }
+
+        if (maximizingPlayer) {
             if (eval > value) {
                 value = eval;
-                localBestMove = move;  // Remember best move for TT
+                localBestMove = move;
             }
-
-            alpha = std::max(alpha, value);
-            if (beta <= alpha) {
-                pruningCount++;
-                // this move caused a beta cutoff, so update killer moves
-                updateKillerMove(move, depth);
-                break;  // Beta cutoff
-            }
-        }
-
-        // Update TT entry type
-        if (value <= origAlpha) {
-            entryType = MoveType::UPPERBOUND;
-        }
-        else if (value >= beta) {
-            entryType = MoveType::LOWERBOUND;
+            alpha = std::max(alpha, eval);
         }
         else {
-            entryType = MoveType::EXACT;
-        }
-
-        // Store in transposition table
-        transpositionTable.storeEntry(board, depth, value, entryType, localBestMove);
-
-        return value;
-    }
-    else {
-        int value = std::numeric_limits<int>::max();
-        for (const Move& move : possibleMoves) {
-            Board tempBoard = board;
-            tempBoard.applyMove(move);
-            int eval = minimax(tempBoard, depth - 1, alpha, beta, true);
-
             if (eval < value) {
                 value = eval;
-                localBestMove = move;  // Remember best move for TT
+                localBestMove = move;
             }
+            beta = std::min(beta, eval);
+        }
 
-            beta = std::min(beta, value);
-            if (beta <= alpha) {
-                pruningCount++;
-                // this move caused an alpha cutoff, so update killer moves
-                updateKillerMove(move, depth);
-                break;  // Alpha cutoff
+        if (beta <= alpha) {
+            pruningCount++;
+            updateKillerMove(move, depth);
+            for (int idx : move.marbleIndices) {
+                historyTable[idx][move.direction] += depth * depth;
             }
+            break;
         }
-
-        // Update TT entry type
-        if (value <= origAlpha) {
-            entryType = MoveType::UPPERBOUND;
-        }
-        else if (value >= beta) {
-            entryType = MoveType::LOWERBOUND;
-        }
-        else {
-            entryType = MoveType::EXACT;
-        }
-
-        // Store in transposition table
-        transpositionTable.storeEntry(board, depth, value, entryType, localBestMove);
-
-        return value;
     }
+
+    // Store in transposition table
+    if (value <= origAlpha) {
+        entryType = MoveType::UPPERBOUND;
+    }
+    else if (value >= origBeta) {
+        entryType = MoveType::LOWERBOUND;
+    }
+    else {
+        entryType = MoveType::EXACT;
+    }
+    transpositionTable.storeEntry(board, depth, value, entryType, localBestMove);
+
+    return value;
+}
+
+int AbaloneAI::quiescenceSearch(Board& board, int alpha, int beta, Occupant side) {
+    int standPat = evaluatePosition(board);
+    if (standPat >= beta) return beta;
+    if (alpha < standPat) alpha = standPat;
+
+    std::vector<Move> captureMoves = board.generateCaptureMoves(side);  // Assume this exists or adapt
+    for (const Move& move : captureMoves) {
+        Board tempBoard = board;
+        tempBoard.applyMove(move);
+        int score = -quiescenceSearch(tempBoard, -beta, -alpha, (side == Occupant::BLACK) ? Occupant::WHITE : Occupant::BLACK);
+        if (score >= beta) return beta;
+        if (score > alpha) alpha = score;
+    }
+    return alpha;
 }
 
 AbaloneAI::AbaloneAI(int depth, int timeLimitMs, size_t ttSizeInMB)
@@ -645,23 +526,18 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board) {
     timeoutOccurred = false;
     startTime = std::chrono::high_resolution_clock::now();
 
-    // Clear transposition table before a new search
-    // transpositionTable.clearTable();
     transpositionTable.incrementAge();
-
-    // Reset killer moves for a new search
     killerMoves = std::vector<std::array<Move, MAX_KILLER_MOVES>>(maxDepth + 1);
+    historyTable = std::vector<std::vector<int>>(Board::NUM_CELLS, std::vector<int>(Board::NUM_DIRECTIONS, 0));
 
     Occupant currentPlayer = board.nextToMove;
     bool maximizingPlayer = (currentPlayer == Occupant::BLACK);
     std::vector<Move> possibleMoves = board.generateMoves(currentPlayer);
 
     if (possibleMoves.empty()) {
-        Move noMove;
-        return std::make_pair(noMove, 0);
+        return std::make_pair(Move(), 0);
     }
 
-    // Order the root moves
     Move ttBestMove;
     bool hasTTMove = transpositionTable.getBestMove(board, ttBestMove);
     orderMoves(possibleMoves, board, currentPlayer, hasTTMove ? ttBestMove : Move());
@@ -669,44 +545,61 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board) {
     Move bestMove = possibleMoves[0];
     int bestScore = maximizingPlayer ? std::numeric_limits<int>::min() : std::numeric_limits<int>::max();
 
-    // Gather statistics for move ordering effectiveness
-    int totalMoves = 0;
-    int bestMoveIndex = 0;
+// Sets thread count to 8 
+// ======================
+// WARNING!!! THIS IS SYSTEM SPECIFIC
+// ======================
+    int threadCount = std::min(8, (int)possibleMoves.size());
+    std::vector<std::future<std::pair<int, Move>>> futures;
+    
+    for (int i = 0; i < threadCount; ++i) {
+        futures.push_back(std::async(std::launch::async, [&, i]() {
+            const Move& move = possibleMoves[i];
+            Board tempBoard = board;
+            tempBoard.applyMove(move);
+            int score = this->minimax(tempBoard, maxDepth - 1,
+                                      std::numeric_limits<int>::min(),
+                                      std::numeric_limits<int>::max(),
+                                      !maximizingPlayer);
+            return std::make_pair(score, move);
+        }));
+    }
 
-    for (size_t i = 0; i < possibleMoves.size(); i++) {
-        const Move& move = possibleMoves[i];
-        totalMoves++;
+//  // Changes thread count
+//     std::vector<std::future<std::pair<int, Move>>> futures;
+//     int threadCount = std::min((int)possibleMoves.size(), static_cast<int>(std::thread::hardware_concurrency()));
+    
+//     for (const Move& move : possibleMoves) {
+//         futures.push_back(std::async(std::launch::async, [&board, move, this, maximizingPlayer]() {
+//             Board tempBoard = board;
+//             tempBoard.applyMove(move);
+//             int score = this->minimax(tempBoard, maxDepth - 1,
+//                                       std::numeric_limits<int>::min(),
+//                                       std::numeric_limits<int>::max(),
+//                                       !maximizingPlayer);
+//             return std::make_pair(score, move);
+//         }));
+//     }
 
-        Board tempBoard = board;
-        tempBoard.applyMove(move);
-        int score = minimax(tempBoard, maxDepth - 1,
-            std::numeric_limits<int>::min(),
-            std::numeric_limits<int>::max(),
-            !maximizingPlayer);
-        if ((maximizingPlayer && score > bestScore) || (!maximizingPlayer && score < bestScore)) {
-            bestScore = score;
-            bestMove = move;
-            bestMoveIndex = i;
-        }
+    for (auto& f : futures) {
         if (isTimeUp()) {
             timeoutOccurred = true;
             break;
         }
+        auto [score, move] = f.get();
+        if ((maximizingPlayer && score > bestScore) || (!maximizingPlayer && score < bestScore)) {
+            bestScore = score;
+            bestMove = move;
+        }
     }
+
     auto end = std::chrono::high_resolution_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - startTime).count();
+
     std::cout << "Nodes evaluated: " << nodesEvaluated << std::endl;
     std::cout << "Time taken: " << elapsed << " ms" << std::endl;
     std::cout << "Timeout occurred: " << (timeoutOccurred ? "Yes" : "No") << std::endl;
     std::cout << "Best move score: " << bestScore << std::endl;
-
-    // Report move ordering effectiveness
-    if (totalMoves > 0) {
-        std::cout << "Move ordering effectiveness: best move was #" << (bestMoveIndex + 1)
-            << " out of " << totalMoves << " moves" << std::endl;
-        double effectiveness = 100.0 * (1.0 - static_cast<double>(bestMoveIndex) / totalMoves);
-        std::cout << "Move ordering efficiency: " << effectiveness << "%" << std::endl;
-    }
 
     return std::make_pair(bestMove, bestScore);
 }
@@ -759,6 +652,7 @@ std::pair<Move, int> AbaloneAI::findBestMoveIterativeDeepening(Board& board, int
             break;
         }
     }
+
     if (!foundMove) {
         std::cout << "Warning: No complete depth search finished. Using 1-ply search." << std::endl;
         maxDepth = 1;

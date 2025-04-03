@@ -54,6 +54,8 @@ public:
     std::vector<std::pair<int, int>> blackOccupantsCoords;
     std::vector<std::pair<int, int>> whiteOccupantsCoords;
 
+    static std::unordered_map<long long, int> s_coordToIndex;
+
     // Direction offsets (dx, dy) in board coordinates.
     // Order: W=(-1,0), E=(+1,0), NW=(0,+1), NE=(+1,+1), SW=(-1,-1), SE=(0,-1)
     static const std::array<std::pair<int, int>, NUM_DIRECTIONS> DIRECTION_OFFSETS;
@@ -133,6 +135,16 @@ public:
         }
     }
 
+    std::vector<Move> generateCaptureMoves(Occupant side) const;
+
+    bool isOnEdge(int index) const {
+        if (index < 0 || index >= NUM_CELLS) return false;
+        for (int d = 0; d < NUM_DIRECTIONS; d++) {
+            if (neighbors[index][d] < 0) return true;
+        }
+        return false;
+    }
+
     // Returns the occupant at a given cell index.
     Occupant getOccupant(int index) const {
         return (index >= 0 && index < NUM_CELLS) ? occupant[index] : Occupant::EMPTY;
@@ -146,7 +158,7 @@ private:
     // Flag to indicate if the coordinate mapping has been initialized.
     static bool s_mappingInitialized;
     // Mapping from a packed coordinate (m,y) to a cell index.
-    static std::unordered_map<long long, int> s_coordToIndex;
+
 
     // Initializes the coordinate mapping.
     static void initMapping();
