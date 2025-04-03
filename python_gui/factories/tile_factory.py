@@ -9,7 +9,7 @@ class TileFactory(object):
     def create_tile(self,  col, row, x, y):
         # tile_id = f"({col},{row})"
         tile_model = TileModel(
-            tile_id=f"{chr(ord('A') + (col - 1))}{row}",
+            tile_id = f"{chr(ord('A') + (row - 1))}{col}",
             col=col,
             row=row,
             is_occupied=False,

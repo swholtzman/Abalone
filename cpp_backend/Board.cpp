@@ -389,7 +389,7 @@ string Board::moveToNotation(const Move& m, Occupant side) {
     notation += ") ";
     notation += (m.isInline ? "i" : "s");
     notation += " → ";
-    static const char* DIRS[] = { "SE", "NW", "E", "NE", "SW", "W" };
+    static const char* DIRS[] = { "W", "E", "NW", "NE", "SW", "SE" };
     notation += DIRS[m.direction];
     return notation;
 }

@@ -176,6 +176,16 @@ class GameBoard:
         """
         self._clear_occupants()
 
+        # opponent_coords = [
+        #     (5,9),(6,9),(8,9),(9,9),(4,8),(5,8),(6,8),
+        #     (7,8),(8,8),(9,8),(4,7),(5,7),(7,7),(8,7)
+        # ]
+        #
+        # host_coords = [
+        #     (2,3),(3,3),(5,3),(6,3),(1,2),(2,2),(3,2),
+        #     (4,2),(5,2),(6,2),(1,1),(2,1),(4,1),(5,1)
+        # ]
+
         opponent_coords = [
             (5, 9), (6, 9), (4, 8), (5, 8), (6, 8), (4, 7), (5, 7),
             (5, 3), (6, 3), (4, 2), (5, 2), (6, 2), (4, 1), (5, 1)
@@ -889,8 +899,8 @@ class GameBoard:
     @staticmethod
     def _coord_to_str(col, row):
         """Convert (col, row) to display format, e.g., (1,5) -> 'A5'."""
-        col_letter = chr(ord('A') + col - 1)
-        return f"{col_letter}{row}"
+        row_letter = chr(ord('A') + row - 1)
+        return f"{row_letter}{col}"
 
     def _generate_board_state_output(self):
         """Generate board state for C++ algorithm after a move."""
@@ -953,10 +963,11 @@ class GameBoard:
     @staticmethod
     def _str_to_coord(tile_str):
         """Convert a tile identifier like 'E3' to (col, row) coordinates."""
-        col_letter = tile_str[0].upper()
-        row_num = int(tile_str[1:])
-        col = ord(col_letter) - ord('A') + 1
-        return col, row_num
+        row_letter = tile_str[0].upper()
+        col_num = int(tile_str[1:])
+        row = ord(row_letter) - ord('A') + 1
+        col = col_num
+        return col, row
 
     def parse_move(self, move_str):
         """Parse the AI move string into a structured dictionary."""
