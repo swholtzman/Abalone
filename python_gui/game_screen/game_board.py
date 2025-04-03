@@ -1,3 +1,4 @@
+import re
 import time
 
 from PyQt5 import QtWidgets, QtCore
@@ -924,3 +925,52 @@ class GameBoard:
 
     def set_ai_update_callback(self, callback):
         self.ai_update_callback = callback
+
+    def highlight_suggested_move(self, parsed_move):
+        """Highlight the AI-suggested move by selecting tiles and setting destination options."""
+        # Clear existing highlights
+        self._clear_options()
+        self._clear_selected()
+
+        # Set selected tiles
+        self._selected_tiles = parsed_move["selected_coords"]
+        for coord in self._selected_tiles:
+            if coord in self._tiles:
+                model, view = self._tiles[coord]
+                model.is_selected = True
+                view.refresh()
+
+        # Calculate and highlight destination tiles
+        dx, dy = self.DIRECTIONS[parsed_move["direction"]]
+        highlight_coords = [(c + dx, r + dy) for (c, r) in self._selected_tiles]
+        for coord in highlight_coords:
+            if coord in self._tiles:
+                model, view = self._tiles[coord]
+                model.is_option = True
+                view.refresh()
+
+    @staticmethod
+    def _str_to_coord(tile_str):
+        """Convert a tile identifier like 'E3' to (col, row) coordinates."""
+        col_letter = tile_str[0].upper()
+        row_num = int(tile_str[1:])
+        col = ord(col_letter) - ord('A') + 1
+        return col, row_num
+
+    def parse_move(self, move_str):
+        """Parse the AI move string into a structured dictionary."""
+        pattern = r'\((\w),\s*([\w\d]+(?:,\s*[\w\d]+)*)\)\s*(\w)\s*→\s*(\w+)'
+        match = re.match(pattern, move_str)
+        if not match:
+            raise ValueError(f"Invalid move string format: {move_str}")
+        player = match.group(1)
+        tiles_str = match.group(2).split(', ')
+        move_type = match.group(3)
+        direction = match.group(4)
+        selected_coords = [self._str_to_coord(tile) for tile in tiles_str]
+        return {
+            "player": player,
+            "selected_coords": selected_coords,
+            "move_type": move_type,
+            "direction": direction
+        }

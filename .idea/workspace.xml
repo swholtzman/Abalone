@@ -23,21 +23,11 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="78b3a9d5-048c-4cf1-b738-3aedf66aacb0" name="Changes" comment="### Path 1.1.5&#10;- Pushed March 27, 2025 2:42pm ; Sam Holtzman&#10;- Undo button fixed">
-      <change afterPath="$PROJECT_DIR$/public/resources/images/victory.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/python_gui/game_screen/components/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/python_gui/victory_screen/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/python_gui/victory_screen/win_screen.py" afterDir="false" />
+    <list default="true" id="78b3a9d5-048c-4cf1-b738-3aedf66aacb0" name="Changes" comment="### Path 1.1.6&#10;- Pushed March 31, 2025 7:48pm ; Sam Holtzman&#10;- Multiple QOL (Quality of Life) improvements">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/python_gui/agent_secretary.py" beforeDir="false" afterPath="$PROJECT_DIR$/python_gui/agent_secretary.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/python_gui/factories/scoreboard_factory.py" beforeDir="false" afterPath="$PROJECT_DIR$/python_gui/factories/scoreboard_factory.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/python_gui/game_screen/components/tile/tile_view.py" beforeDir="false" afterPath="$PROJECT_DIR$/python_gui/game_screen/components/tile/tile_view.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/python_gui/game_screen/game_board.py" beforeDir="false" afterPath="$PROJECT_DIR$/python_gui/game_screen/game_board.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/python_gui/game_screen/game_view.py" beforeDir="false" afterPath="$PROJECT_DIR$/python_gui/game_screen/game_view.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/python_gui/game_screen/info_panel/info_panel_view.py" beforeDir="false" afterPath="$PROJECT_DIR$/python_gui/game_screen/info_panel/info_panel_view.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/python_gui/game_screen/move_history/move_history_model.py" beforeDir="false" afterPath="$PROJECT_DIR$/python_gui/game_screen/move_history/move_history_model.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/python_gui/game_screen/scoreboard/scoreboard_model.py" beforeDir="false" afterPath="$PROJECT_DIR$/python_gui/game_screen/scoreboard/scoreboard_model.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/python_gui/main_app.py" beforeDir="false" afterPath="$PROJECT_DIR$/python_gui/main_app.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/setup_and_run.sh" beforeDir="false" afterPath="$PROJECT_DIR$/setup_and_run.sh" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -248,7 +238,10 @@
       <workItem from="1743316461269" duration="170000" />
       <workItem from="1743461148856" duration="9217000" />
       <workItem from="1743473245938" duration="145000" />
-      <workItem from="1743473399251" duration="2151000" />
+      <workItem from="1743473399251" duration="2359000" />
+      <workItem from="1743546431748" duration="155000" />
+      <workItem from="1743550457111" duration="87000" />
+      <workItem from="1743637924474" duration="8456000" />
     </task>
     <task id="LOCAL-00001" summary="Black moves first">
       <option name="closed" value="true" />
@@ -322,11 +315,30 @@
       <option name="project" value="LOCAL" />
       <updated>1743111772399</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="### Path 1.1.6&#10;- Pushed March 31, 2025 7:48pm ; Sam Holtzman&#10;- Multiple QOL (Quality of Life) improvements">
+      <option name="closed" value="true" />
+      <created>1743475757804</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1743475757804</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="### Patch 1.0.X&#10;- Pushed March 24, 2025 2:42pm ; Sam Holtzman&#10;- game_board.py updates; game is play-able&#10;- settings_view.py updates; fixed settings margins&#10;- Need to implement further UI items such as scoreboards, clock, etc" />
@@ -338,13 +350,14 @@
     <MESSAGE value="readme updated" />
     <MESSAGE value="minor aesthetic fixes" />
     <MESSAGE value="### Path 1.1.5&#10;- Pushed March 27, 2025 2:42pm ; Sam Holtzman&#10;- Undo button fixed" />
-    <option name="LAST_COMMIT_MESSAGE" value="### Path 1.1.5&#10;- Pushed March 27, 2025 2:42pm ; Sam Holtzman&#10;- Undo button fixed" />
+    <MESSAGE value="### Path 1.1.6&#10;- Pushed March 31, 2025 7:48pm ; Sam Holtzman&#10;- Multiple QOL (Quality of Life) improvements" />
+    <option name="LAST_COMMIT_MESSAGE" value="### Path 1.1.6&#10;- Pushed March 31, 2025 7:48pm ; Sam Holtzman&#10;- Multiple QOL (Quality of Life) improvements" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/Abalone$python___version.coverage" NAME="python --version Coverage Results" MODIFIED="1743473262131" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/Abalone$tkinter_test.coverage" NAME="tkinter_test Coverage Results" MODIFIED="1742253753062" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python_gui" />
     <SUITE FILE_PATH="coverage/Abalone$python__m_venv_venv.coverage" NAME="python -m venv venv Coverage Results" MODIFIED="1743473491609" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/Abalone$main_app.coverage" NAME="main_app Coverage Results" MODIFIED="1743473520552" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python_gui" />
+    <SUITE FILE_PATH="coverage/Abalone$main_app.coverage" NAME="main_app Coverage Results" MODIFIED="1743647285553" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python_gui" />
     <SUITE FILE_PATH="coverage/Abalone$intro_view.coverage" NAME="intro_view Coverage Results" MODIFIED="1742255977251" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python_gui/intro_screen" />
     <SUITE FILE_PATH="coverage/Abalone$game_board.coverage" NAME="game_board Coverage Results" MODIFIED="1742852781544" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/python_gui/game_screen" />
   </component>

@@ -139,8 +139,12 @@ class GameView(QtWidgets.QWidget):
         self.main_app_callback()
 
     def update_ai_information(self, board_state):
-        """Update the AI Information panel with data from AgentSecretary."""
+        """Update AI info and highlight the suggested move."""
         next_move, move_time = self.agent_secretary.send_state_to_agent(board_state)
+        # Parse and highlight the move
+        parsed_move = self.game_board.parse_move(next_move)
+        self.game_board.highlight_suggested_move(parsed_move)
+        # Update info panel
         self.info_panel_model.next_move = next_move
         self.info_panel_model.move_time = move_time
         self.info_panel_model.agent_total_time = self.agent_secretary.agent_total_time

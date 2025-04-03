@@ -2,17 +2,21 @@
 Abalone game created to develop an effective AI bot system with heuristics for optimized gameplay strategies.
 
 ## Patch Notes
-### Path 1.1.6
+### Patch 1.2.1
+- Pushed April 3, 2025 12:33am ; Sam Holtzman
+- Highlight suggested moves based off agent "Next Move"
+  - Only highlights the suggested path for tiles
+
+### Patch 1.1.6
 - Pushed March 31, 2025 7:48pm ; Sam Holtzman
 - Multiple QOL (Quality of Life) improvements
 - Added win screen and win condition
-- 
 
-### Path 1.1.5
+### Patch 1.1.5
 - Pushed March 27, 2025 2:42pm ; Sam Holtzman
 - Undo button fixed
 
-### Path 1.1.4
+### Patch 1.1.4
 - Pushed March 27, 2025 4:18am ; Sam Holtzman
 - all peripherals implemented
 - buttons need work 
@@ -21,15 +25,15 @@ Abalone game created to develop an effective AI bot system with heuristics for o
     - Undo to only undo the last move made
     - pause to switch to play when it is pressed
 
-### Path 1.1.3
+### Patch 1.1.3
 - Pushed March 25, 2025 10:11am ; Sam Holtzman
 - scoreboards implemented. 
 
-### Path 1.1.2
+### Patch 1.1.2
 - Pushed March 24, 2025 3:46pm ; Sam Holtzman
 - repaired crashing but introduced while removing unused params in tile_view.py __init__()
 
-### Path 1.1.1
+### Patch 1.1.1
 - Pushed March 24, 2025 2:48pm ; Sam Holtzman
 - Game now playable
 - resolved some warnings

@@ -9,6 +9,7 @@ print(abalone_ai.__file__)
 
 class AgentSecretary:
     def __init__(self, game_view, depth=6, time_limit_ms=10000, tt_size_mb=64):
+        self.latest_board = None
         self.game_view = game_view
         self.last_move_time = 0.0
         self.agent_total_time = 0.0
@@ -31,6 +32,7 @@ class AgentSecretary:
         move, updated_board = self.ai.find_best_move()  # Get both values
 
         print(f"[DEBUG] Move from C++: {move}")
+        print(f"[DEBUG] Move Suggested by Agent: {move}")
         print(f"[DEBUG] Updated board: {updated_board}")
 
         # Store updated board in case other methods want it later
@@ -41,16 +43,15 @@ class AgentSecretary:
         self.agent_total_time += move_time
 
         return move, move_time  # Return only 2 values to avoid unpacking error
-    # function
 
-    @staticmethod
-    def generate_random_move():
-        players = ["Black", "White"]
-        player = random.choice(players)
-        num_tiles = random.randint(1, 3)
-        from_tiles = [f"{chr(65 + random.randint(0, 8))}{random.randint(1, 9)}" for _ in range(num_tiles)]
-        to_tiles = [f"{chr(65 + random.randint(0, 8))}{random.randint(1, 9)}" for _ in range(num_tiles)]
-        return f"{player} moves {{{', '.join(from_tiles)}}} to {{{', '.join(to_tiles)}}}"
+    # @staticmethod
+    # def generate_random_move():
+    #     players = ["Black", "White"]
+    #     player = random.choice(players)
+    #     num_tiles = random.randint(1, 3)
+    #     from_tiles = [f"{chr(65 + random.randint(0, 8))}{random.randint(1, 9)}" for _ in range(num_tiles)]
+    #     to_tiles = [f"{chr(65 + random.randint(0, 8))}{random.randint(1, 9)}" for _ in range(num_tiles)]
+    #     return f"{player} moves {{{', '.join(from_tiles)}}} to {{{', '.join(to_tiles)}}}"
     
 
 # Test function here if you want to know where the connection between cpp and python is
