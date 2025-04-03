@@ -81,7 +81,7 @@ private:
 public:
     // Default parameters are specified only here.
     AbaloneAI(int depth = 4, int timeLimitMs = 5000, size_t ttSizeInMB = 64);
-
+    
     /**
      * Finds the best move for the given board position.
      * Returns the best move and its evaluation score.

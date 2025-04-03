@@ -64,7 +64,7 @@ int AbaloneAI::evaluatePosition(const Board& board) {
             whiteMarbles++;
     }
 
-    // Determine game phase based on marble count
+    // Determine game phase based on move count
     float gameProgress = 1.0f - ((blackMarbles + whiteMarbles) / (2.0f * STARTING_MARBLES - 2.0f * PUSHED_MARBLES));
 
     // Dynamically adjust evaluation weights based on game progress
@@ -104,16 +104,6 @@ int AbaloneAI::evaluatePosition(const Board& board) {
     int blackEdgeDanger = calculateEdgeDanger(board, Occupant::BLACK);
     int whiteEdgeDanger = calculateEdgeDanger(board, Occupant::WHITE);
     score -= (blackEdgeDanger - whiteEdgeDanger) * edgeValue;
-
-    // Threat potential
-    int blackThreat = calculateThreatPotential(board, Occupant::BLACK);
-    int whiteThreat = calculateThreatPotential(board, Occupant::WHITE);
-    score += (blackThreat - whiteThreat) * 10;
-
-    // Mobility
-    int blackMobility = calculateMobility(board, Occupant::BLACK);
-    int whiteMobility = calculateMobility(board, Occupant::WHITE);
-    score += (blackMobility - whiteMobility) * mobilityValue;
 
     return score;
 }
@@ -179,16 +169,6 @@ int AbaloneAI::evaluateMove(const Board& board, const Move& move, Occupant side)
     int afterDanger = calculateEdgeDanger(tempBoard, side);
     score -= (afterDanger - beforeDanger) * edgeValue;
 
-    // Calculate threat potential
-    int beforeThreat = calculateThreatPotential(board, side);
-    int afterThreat = calculateThreatPotential(tempBoard, side);
-    score += (afterThreat - beforeThreat) * threatValue;
-
-    // Calculate mobility
-    int beforeMobility = calculateMobility(board, side);
-    int afterMobility = calculateMobility(tempBoard, side);
-    score += (afterMobility - beforeMobility) * mobilityValue;
-
     // Bonus for pushing opponent marbles off the edge
     if (move.pushCount > 0) {
         score += 50 * move.pushCount;
@@ -205,23 +185,6 @@ int AbaloneAI::evaluateMove(const Board& board, const Move& move, Occupant side)
     }
 
     return score;
-}
-
-int AbaloneAI::calculateMobility(const Board& board, Occupant side) {
-    int mobilityScore = 0;
-
-    for (int i = 0; i < Board::NUM_CELLS; i++) {
-        if (board.occupant[i] == side) {
-            for (int d = 0; d < Board::NUM_DIRECTIONS; d++) {
-                int neighbor = board.neighbors[i][d];
-                if (neighbor >= 0 && board.occupant[neighbor] == Occupant::EMPTY) {
-                    mobilityScore++;
-                }
-            }
-        }
-    }
-
-    return mobilityScore;
 }
 
 // Calculate the cohesion of a group of marbles
@@ -256,29 +219,6 @@ int AbaloneAI::calculateEdgeDanger(const Board& board, Occupant side) {
         }
     }
     return edgeCount;
-}
-
-// Calculate the threat potential of a player
-int AbaloneAI::calculateThreatPotential(const Board& board, Occupant side) {
-    int threatScore = 0;
-
-    // Check for potential threats in each direction
-    for (int i = 0; i < Board::NUM_CELLS; i++) {
-        if (board.occupant[i] == side) {
-            for (int d = 0; d < Board::NUM_DIRECTIONS; d++) {
-                int neighbor = board.neighbors[i][d];
-                if (neighbor >= 0 && board.occupant[neighbor] == Occupant::EMPTY) {
-                    // Check if the next cell is an opponent
-                    int nextNeighbor = board.neighbors[neighbor][d];
-                    if (nextNeighbor >= 0 && board.occupant[nextNeighbor] != side) {
-                        threatScore++;
-                    }
-                }
-            }
-        }
-    }
-
-    return threatScore;
 }
 
 bool AbaloneAI::isTimeUp() {
