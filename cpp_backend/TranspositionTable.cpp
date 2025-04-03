@@ -53,7 +53,9 @@ void TranspositionTable::initZobristKeys() {
 
 // Clear the table
 void TranspositionTable::clearTable() {
-    std::memset(m_table.data(), 0, m_table.size() * sizeof(TTEntry));
+    for (auto& entry : m_table) {
+        entry = TTEntry();
+    }
 }
 
 // Compute Zobrist hash for a given board position

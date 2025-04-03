@@ -6,7 +6,7 @@ import abalone_ai
 print(abalone_ai.__file__)
 
 class AgentSecretary:
-    def __init__(self, game_view, depth=6, time_limit_ms=10000, tt_size_mb=64):
+    def __init__(self, game_view, depth=6, time_limit_ms=10000, tt_size_mb=128):
         self.latest_board = None
         self.game_view = game_view
         self.last_move_time = 0.0
