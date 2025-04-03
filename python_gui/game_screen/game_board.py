@@ -899,8 +899,8 @@ class GameBoard:
     @staticmethod
     def _coord_to_str(col, row):
         """Convert (col, row) to display format, e.g., (1,5) -> 'A5'."""
-        col_letter = chr(ord('A') + col - 1)
-        return f"{col_letter}{row}"
+        row_letter = chr(ord('A') + row - 1)
+        return f"{row_letter}{col}"
 
     def _generate_board_state_output(self):
         """Generate board state for C++ algorithm after a move."""
@@ -963,10 +963,11 @@ class GameBoard:
     @staticmethod
     def _str_to_coord(tile_str):
         """Convert a tile identifier like 'E3' to (col, row) coordinates."""
-        col_letter = tile_str[0].upper()
-        row_num = int(tile_str[1:])
-        col = ord(col_letter) - ord('A') + 1
-        return col, row_num
+        row_letter = tile_str[0].upper()
+        col_num = int(tile_str[1:])
+        row = ord(row_letter) - ord('A') + 1
+        col = col_num
+        return col, row
 
     def parse_move(self, move_str):
         """Parse the AI move string into a structured dictionary."""
