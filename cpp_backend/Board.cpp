@@ -49,6 +49,19 @@ const array<pair<int, int>, Board::NUM_DIRECTIONS> Board::DIRECTION_OFFSETS = { 
 
 static const array<int, Board::NUM_DIRECTIONS> OPPOSITES = { 1, 0, 5, 4, 3, 2 };
 
+//bool Board::isOnEdge(int index) const {
+//    // Check for invalid index
+//    if (index < 0 || index >= NUM_CELLS) {
+//        return false; // Invalid indices are not on the edge
+//    }
+//    // Check each direction for an off-board neighbor
+//    for (int d = 0; d < NUM_DIRECTIONS; d++) {
+//        if (neighbors[index][d] == -1) {
+//            return true; // Found an off-board neighbor, so this cell is on the edge
+//        }
+//    }
+//    return false; // No off-board neighbors found
+//}
 
 bool Board::isGroupAligned(const std::vector<int>& group, int& alignedDirection) const {
     if (group.size() < 2)
@@ -82,40 +95,89 @@ bool Board::isGroupAligned(const std::vector<int>& group, int& alignedDirection)
 }
 
 
-bool Board::tryMove(const vector<int>& group, int direction, Move& move) const {
-    DEBUG_PRINT("Trying move for group: ");
-    for (int idx : group)
-        DEBUG_PRINT(indexToNotation(idx) << " ");
-    DEBUG_PRINT("in direction " << direction << "\n");
+//bool Board::tryMove(const vector<int>& group, int direction, Move& move) const {
+//    DEBUG_PRINT("Trying move for group: ");
+//    for (int idx : group)
+//        DEBUG_PRINT(indexToNotation(idx) << " ");
+//    DEBUG_PRINT("in direction " << direction << "\n");
+//
+//    Board temp = *this;
+//    move.marbleIndices = group;
+//    move.direction = direction;
+//    if (group.size() == 1) {
+//        move.isInline = false;
+//    }
+//    else {
+//        int alignedDir;
+//        if (isGroupAligned(group, alignedDir)) {
+//            DEBUG_PRINT("Group is aligned. Aligned direction: " << alignedDir << "\n");
+//            move.isInline = (direction == alignedDir || direction == OPPOSITES[alignedDir]);
+//        }
+//        else {
+//            move.isInline = false;
+//        }
+//    }
+//    try {
+//        temp.applyMove(move);
+//    }
+//    catch (const runtime_error& e) {
+//        DEBUG_PRINT("Move failed: " << e.what() << "\n");
+//        return false;
+//    }
+//    DEBUG_PRINT("Move succeeded for group: ");
+//    for (int idx : group)
+//        DEBUG_PRINT(indexToNotation(idx) << " ");
+//    DEBUG_PRINT("direction " << direction << "\n");
+//    return true;
+//}
 
+bool Board::tryMove(const vector<int>& group, int direction, Move& move) const {
+    if (group.empty()) return false;
+
+    // Determine the side and opponent
+    Occupant side = occupant[group[0]]; // Assumes all marbles in group are the same side
+    Occupant opponent = (side == Occupant::BLACK) ? Occupant::WHITE : Occupant::BLACK;
+
+    // Initialize the move object
     Board temp = *this;
     move.marbleIndices = group;
     move.direction = direction;
+    move.pushCount = 0; // Initialize pushCount
+
+    // Determine if the move is inline
     if (group.size() == 1) {
         move.isInline = false;
-    }
-    else {
+    } else {
         int alignedDir;
         if (isGroupAligned(group, alignedDir)) {
-            DEBUG_PRINT("Group is aligned. Aligned direction: " << alignedDir << "\n");
             move.isInline = (direction == alignedDir || direction == OPPOSITES[alignedDir]);
-        }
-        else {
+        } else {
             move.isInline = false;
         }
     }
+
+    // Count opponent marbles before the move
+    int opponentBefore = 0;
+    for (int i = 0; i < NUM_CELLS; i++) {
+        if (temp.occupant[i] == opponent) opponentBefore++;
+    }
+
+    // Attempt to apply the move
     try {
         temp.applyMove(move);
+    } catch (const runtime_error& e) {
+        return false; // Move is illegal
     }
-    catch (const runtime_error& e) {
-        DEBUG_PRINT("Move failed: " << e.what() << "\n");
-        return false;
+
+    // Count opponent marbles after the move
+    int opponentAfter = 0;
+    for (int i = 0; i < NUM_CELLS; i++) {
+        if (temp.occupant[i] == opponent) opponentAfter++;
     }
-    DEBUG_PRINT("Move succeeded for group: ");
-    for (int idx : group)
-        DEBUG_PRINT(indexToNotation(idx) << " ");
-    DEBUG_PRINT("direction " << direction << "\n");
-    return true;
+
+    // Calculate pushCount as the number of opponent marbles removed
+    move.pushCount = opponentBefore - opponentAfter;
+    return true; // Move is legal
 }
 
 
@@ -191,10 +253,20 @@ std::set<std::vector<int>> Board::generateGroups(Occupant side) const {
     return groups;
 }
 
+std::vector<Move> Board::generateCaptureMoves(Occupant side) const {
+    std::vector<Move> captureMoves;
+    std::set<std::vector<int>> candidateGroups = generateGroups(side);
 
-
-
-
+    for (const auto& group : candidateGroups) {
+        for (int d = 0; d < NUM_DIRECTIONS; d++) {
+            Move candidateMove;
+            if (tryMove(group, d, candidateMove) && candidateMove.pushCount > 0) {
+                captureMoves.push_back(candidateMove);
+            }
+        }
+    }
+    return captureMoves;
+}
 
 
 /**
@@ -207,29 +279,36 @@ std::set<std::vector<int>> Board::generateGroups(Occupant side) const {
  * @return A list of valid moves.
  */
 std::vector<Move> Board::generateMoves(Occupant side) const {
-    std::vector<Move> moves;  // Stores all valid moves
-
-    // Generate unique groups using the multi-threaded approach
+    std::vector<Move> moves;
     std::set<std::vector<int>> candidateGroups = generateGroups(side);
 
+    // Estimate number of moves: roughly 6 directions per group
+    moves.reserve(candidateGroups.size() * NUM_DIRECTIONS / 2); // Conservative estimate
 
-    // Iterate over each group and attempt moves in all directions
     for (const auto& group : candidateGroups) {
+        // Quick filter: for single marbles, check if any direction has an empty neighbor
+        if (group.size() == 1) {
+            int idx = group[0];
+            bool hasEmptyNeighbor = false;
+            for (int d = 0; d < NUM_DIRECTIONS; d++) {
+                int n = neighbors[idx][d];
+                if (n >= 0 && occupant[n] == Occupant::EMPTY) {
+                    hasEmptyNeighbor = true;
+                    break;
+                }
+            }
+            if (!hasEmptyNeighbor) continue; // Skip if no possible broadside move
+        }
+
         for (int d = 0; d < NUM_DIRECTIONS; d++) {
-
-
             Move candidateMove;
-
-            if (tryMove(group, d, candidateMove)) { // Validate and apply move logic
+            if (tryMove(group, d, candidateMove)) {
                 moves.push_back(candidateMove);
             }
         }
     }
-
     return moves;
 }
-
-
 
 void Board::applyMove(const Move& m) {
     if (m.marbleIndices.empty()) {

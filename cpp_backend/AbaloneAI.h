@@ -30,6 +30,7 @@ private:
     // Killer move heuristic - stores two killer moves per depth
     static constexpr int MAX_KILLER_MOVES = 2;
     std::vector<std::array<Move, MAX_KILLER_MOVES>> killerMoves;
+    std::vector<std::vector<int>> historyTable;
 
     // Helper method to update killer moves
     void updateKillerMove(const Move& move, int depth);
@@ -72,6 +73,8 @@ private:
      */
     int minimax(Board& board, int depth, int alpha, int beta, bool maximizingPlayer);
 
+    int quiescenceSearch(Board& board, int alpha, int beta, Occupant side);
+
     // Evaluate a move quickly for node ordering
     int evaluateMove(const Board& board, const Move& move, Occupant side);
 
@@ -93,6 +96,10 @@ public:
      * Default max search depth is 10.
      */
     std::pair<Move, int> findBestMoveIterativeDeepening(Board& board, int maxSearchDepth = 10);
+
+    int getNodesEvaluated() const { return nodesEvaluated; }
+    int getPruningCount() const { return pruningCount; }
+    bool getTimeoutOccurred() const { return timeoutOccurred; }
 };
 
 #endif // ABALONE_AI_H

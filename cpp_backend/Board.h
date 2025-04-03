@@ -135,6 +135,16 @@ public:
         }
     }
 
+    std::vector<Move> generateCaptureMoves(Occupant side) const;
+
+    bool isOnEdge(int index) const {
+        if (index < 0 || index >= NUM_CELLS) return false;
+        for (int d = 0; d < NUM_DIRECTIONS; d++) {
+            if (neighbors[index][d] < 0) return true;
+        }
+        return false;
+    }
+
     // Returns the occupant at a given cell index.
     Occupant getOccupant(int index) const {
         return (index >= 0 && index < NUM_CELLS) ? occupant[index] : Occupant::EMPTY;

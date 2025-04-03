@@ -29,12 +29,17 @@ mkdir -p build && cd build
 PYTHON_EXEC=$(which python3.13)
 
 # Run cmake with the correct Python executable
-cmake .. -DPython3_EXECUTABLE="$PYTHON_EXEC"
+cmake .. \
+    -DPython3_EXECUTABLE="$PYTHON_EXEC" \
+    -Dpybind11_DIR="$(python -m pybind11 --cmakedir)"
 
 # Build the project
 make
 
-# 5. Run your Python script
+# 5. Set PYTHONPATH to include the build directory
+# Replace '/path/to/your/project/build' with the absolute path to your build directory
+export PYTHONPATH=$PYTHONPATH:/path/to/your/project/build
+
+# 6. Run your Python script
 cd ../python_gui
-# CHANGE THIS TO main_app.py WHEN FINISHED
 python3.13 main_app.py
