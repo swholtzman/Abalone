@@ -23,11 +23,7 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="78b3a9d5-048c-4cf1-b738-3aedf66aacb0" name="Changes" comment="### Path 1.1.6&#10;- Pushed March 31, 2025 7:48pm ; Sam Holtzman&#10;- Multiple QOL (Quality of Life) improvements">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/python_gui/agent_secretary.py" beforeDir="false" afterPath="$PROJECT_DIR$/python_gui/agent_secretary.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/python_gui/game_screen/game_board.py" beforeDir="false" afterPath="$PROJECT_DIR$/python_gui/game_screen/game_board.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/python_gui/game_screen/game_view.py" beforeDir="false" afterPath="$PROJECT_DIR$/python_gui/game_screen/game_view.py" afterDir="false" />
+    <list default="true" id="78b3a9d5-048c-4cf1-b738-3aedf66aacb0" name="Changes" comment="### Patch 1.2.1&#10;- Pushed April 3, 2025 12:33am ; Sam Holtzman&#10;- Highlight suggested moves based off agent &quot;Next Move&quot;&#10;  - Only highlights the suggested path for tiles">
       <change beforePath="$PROJECT_DIR$/setup_and_run.sh" beforeDir="false" afterPath="$PROJECT_DIR$/setup_and_run.sh" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -241,7 +237,7 @@
       <workItem from="1743473399251" duration="2359000" />
       <workItem from="1743546431748" duration="155000" />
       <workItem from="1743550457111" duration="87000" />
-      <workItem from="1743637924474" duration="8456000" />
+      <workItem from="1743637924474" duration="8783000" />
     </task>
     <task id="LOCAL-00001" summary="Black moves first">
       <option name="closed" value="true" />
@@ -323,7 +319,15 @@
       <option name="project" value="LOCAL" />
       <updated>1743475757804</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="### Patch 1.2.1&#10;- Pushed April 3, 2025 12:33am ; Sam Holtzman&#10;- Highlight suggested moves based off agent &quot;Next Move&quot;&#10;  - Only highlights the suggested path for tiles">
+      <option name="closed" value="true" />
+      <created>1743665699811</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1743665699811</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -351,7 +355,8 @@
     <MESSAGE value="minor aesthetic fixes" />
     <MESSAGE value="### Path 1.1.5&#10;- Pushed March 27, 2025 2:42pm ; Sam Holtzman&#10;- Undo button fixed" />
     <MESSAGE value="### Path 1.1.6&#10;- Pushed March 31, 2025 7:48pm ; Sam Holtzman&#10;- Multiple QOL (Quality of Life) improvements" />
-    <option name="LAST_COMMIT_MESSAGE" value="### Path 1.1.6&#10;- Pushed March 31, 2025 7:48pm ; Sam Holtzman&#10;- Multiple QOL (Quality of Life) improvements" />
+    <MESSAGE value="### Patch 1.2.1&#10;- Pushed April 3, 2025 12:33am ; Sam Holtzman&#10;- Highlight suggested moves based off agent &quot;Next Move&quot;&#10;  - Only highlights the suggested path for tiles" />
+    <option name="LAST_COMMIT_MESSAGE" value="### Patch 1.2.1&#10;- Pushed April 3, 2025 12:33am ; Sam Holtzman&#10;- Highlight suggested moves based off agent &quot;Next Move&quot;&#10;  - Only highlights the suggested path for tiles" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/Abalone$python___version.coverage" NAME="python --version Coverage Results" MODIFIED="1743473262131" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
