@@ -1,5 +1,6 @@
 import time
 import sys
+sys.path.insert(0, "../build")
 import random
 
 import abalone_ai

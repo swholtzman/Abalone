@@ -20,7 +20,7 @@ void AbaloneAI::getDynamicWeights(float gameProgress, int& marbleValue, int& cen
     cohesionValue = 5;
     edgeValue = 10;
     threatValue = 5;
-    mobilityValue = 0;
+    mobilityValue = 2;
 
     // Early game
     if (gameProgress < 0.333f) {
