@@ -216,7 +216,8 @@ std::set<std::vector<int>> Board::generateGroups(Occupant side) const {
     // Select the target list based on occupant color
     if (side == Occupant::BLACK) {
         targetList = &blackOccupantsCoords;
-    } else if (side == Occupant::WHITE) {
+    }
+    else if (side == Occupant::WHITE) {
         targetList = &whiteOccupantsCoords;
     }
 
@@ -226,7 +227,7 @@ std::set<std::vector<int>> Board::generateGroups(Occupant side) const {
         if (it == s_coordToIndex.end()) continue;  // Skip if coordinate is invalid
 
         int idx = it->second;
-        groups.insert({idx});  // Add single-marble group
+        groups.insert({ idx });  // Add single-marble group
 
         for (int i = 1; i <= 3; i++) {  // Only iterate over necessary directions
             int first_neighbour_index = neighbors[idx][i];
@@ -234,7 +235,7 @@ std::set<std::vector<int>> Board::generateGroups(Occupant side) const {
             // Ensure first neighbor is valid and belongs to the same player
             if (first_neighbour_index == -1 || occupant[first_neighbour_index] != side) continue;
 
-            std::vector<int> twoMarbleGroup = {idx, first_neighbour_index};
+            std::vector<int> twoMarbleGroup = { idx, first_neighbour_index };
             std::sort(twoMarbleGroup.begin(), twoMarbleGroup.end());
             groups.insert(twoMarbleGroup);  // Insert two-marble group
 
@@ -242,7 +243,7 @@ std::set<std::vector<int>> Board::generateGroups(Occupant side) const {
 
             if (second_neighbour_index == -1 || occupant[second_neighbour_index] != side) continue;
 
-            std::vector<int> threeMarbleGroup = {idx, first_neighbour_index, second_neighbour_index};
+            std::vector<int> threeMarbleGroup = { idx, first_neighbour_index, second_neighbour_index };
             std::sort(threeMarbleGroup.begin(), threeMarbleGroup.end());
             groups.insert(threeMarbleGroup);  // Insert three-marble group
         }
@@ -524,13 +525,13 @@ void Board::initStandardLayout() {
 void Board::initBelgianDaisyLayout() {
     occupant.fill(Occupant::EMPTY);
     vector<string> blackPositions = {
-        "C5","C6","D4","D7","E4","E7","F4","F7","G5","G6"
+        "A1","A2","B1","B2","B3","C2","C3","G7","G8","H7","H8","H9","I8","I9"
     };
     for (auto& cell : blackPositions) {
         setOccupant(cell, Occupant::BLACK);
     }
     vector<string> whitePositions = {
-        "C4","D3","E3","F3","G4","G7","D8","E8","F8","G8"
+        "A4","A5","B4","B5","B6","C5","C6","G4","G5","H4","H5","H6","I5","I6"
     };
     for (auto& cell : whitePositions) {
         setOccupant(cell, Occupant::WHITE);
@@ -617,7 +618,8 @@ void Board::updateOccupantCoordinates() {
     for (int i = 0; i < NUM_CELLS; i++) {
         if (occupant[i] == Occupant::BLACK) {
             blackOccupantsCoords.push_back(s_indexToCoord[i]);
-        } else if (occupant[i] == Occupant::WHITE) {
+        }
+        else if (occupant[i] == Occupant::WHITE) {
             whiteOccupantsCoords.push_back(s_indexToCoord[i]);
         }
     }
@@ -625,7 +627,7 @@ void Board::updateOccupantCoordinates() {
     // Sort the lists to maintain order from A1 to A5, B1 to B6, etc.
     auto sortingLambda = [](const std::pair<int, int>& a, const std::pair<int, int>& b) {
         return (a.second == b.second) ? (a.first < b.first) : (a.second < b.second);
-    };
+        };
 
     std::sort(blackOccupantsCoords.begin(), blackOccupantsCoords.end(), sortingLambda);
     std::sort(whiteOccupantsCoords.begin(), whiteOccupantsCoords.end(), sortingLambda);
@@ -637,7 +639,8 @@ void Board::updateOccupantCoordinates(int oldIndex, int newIndex, Occupant occup
 
     if (occupantType == Occupant::BLACK) {
         targetList = &blackOccupantsCoords;
-    } else if (occupantType == Occupant::WHITE) {
+    }
+    else if (occupantType == Occupant::WHITE) {
         targetList = &whiteOccupantsCoords;
     }
 

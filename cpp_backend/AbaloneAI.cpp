@@ -95,7 +95,6 @@ int AbaloneAI::evaluatePosition(const Board& board) {
                 whiteCenterControl++;
         }
     }
-
     score += (blackCenterControl - whiteCenterControl) * centerValue;
 
     // Group cohesion
@@ -593,6 +592,7 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board) {
         }
     }
 
+
     auto end = std::chrono::high_resolution_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - startTime).count();
 
@@ -652,6 +652,7 @@ std::pair<Move, int> AbaloneAI::findBestMoveIterativeDeepening(Board& board, int
             break;
         }
     }
+
 
     if (!foundMove) {
         std::cout << "Warning: No complete depth search finished. Using 1-ply search." << std::endl;

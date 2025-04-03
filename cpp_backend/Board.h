@@ -35,9 +35,9 @@ struct Move {
 
     bool operator==(const Move& other) const {
         return (marbleIndices == other.marbleIndices &&
-                direction == other.direction &&
-                isInline == other.isInline &&
-                pushCount == other.pushCount);
+            direction == other.direction &&
+            isInline == other.isInline &&
+            pushCount == other.pushCount);
     }
 };
 
@@ -89,7 +89,7 @@ public:
     // Converts a cell index to its board notation (e.g., 0 -> "A1").
     static std::string indexToNotation(int idx);
 
-    bool isGroupAligned(const std::vector<int> &group, int &alignedDirection) const;
+    bool isGroupAligned(const std::vector<int>& group, int& alignedDirection) const;
 
     // Attempts to apply a move on a temporary copy of the board.
     // Returns true if the move is legal (applied without error), false otherwise.
@@ -160,6 +160,7 @@ private:
     // Mapping from a packed coordinate (m,y) to a cell index.
 
 
+
     // Initializes the coordinate mapping.
     static void initMapping();
 
@@ -182,17 +183,17 @@ private:
         std::set<std::vector<int>>& result) const;
 
     void scanCoordinateSet(const std::vector<std::vector<std::pair<int, int>>>& coordinateSet,
-                              Occupant side, std::set<std::vector<int>>& groupSet, int d, bool isHorizontal) const;
+        Occupant side, std::set<std::vector<int>>& groupSet, int d, bool isHorizontal) const;
 
 
-    void scanHorizontal(const std::vector<std::vector<std::pair<int, int>>> &coordinateSet, Occupant side, int d,
-                        std::set<std::vector<int>> &groups) const;
+    void scanHorizontal(const std::vector<std::vector<std::pair<int, int>>>& coordinateSet, Occupant side, int d,
+        std::set<std::vector<int>>& groups) const;
 
-    void scanNorthEast(const std::vector<std::vector<std::pair<int, int>>> &coordinateSet, Occupant side, int d,
-                       std::set<std::vector<int>> &groups) const;
+    void scanNorthEast(const std::vector<std::vector<std::pair<int, int>>>& coordinateSet, Occupant side, int d,
+        std::set<std::vector<int>>& groups) const;
 
-    void scanNorthWest(const std::vector<std::vector<std::pair<int, int>>> &coordinateSet, Occupant side, int d,
-                       std::set<std::vector<int>> &groups) const;
+    void scanNorthWest(const std::vector<std::vector<std::pair<int, int>>>& coordinateSet, Occupant side, int d,
+        std::set<std::vector<int>>& groups) const;
 
     std::set<std::vector<int>> generateGroups(Occupant side) const;
 
