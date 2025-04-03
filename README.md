@@ -1,7 +1,10 @@
 # Abalone Game
 
 An interactive implementation of the **Abalone board game** with an AI opponent designed using heuristic-based strategies. Built using a hybrid of **C++** for performance-critical simulation and **Python (PyQt5)** for a sleek graphical user interface.
+---
+## 🖼️ Game UI Preview
 
+![Abalone Game UI](public/resources/AbaloneAIMenu.png)
 ---
 
 ## 🧠 Introduction
