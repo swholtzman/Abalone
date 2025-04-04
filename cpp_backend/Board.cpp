@@ -542,13 +542,13 @@ void Board::initBelgianDaisyLayout() {
 void Board::initGermanDaisyLayout() {
     occupant.fill(Occupant::EMPTY);
     vector<string> blackPositions = {
-        "B4","C4","D5","E5","F5","G5","H6"
+        "B1b","B2b","C1b","C2b","C3b","D2b","D3b","F7b","F8b","G7b","G8b","G9b","H8b","H9b"
     };
     for (auto& cell : blackPositions) {
         setOccupant(cell, Occupant::BLACK);
     }
     vector<string> whitePositions = {
-        "B5","C5","D4","E4","F4","G4","H5"
+        "B5w","B6w","C5w","C6w","C7w","D6w","D7w","F3w","F4w","G3w","G4w","G5w","H4w","H5w"
     };
     for (auto& cell : whitePositions) {
         setOccupant(cell, Occupant::WHITE);

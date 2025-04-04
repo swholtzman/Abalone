@@ -32,8 +32,9 @@ int main(int argc, char* argv[]) {
     //       "random" for random moves for both sides,
     //       "ai_vs_random" for AI vs random (Black uses AI, White random)
     int winningThreshold = 3;
-    int aiDepth = 5;
+    int aiDepth = 4;
     int timeLimitMs = 6000;
+    int maxMoves = 50; // Maximum number of moves to simulate
     std::string mode = "ai_vs_ai2"; // Options: "ai", "random", or "ai_vs_random"
 
     // Optional command line arguments override defaults:
@@ -66,6 +67,7 @@ int main(int argc, char* argv[]) {
     initialPositionFile << board.toBoardString() << std::endl;
 
     int moveCount = 0;
+    int moveAICount = 0;
     while (true) {
         std::cout << "\nBoard state: " << board.toBoardString() << "\n";
         int blackMarbles = countMarbles(board, Occupant::BLACK);
@@ -79,6 +81,11 @@ int main(int argc, char* argv[]) {
         }
         if ((14 - whiteMarbles) >= winningThreshold) {
             std::cout << "Black wins! White has lost " << (14 - whiteMarbles) << " marbles.\n";
+            break;
+        }
+
+        if (moveCount >= maxMoves*2) {
+            std::cout << "Game ended after " << maxMoves << " moves. No winner.\n";
             break;
         }
 
@@ -120,12 +127,16 @@ int main(int argc, char* argv[]) {
             }
             else if (mode == "ai_vs_random") {
                 // Black uses AI; White chooses randomly.
+                if (whiteMarbles == 12) {
+                    std::cout << "White is close to losing!\n";
+                }
                 if (board.nextToMove == Occupant::BLACK) {
                     AbaloneAI aiMove(aiDepth, timeLimitMs);
-                    auto result = aiMove.findBestMoveIterativeDeepening(board, aiDepth);
+                    auto result = aiMove.findBestMoveIterativeDeepening(board, aiDepth, moveAICount, maxMoves);
                     chosenMove = result.first;
                     std::cout << "Black (AI) chooses move: "
                         << Board::moveToNotation(chosenMove, board.nextToMove) << "\n";
+                    moveAICount++;
                 }
                 else {
                     int randomIndex = std::rand() % legalMoves.size();
@@ -139,25 +150,26 @@ int main(int argc, char* argv[]) {
 
                 AbaloneAI aiMove(aiDepth, timeLimitMs);
                 AbaloneAI2 aiMove2(aiDepth, timeLimitMs);
-
                 if (board.nextToMove == Occupant::BLACK) {
                     // Black's first move is random
+                    moveAICount++;
                     if (moveCount == 0) {
                         int randomIndex = std::rand() % legalMoves.size();
                         chosenMove = legalMoves[randomIndex];
                         std::cout << "Black's first move chosen randomly.\n";
+                        std::cout << "Move Count:" << moveAICount << "\n";
                     }
                     else {
-                        auto result = aiMove2.findBestMoveIterativeDeepening(board, aiDepth);
+                        auto result = aiMove.findBestMoveIterativeDeepening(board, aiDepth, moveAICount, maxMoves);
                         chosenMove = result.first;
-                        std::cout << "Wayne - Black (AI) chooses move: "
+                        std::cout << "Wayne (New) - Black (AI) chooses move: "
                             << Board::moveToNotation(chosenMove, board.nextToMove) << "\n";
                     }
                 }
                 else {
-                    auto result2 = aiMove.findBestMoveIterativeDeepening(board, aiDepth);
+                    auto result2 = aiMove2.findBestMoveIterativeDeepening(board, aiDepth);
                     chosenMove = result2.first;
-                    std::cout << "Parham - White (AI2) chooses move: "
+                    std::cout << "Wayne (Old) - White (AI2) chooses move: "
                         << Board::moveToNotation(chosenMove, board.nextToMove) << "\n";
                 }
             }

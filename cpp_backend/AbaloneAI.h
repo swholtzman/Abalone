@@ -30,7 +30,6 @@ private:
     // Killer move heuristic - stores two killer moves per depth
     static constexpr int MAX_KILLER_MOVES = 2;
     std::vector<std::array<Move, MAX_KILLER_MOVES>> killerMoves;
-    std::vector<std::vector<int>> historyTable;
 
     // Helper method to update killer moves
     void updateKillerMove(const Move& move, int depth);
@@ -38,13 +37,15 @@ private:
     // Helper function to check if a move is a killer move
     bool isKillerMove(const Move& move, int depth) const;
 
-    void getDynamicWeights(float gameProgress, int& marbleValue, int& centerValue, int& cohesionValue, int& edgeValue, int& threatValue, int& mobilityValue);
+    void getDynamicWeights(float gameProgress, int& marbleValue, int& centerValue, 
+        int& cohesionValue, int& edgeValue, int& threatValue,
+        int& blackMarbles, int& whiteMarbles, Occupant currentPlayer);
 
     /**
      * Evaluates the current board position from BLACK's perspective.
      * Higher scores are better for BLACK, lower scores for WHITE.
      */
-    int evaluatePosition(const Board& board);
+    int evaluatePosition(const Board& board, float gameProgress);
 
     /**
      * Calculates group cohesion for the given side.
@@ -59,9 +60,7 @@ private:
     /**
      * Calculate threat potential
      */
-    int calculateThreatPotential(const Board& board, Occupant side);
-
-    int calculateMobility(const Board& board, Occupant side);
+    int calculatePushability(const Board& board, Occupant side);
 
     /**
      * Checks if the time limit has been exceeded.
@@ -71,35 +70,29 @@ private:
     /**
      * The minimax algorithm with alpha-beta pruning.
      */
-    int minimax(Board& board, int depth, int alpha, int beta, bool maximizingPlayer);
-
-    int quiescenceSearch(Board& board, int alpha, int beta, Occupant side);
+    int minimax(Board& board, int depth, int alpha, int beta, bool maximizingPlayer, float gameProgress);
 
     // Evaluate a move quickly for node ordering
-    int evaluateMove(const Board& board, const Move& move, Occupant side);
+    int evaluateMove(const Board& board, const Move& move, Occupant side, float gameProgress);
 
     // Order moves based on evaluation and TT move
-    void orderMoves(std::vector<Move>& moves, const Board& board, Occupant side, const Move& ttMove);
+    void orderMoves(std::vector<Move>& moves, const Board& board, Occupant side, const Move& ttMove, float gameProgress);
 
 public:
     // Default parameters are specified only here.
     AbaloneAI(int depth = 4, int timeLimitMs = 5000, size_t ttSizeInMB = 64);
-
+    
     /**
      * Finds the best move for the given board position.
      * Returns the best move and its evaluation score.
      */
-    std::pair<Move, int> findBestMove(Board& board);
+    std::pair<Move, int> findBestMove(Board& board, float gameProgress);
 
     /**
      * Iterative deepening search.
      * Default max search depth is 10.
      */
-    std::pair<Move, int> findBestMoveIterativeDeepening(Board& board, int maxSearchDepth = 10);
-
-    int getNodesEvaluated() const { return nodesEvaluated; }
-    int getPruningCount() const { return pruningCount; }
-    bool getTimeoutOccurred() const { return timeoutOccurred; }
+    std::pair<Move, int> findBestMoveIterativeDeepening(Board& board, int maxSearchDepth = 10, int moveCount = 0, int totalMoves = 0);
 };
 
 #endif // ABALONE_AI_H
