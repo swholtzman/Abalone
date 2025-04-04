@@ -42,6 +42,9 @@ $(COMPARE_TARGET): $(COMPARE_SRCS) | $(BUILD_DIR)
 $(VISUALIZER_TARGET): $(VISUALIZER_SRCS) | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
+play_game: play_game.cpp Board.cpp TranspositionTable.cpp AbaloneAI.cpp Board.h AbaloneAI.h TranspositionTable.h
+	$(CC) $(CFLAGS) play_game.cpp Board.cpp TranspositionTable.cpp AbaloneAI.cpp -o play_game
+
 # Play game
 $(PLAY_GAME_TARGET): $(PLAY_GAME_SRCS) | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) $^ -o $@

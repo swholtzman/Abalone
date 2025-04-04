@@ -1,4 +1,4 @@
-#include "AbaloneAI.h"
+#include "AbaloneAI2.h"
 #include "Board.h"
 #include <limits>
 #include <algorithm>
