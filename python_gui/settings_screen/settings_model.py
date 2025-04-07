@@ -1,4 +1,3 @@
-
 class SettingsModel:
     def __init__(
         self,
@@ -7,6 +6,8 @@ class SettingsModel:
         moves_per_team=50,
         time_limit_black=30,
         time_limit_white=30,
+        ai_max_depth=4,
+        ai_time_limit_ms=5000,
         is_visible=False
     ):
         self._board_layout = board_layout
@@ -14,6 +15,8 @@ class SettingsModel:
         self._moves_per_team = moves_per_team
         self._time_limit_black = time_limit_black
         self._time_limit_white = time_limit_white
+        self._ai_max_depth = ai_max_depth
+        self._ai_time_limit_ms = ai_time_limit_ms
         self._is_visible = is_visible
 
     @property
@@ -55,6 +58,22 @@ class SettingsModel:
     @time_limit_white.setter
     def time_limit_white(self, value):
         self._time_limit_white = value
+
+    @property
+    def ai_max_depth(self):
+        return self._ai_max_depth
+
+    @ai_max_depth.setter
+    def ai_max_depth(self, value):
+        self._ai_max_depth = value
+
+    @property
+    def ai_time_limit_ms(self):
+        return self._ai_time_limit_ms
+
+    @ai_time_limit_ms.setter
+    def ai_time_limit_ms(self, value):
+        self._ai_time_limit_ms = value
 
     @property
     def is_visible(self):

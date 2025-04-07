@@ -8,6 +8,7 @@ from python_gui.intro_screen.intro_view import IntroView
 from python_gui.game_screen.game_view import GameView
 from python_gui.utils.game_config import GameConfig
 from python_gui.settings_screen.settings_controller import SettingsController
+from python_gui.agent_secretary import AgentSecretary
 
 class MainApp(QtWidgets.QMainWindow):
     def __init__(self):
@@ -38,7 +39,6 @@ class MainApp(QtWidgets.QMainWindow):
             parent=self,
             main_app_callback=self.on_quit_game
         )
-
         self.stacked_widget.addWidget(self.game_view)
         self.frames["Game View"] = self.game_view
 
@@ -49,13 +49,23 @@ class MainApp(QtWidgets.QMainWindow):
             self.stacked_widget.setCurrentWidget(self.frames[screen_name])
 
     def on_start_game(self, settings_model):
+        # Create a GameConfig instance with all required parameters.
         game_config = GameConfig(
             board_layout=settings_model.board_layout,
             match_type=settings_model.match_type,
             host_colour=settings_model.host_colour,
             moves_per_team=settings_model.moves_per_team,
             time_limit_black=settings_model.time_limit_black,
-            time_limit_white=settings_model.time_limit_white
+            time_limit_white=settings_model.time_limit_white,
+            ai_max_depth=settings_model.ai_max_depth,
+            ai_time_limit_ms=settings_model.ai_time_limit_ms
+        )
+        # Reinitialize AgentSecretary with the new AI parameters.
+        self.game_view.agent_secretary = AgentSecretary(
+            self.game_view,
+            depth=game_config.ai_max_depth,
+            time_limit_ms=game_config.ai_time_limit_ms,
+            tt_size_mb=128
         )
         self.game_view.set_config(game_config)
         self.show_screen("Game View")

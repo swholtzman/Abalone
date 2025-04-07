@@ -100,6 +100,24 @@ class SettingsView(QtWidgets.QWidget):
             max_value=500
         )
 
+        # Create integer input for AI Max Depth.
+        self._ai_max_depth_spin = self._create_labeled_intinput(
+            parent=self.center_frame,
+            layout=inner_layout,
+            label_text="AI Max Depth",
+            default_value=4,
+            max_value=20
+        )
+
+        # Create integer input for AI Time Limit (ms).
+        self._ai_time_limit_spin = self._create_labeled_intinput(
+            parent=self.center_frame,
+            layout=inner_layout,
+            label_text="AI Time Limit (ms)",
+            default_value=5000,
+            max_value=10000
+        )
+
         # Add stretch between center frame and the start button.
         main_layout.addSpacing(10)
 
@@ -130,7 +148,7 @@ class SettingsView(QtWidgets.QWidget):
     @staticmethod
     def _create_labeled_dropdown(parent, layout, label_text, dropdown_values, default_value):
         container = QtWidgets.QWidget(parent)
-        container.setFixedWidth(685)  # 80% of a 800px-wide center_frame
+        container.setFixedWidth(685)
         container_layout = QtWidgets.QVBoxLayout(container)
         container_layout.setContentsMargins(0, 0, 0, 0)
         container_layout.setSpacing(8)
@@ -139,7 +157,6 @@ class SettingsView(QtWidgets.QWidget):
         label.setStyleSheet("color: white; background: transparent; font-size: 16px;")
         container_layout.addWidget(label, alignment=QtCore.Qt.AlignLeft)
 
-        # White rectangle frame with rounded corners
         frame = QtWidgets.QFrame(container)
         frame.setStyleSheet("""
             QFrame {
@@ -154,7 +171,6 @@ class SettingsView(QtWidgets.QWidget):
         combo = QtWidgets.QComboBox(frame)
         combo.addItems(dropdown_values)
         combo.setCurrentText(default_value)
-        # Style for the inner text
         combo.setStyleSheet("color: #150700; font-size: 16px;")
         combo.setEditable(True)
         combo.lineEdit().setAlignment(QtCore.Qt.AlignCenter)
@@ -163,7 +179,6 @@ class SettingsView(QtWidgets.QWidget):
 
         frame_layout.addWidget(combo)
         container_layout.addWidget(frame)
-        # In _create_labeled_dropdown:
         layout.addWidget(container, alignment=QtCore.Qt.AlignHCenter)
 
         return combo
@@ -180,7 +195,6 @@ class SettingsView(QtWidgets.QWidget):
         label.setStyleSheet("color: white; background: transparent; font-size: 16px;")
         container_layout.addWidget(label, alignment=QtCore.Qt.AlignLeft)
 
-        # White rectangle frame with rounded corners
         frame = QtWidgets.QFrame(container)
         frame.setStyleSheet("""
             QFrame {
@@ -200,7 +214,6 @@ class SettingsView(QtWidgets.QWidget):
 
         frame_layout.addWidget(spin)
         container_layout.addWidget(frame)
-        # In _create_labeled_intinput:
         layout.addWidget(container, alignment=QtCore.Qt.AlignHCenter)
         return spin
 
@@ -225,3 +238,9 @@ class SettingsView(QtWidgets.QWidget):
 
     def get_time_limit_white(self):
         return self._time_limit_white_spin.value()
+
+    def get_ai_max_depth(self):
+        return self._ai_max_depth_spin.value()
+
+    def get_ai_time_limit_ms(self):
+        return self._ai_time_limit_spin.value()

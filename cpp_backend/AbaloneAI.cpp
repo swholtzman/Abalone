@@ -595,6 +595,9 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board, float gameProgress) {
 }
 
 std::pair<Move, int> AbaloneAI::findBestMoveIterativeDeepening(Board& board, int maxSearchDepth, int moveCount, int totalMoves) {
+    // Clamp the maximum search depth to the object's maxDepth.
+    maxSearchDepth = std::min(maxSearchDepth, this->maxDepth);
+
     nodesEvaluated = 0;
     timeoutOccurred = false;
     startTime = std::chrono::high_resolution_clock::now();
@@ -618,7 +621,6 @@ std::pair<Move, int> AbaloneAI::findBestMoveIterativeDeepening(Board& board, int
         // Check if total elapsed time exceeds the time limit
         auto now = std::chrono::high_resolution_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count();
-
         if (elapsed >= timeLimit) {
             std::cout << "Total time limit exceeded. Stopping search." << std::endl;
             break;
@@ -626,8 +628,6 @@ std::pair<Move, int> AbaloneAI::findBestMoveIterativeDeepening(Board& board, int
 
         // Adjust remaining time for this depth
         int remainingTime = timeLimit - elapsed;
-
-        // Temporarily modify the time limit for this depth's search
         int originalTimeLimit = timeLimit;
         timeLimit = remainingTime;
 
@@ -636,7 +636,7 @@ std::pair<Move, int> AbaloneAI::findBestMoveIterativeDeepening(Board& board, int
 
         auto result = findBestMove(board, gameProgress);
 
-        // Restore original time limit and max depth
+        // Restore original time limit and max depth.
         timeLimit = originalTimeLimit;
         maxDepth = originalMaxDepth;
 
@@ -645,8 +645,7 @@ std::pair<Move, int> AbaloneAI::findBestMoveIterativeDeepening(Board& board, int
             bestScore = result.second;
             foundMove = true;
             std::cout << "Completed depth " << depth << std::endl;
-        }
-        else {
+        } else {
             std::cout << "Timeout at depth " << depth << ", using previous result" << std::endl;
             break;
         }
@@ -660,12 +659,9 @@ std::pair<Move, int> AbaloneAI::findBestMoveIterativeDeepening(Board& board, int
         bestScore = result.second;
     }
 
-    // At the end of search, print TT usage statistics
     std::cout << "Transposition table usage: " << transpositionTable.getUsage() << "%" << std::endl;
     std::cout << "TT hit rate: " << transpositionTable.getHitRate() << "%" << std::endl;
-
     std::cout << "Pruning count: " << pruningCount << std::endl;
-
     std::cout << "Game progress: " << gameProgress << std::endl;
 
     return std::make_pair(bestMove, bestScore);
