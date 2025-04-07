@@ -68,7 +68,7 @@ class SettingsView(QtWidgets.QWidget):
         self._host_colour_combo = self._create_labeled_dropdown(
             parent=self.center_frame,
             layout=inner_layout,
-            label_text="Host Colour",
+            label_text="Human/Opposing AI Colour",
             dropdown_values=["Black", "White"],
             default_value="Black"
         )

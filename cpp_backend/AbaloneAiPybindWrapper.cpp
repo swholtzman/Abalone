@@ -47,8 +47,10 @@ public:
         }
     }
 
-    std::tuple<std::string, std::string> find_best_move() {
-        auto result = ai.findBestMoveIterativeDeepening(board);
+    std::tuple<std::string, std::string> find_best_move(int move_count, int total_moves) {
+        // Use a fixed max search depth (e.g., 10) or allow it to be configurable
+        int maxSearchDepth = 10;
+        auto result = ai.findBestMoveIterativeDeepening(board, maxSearchDepth, move_count, total_moves);
         Occupant side = board.nextToMove;
         std::string moveStr = board.moveToNotation(result.first, side);
         board.applyMove(result.first);
@@ -73,6 +75,7 @@ PYBIND11_MODULE(abalone_ai, m) {
              pybind11::arg("time_limit_ms") = 5000,
              pybind11::arg("tt_size_mb") = 64)
         .def("parse_board_state", &AbaloneAIPybind::parse_board_state)
-        .def("find_best_move", &AbaloneAIPybind::find_best_move)
+        .def("find_best_move", &AbaloneAIPybind::find_best_move,
+             pybind11::arg("move_count"), pybind11::arg("total_moves"))
         .def("get_current_board_string", &AbaloneAIPybind::get_current_board_string);
 }

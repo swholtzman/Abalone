@@ -1,5 +1,5 @@
 from pathlib import Path
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtGui, QtCore
 
 from python_gui.agent_secretary import AgentSecretary
 from python_gui.factories.scoreboard_factory import ScoreboardFactory
@@ -54,35 +54,35 @@ class GameView(QtWidgets.QWidget):
         self.info_panel_view = InfoPanelView(self, self.info_panel_model)
         self.game_board.set_ai_update_callback(self.update_ai_information)
 
-        # **Create left column: Black Scoreboard (top) and Move History (bottom)**
+        # Create left column: Black Scoreboard (top) and Move History (bottom)
         left_column = QtWidgets.QWidget()
         left_layout = QtWidgets.QVBoxLayout(left_column)
-        left_layout.addWidget(self.black_scoreboard_view)  # Scoreboard at the top
-        left_layout.addStretch()  # Stretch pushes Move History to the bottom
-        left_layout.addWidget(self.move_history_view)  # Move History at the bottom
+        left_layout.addWidget(self.black_scoreboard_view)
+        left_layout.addStretch()
+        left_layout.addWidget(self.move_history_view)
 
-        # **Create right column: White Scoreboard (top) and Agent Information (bottom)**
+        # Create right column: White Scoreboard (top) and Agent Information (bottom)
         right_column = QtWidgets.QWidget()
         right_layout = QtWidgets.QVBoxLayout(right_column)
-        right_layout.addWidget(self.white_scoreboard_view)  # Scoreboard at the top
-        right_layout.addStretch()  # Stretch pushes Agent Info to the bottom
-        right_layout.addWidget(self.info_panel_view)  # Agent Info at the bottom
+        right_layout.addWidget(self.white_scoreboard_view)
+        right_layout.addStretch()
+        right_layout.addWidget(self.info_panel_view)
 
-        # **Create content layout: horizontal arrangement of columns**
+        # Create content layout: horizontal arrangement of columns
         content_layout = QtWidgets.QHBoxLayout()
-        content_layout.addStretch(1)  # Left spacer for horizontal centering
+        content_layout.addStretch(1)
         content_layout.addWidget(left_column)
-        content_layout.addWidget(self.board_view)  # Gameboard in the middle
+        content_layout.addWidget(self.board_view)
         content_layout.addWidget(right_column)
-        content_layout.addStretch(1)  # Right spacer for horizontal centering
+        content_layout.addStretch(1)
 
-        # **Main layout: vertical layout for vertical centering**
+        # Main layout: vertical layout for vertical centering
         main_layout = QtWidgets.QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
-        main_layout.addStretch(1)  # Top spacer for vertical centering
+        main_layout.addStretch(1)
         main_layout.addLayout(content_layout)
-        main_layout.addStretch(1)  # Bottom spacer for vertical centering
+        main_layout.addStretch(1)
 
         # Create buttons
         self.pause_button = PauseButton(self)
@@ -98,17 +98,15 @@ class GameView(QtWidgets.QWidget):
 
         # Button layout
         button_layout = QtWidgets.QHBoxLayout()
-        button_layout.addStretch(1)  # Left spacer for centering
+        button_layout.addStretch(1)
         button_layout.addWidget(self.pause_button)
-        button_layout.addSpacing(10)  # 10px gap between buttons
+        button_layout.addSpacing(10)
         button_layout.addWidget(self.undo_button)
         button_layout.addSpacing(10)
         button_layout.addWidget(self.restart_button)
         button_layout.addSpacing(10)
         button_layout.addWidget(self.quit_button)
-        button_layout.addStretch(1)  # Right spacer for centering
-
-        # Add to main layout below game board
+        button_layout.addStretch(1)
         main_layout.addLayout(button_layout)
 
         self.win_screen = WinScreen(self)
@@ -116,6 +114,7 @@ class GameView(QtWidgets.QWidget):
         self.win_screen.hide()
 
         self._config = None
+        self.match_type = "Human vs Human"  # Default match type
 
     def pause_game(self):
         self.pause_button.on_click()
@@ -139,12 +138,27 @@ class GameView(QtWidgets.QWidget):
         self.main_app_callback()
 
     def update_ai_information(self, board_state):
-        """Update AI info and highlight the suggested move."""
+        """
+        Update AI info and highlight the suggested move.
+        Only call the C++ backend if the current turn belongs to an AI:
+         - In Human vs Human mode, no calls are made.
+         - In Human vs Computer mode, only call the backend if current player is AI.
+         - In Computer vs Computer mode, always call the backend.
+        """
+        current_player = board_state.splitlines()[0].strip().lower()  # "b" or "w"
+
+        if self.match_type == "Human vs Human":
+            return
+
+        if self.match_type == "Human vs Computer":
+            # If the host is human (per config), skip AI call when it's their turn.
+            if self._config.host_colour.lower()[0] == current_player:
+                return
+
+        # Call the C++ backend synchronously (blocking call)
         next_move, move_time = self.agent_secretary.send_state_to_agent(board_state)
-        # Parse and highlight the move
         parsed_move = self.game_board.parse_move(next_move)
         self.game_board.highlight_suggested_move(parsed_move)
-        # Update info panel
         self.info_panel_model.next_move = next_move
         self.info_panel_model.move_time = move_time
         self.info_panel_model.agent_total_time = self.agent_secretary.agent_total_time
@@ -154,10 +168,26 @@ class GameView(QtWidgets.QWidget):
         """Handle move data from GameBoard."""
         self.move_history_model.add_move(move_description)
         self.move_history_view.refresh()
-
-        # Check for winning condition
+        
+        # Force the board view to update and process events so the new move is visible.
+        self.board_view.viewport().update()
+        QtWidgets.QApplication.processEvents()
+        
         if self.black_scoreboard_model.score >= 6 or self.white_scoreboard_model.score >= 6:
             self.show_win_screen()
+            return
+
+        board_state = self.game_board.get_board_state()
+        current_player = board_state.splitlines()[0].strip().lower()  # "b" or "w"
+
+        # In Human vs Computer, trigger AI move if it's not the human's turn.
+        if self.match_type == "Human vs Computer":
+            if self._config.host_colour.lower()[0] != current_player:
+                # Delay the AI call so that the move is visible before starting AI processing.
+                QtCore.QTimer.singleShot(500, lambda: self.update_ai_information(self.game_board.get_board_state()))
+        # In Computer vs Computer, always trigger AI move after a delay.
+        elif self.match_type == "Computer vs Computer":
+            QtCore.QTimer.singleShot(500, lambda: self.update_ai_information(self.game_board.get_board_state()))
 
     def show_win_screen(self):
         """Display the winning screen for the given winner."""
@@ -171,8 +201,8 @@ class GameView(QtWidgets.QWidget):
         host_colour = config_data.host_colour
         time_limit_black = config_data.time_limit_black
         time_limit_white = config_data.time_limit_white
+        self.match_type = config_data.match_type  # Store the match type setting
 
-        # Reset game state
         self.black_scoreboard_model.reset()
         self.white_scoreboard_model.reset()
         self.black_scoreboard_model.turn_time_settings = time_limit_black
@@ -185,13 +215,13 @@ class GameView(QtWidgets.QWidget):
         self.move_history_model.clear()
         self.game_board.current_player = "Black"
 
-        # Set board layout
         opponent_color = "White" if host_colour.lower() == "black" else "Black"
         self.game_board.set_layout(board_layout, host_color=host_colour, opponent_color=opponent_color)
 
-        # Initial AI update
+        # For AI matches, trigger an initial AI update.
         initial_board_state = self.game_board.get_board_state()
-        self.update_ai_information(initial_board_state)
+        if self.match_type in ["Computer vs Computer", "Human vs Computer"]:
+            QtCore.QTimer.singleShot(500, lambda: self.update_ai_information(initial_board_state))
 
     def get_board_state(self):
         """Retrieve the current board state."""
@@ -199,19 +229,13 @@ class GameView(QtWidgets.QWidget):
 
     def reset_game(self):
         """Reset all game state to initial conditions."""
-        # Reset scoreboards
         self.black_scoreboard_model.reset()
         self.white_scoreboard_model.reset()
-        self.black_scoreboard_model.is_active = True  # Black starts
+        self.black_scoreboard_model.is_active = True
         self.white_scoreboard_model.is_active = False
         self.black_scoreboard_view.refresh()
         self.white_scoreboard_view.refresh()
 
-        # Clear move history
         self.move_history_model.clear()
-
-        # Reset game board
         self.game_board.clear_board()
-
-        # Hide winning screen
         self.win_screen.hide()

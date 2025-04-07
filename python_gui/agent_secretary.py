@@ -1,12 +1,17 @@
 import time
 import sys
 import random
+from pathlib import Path
+from PyQt5 import QtWidgets
+
+# Uncomment for macOS
+sys.path.insert(0, "../build")
 
 import abalone_ai
 print(abalone_ai.__file__)
 
 class AgentSecretary:
-    def __init__(self, game_view, depth=6, time_limit_ms=10000, tt_size_mb=128):
+    def __init__(self, game_view, depth=4, time_limit_ms=5000, tt_size_mb=128):
         self.latest_board = None
         self.game_view = game_view
         self.last_move_time = 0.0
@@ -27,13 +32,32 @@ class AgentSecretary:
         start_time = time.time()
 
         self.ai.parse_board_state(board_state)
-        move, updated_board = self.ai.find_best_move()  # Get both values
+        
+        # Determine current move count from the scoreboard model based on the current player
+        first_line = board_state.splitlines()[0].strip()
+        if first_line.lower() == 'b':
+            current_move_count = self.game_view.black_scoreboard_model.num_moves_made
+        else:
+            current_move_count = self.game_view.white_scoreboard_model.num_moves_made
+        print(f"[DEBUG] Move count from scoreboard: {current_move_count}")
+
+        # Retrieve total_move_limit from the configuration; default to 100 if not set.
+        total_move_limit = (
+            self.game_view._config.moves_per_team
+            if self.game_view._config is not None else 100
+        )
+        print(f"[DEBUG] Total moves limit: {total_move_limit}")
+
+        move, updated_board = self.ai.find_best_move(current_move_count, total_move_limit)
+        
+        # Debug message to show the AI call worked
+        print("[DEBUG] AI move computed successfully.")
 
         print(f"[DEBUG] Move from C++: {move}")
         print(f"[DEBUG] Move Suggested by Agent: {move}")
         print(f"[DEBUG] Updated board: {updated_board}")
 
-        # Store updated board in case other methods want it later
+        # Store updated board in case other methods need it later
         self.latest_board = updated_board
 
         move_time = time.time() - start_time
@@ -42,6 +66,7 @@ class AgentSecretary:
 
         return move, move_time  # Return only 2 values to avoid unpacking error
 
+    # Uncomment or add additional methods as needed.
     # @staticmethod
     # def generate_random_move():
     #     players = ["Black", "White"]
@@ -50,18 +75,3 @@ class AgentSecretary:
     #     from_tiles = [f"{chr(65 + random.randint(0, 8))}{random.randint(1, 9)}" for _ in range(num_tiles)]
     #     to_tiles = [f"{chr(65 + random.randint(0, 8))}{random.randint(1, 9)}" for _ in range(num_tiles)]
     #     return f"{player} moves {{{', '.join(from_tiles)}}} to {{{', '.join(to_tiles)}}}"
-    
-
-# Test function here if you want to know where the connection between cpp and python is
-
-    if __name__ == "__main__":
-        ai = abalone_ai.AbaloneAI()
-        board_state = """b
-    C5b,D5b,E4b,E5b,E6b,F5b,F6b,F7b,F8b,G6b,H6b,C3w,C4w,D3w,D4w,D6w,E7w,F4w,G5w,G7w,G8w,G9w,H7w,H8w,H9w
-    """
-        ai.parse_board_state(board_state)
-        move = ai.find_best_move()
-
-        print("[TEST] Move from AI:", move)
-        print("[TEST] Updated board state:")
-        print(ai.get_current_board_string())
