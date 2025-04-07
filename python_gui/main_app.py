@@ -14,7 +14,7 @@ class MainApp(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Abalone")
-        self.resize(800, 600)
+        self.resize(1280, 800)
         self.stacked_widget = QtWidgets.QStackedWidget()
         self.stacked_widget.setStyleSheet("background-color: #131313;")
         self.setCentralWidget(self.stacked_widget)
