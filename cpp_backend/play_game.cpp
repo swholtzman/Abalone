@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
     // mode: "ai" to use AI for both sides,
     //       "random" for random moves for both sides,
     //       "ai_vs_random" for AI vs random (Black uses AI, White random)
-    int winningThreshold = 3;
+    int winningThreshold = 6;
     int aiDepth = 4;
     int timeLimitMs = 6000;
     int maxMoves = 50; // Maximum number of moves to simulate
@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
 
     // Set up the board using the standard starting layout.
     Board board;
-    board.initStandardLayout();
+    board.initGermanDaisyLayout(); // Use the German Daisy layout for the game.
     // Ensure the first move is by Black.
     board.nextToMove = Occupant::BLACK;
 
@@ -85,7 +85,15 @@ int main(int argc, char* argv[]) {
         }
 
         if (moveCount >= maxMoves*2) {
-            std::cout << "Game ended after " << maxMoves << " moves. No winner.\n";
+            if (whiteMarbles > blackMarbles) {
+                std::cout << "Game ended after " << maxMoves << " moves. White wins!\n";
+            }
+            else if (blackMarbles > whiteMarbles) {
+                std::cout << "Game ended after " << maxMoves << " moves. Black wins!\n";
+            }
+            else {
+                std::cout << "Game ended after " << maxMoves << " moves. It's a draw!\n";
+            }
             break;
         }
 
@@ -132,7 +140,7 @@ int main(int argc, char* argv[]) {
                 }
                 if (board.nextToMove == Occupant::BLACK) {
                     AbaloneAI aiMove(aiDepth, timeLimitMs);
-                    auto result = aiMove.findBestMoveIterativeDeepening(board, aiDepth, moveAICount, maxMoves);
+                    auto result = aiMove.findBestMoveIterativeDeepening(board, aiDepth);
                     chosenMove = result.first;
                     std::cout << "Black (AI) chooses move: "
                         << Board::moveToNotation(chosenMove, board.nextToMove) << "\n";

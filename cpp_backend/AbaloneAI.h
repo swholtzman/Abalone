@@ -19,6 +19,12 @@ private:
     // Indicates if search was terminated due to time limit
     bool timeoutOccurred;
 
+    mutable std::mutex evalMutex;
+    mutable std::mutex ttMutex;
+    mutable std::mutex timeoutMutex;
+    mutable std::mutex pruningMutex;
+    mutable std::mutex killerMovesMutex;
+
     // Piece value
     static const int MARBLE_VALUE = 100;
 
@@ -62,6 +68,8 @@ private:
      */
     int calculatePushability(const Board& board, Occupant side);
 
+    int calculateThreatPotential(const Board& board, Occupant side);
+
     /**
      * Checks if the time limit has been exceeded.
      */
@@ -73,10 +81,10 @@ private:
     int minimax(Board& board, int depth, int alpha, int beta, bool maximizingPlayer, float gameProgress);
 
     // Evaluate a move quickly for node ordering
-    int evaluateMove(const Board& board, const Move& move, Occupant side, float gameProgress);
+    int evaluateMove(const Board& board, const Move& move, Occupant side);
 
     // Order moves based on evaluation and TT move
-    void orderMoves(std::vector<Move>& moves, const Board& board, Occupant side, const Move& ttMove, float gameProgress);
+    void orderMoves(std::vector<Move>& moves, const Board& board, Occupant side, const Move& ttMove, int depth);
 
 public:
     // Default parameters are specified only here.
