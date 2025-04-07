@@ -104,6 +104,60 @@ void TranspositionTable::clearTable() {
     std::memset(m_table.data(), 0, m_table.size() * sizeof(TTEntry));
 }
 
+
+bool TranspositionTable::loadTableFromFile(const std::string& filename) {
+    std::ifstream inFile(filename);
+    if (!inFile) {
+        std::cerr << "[TT] Failed to open file for reading: " << filename << "\n";
+        return false;
+    }
+
+    clearTable();  // Start fresh
+
+    uint64_t key;
+    int depth, score, typeInt, age;
+    std::string moveStr;
+
+    while (inFile >> key >> depth >> score >> typeInt >> moveStr >> age) {
+        TTEntry entry;
+        entry.key = key;
+        entry.depth = depth;
+        entry.score = score;
+        entry.type = static_cast<MoveType>(typeInt);
+        entry.bestMove = Move::deserialize(moveStr);  // You'll need to implement this
+        entry.age = age;
+        entry.isOccupied = true;
+
+        size_t index = key % m_table.size();
+        m_table[index] = entry;
+    }
+
+    std::cout << "[TT] Transposition table loaded from " << filename << "\n";
+    return true;
+}
+
+void TranspositionTable::saveTableToFile(const std::string& filename) {
+    std::ofstream outFile(filename);
+    if (!outFile) {
+        std::cerr << "[TT] Failed to open file for writing: " << filename << "\n";
+        return;
+    }
+
+    for (const auto& entry : m_table) {
+        if (!entry.isOccupied) continue;
+
+        outFile << entry.key << " "
+                << entry.depth << " "
+                << entry.score << " "
+                << static_cast<int>(entry.type) << " "
+                << entry.bestMove.serialize() << " "  // You'll need to implement this
+                << entry.age << "\n";
+    }
+
+    std::cout << "[TT] Transposition table saved to " << filename << "\n";
+}
+
+
 // Compute Zobrist hash for a given board position
 uint64_t TranspositionTable::computeHash(const Board& board) {
     uint64_t hash = 0;
@@ -182,6 +236,7 @@ bool TranspositionTable::probeEntry(const Board& board, int depth, int& score, M
 
     return false;
 }
+
 
 // Get the best move from transposition table without depth/score requirements
 bool TranspositionTable::getBestMove(const Board& board, Move& bestMove) {

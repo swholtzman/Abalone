@@ -39,7 +39,11 @@ public:
     
     // Probe the transposition table for a position
     bool probeEntry(const Board& board, int depth, int& score, MoveType& moveType, Move& bestMove);
-    
+
+    bool loadTableFromFile(const std::string &filename);
+
+    void saveTableToFile(const std::string &filename);
+
     // Get the best move from transposition table without depth/score requirements
     bool getBestMove(const Board& board, Move& bestMove);
     

@@ -27,18 +27,21 @@ enum class Occupant {
 // 'direction' is an integer from 0 to 5 corresponding to a movement direction.
 // 'isInline' indicates whether the move is inline (true) or a sidestep (false).
 // 'pushCount' can store how many opponent marbles are pushed.
-struct Move {
+class Move {
+public:
     std::vector<int> marbleIndices;
     int direction;
-    bool isInline;
     int pushCount;
+    bool isInline;
 
-    bool operator==(const Move& other) const {
-        return (marbleIndices == other.marbleIndices &&
-                direction == other.direction &&
-                isInline == other.isInline &&
-                pushCount == other.pushCount);
-    }
+    // Serialization to string for file writing
+    std::string serialize() const;
+
+    // Deserialization from string for file reading
+    static Move deserialize(const std::string& str);
+
+    // Equality operator (if not already defined)
+    bool operator==(const Move& other) const;
 };
 
 //------------------------------------------------------------------------------

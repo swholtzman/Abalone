@@ -30,8 +30,8 @@ int main(int argc, char* argv[]) {
     // mode: "ai" to use AI for both sides,
     //       "random" for random moves for both sides,
     //       "ai_vs_random" for AI vs random (Black uses AI, White random)
-    int winningThreshold = 6;
-    int aiDepth = 5;
+    int winningThreshold = 6; //6
+    int aiDepth = 5;//5
     int timeLimitMs = 10000;
     std::string mode = "ai_vs_random"; // Options: "ai", "random", or "ai_vs_random"
 
@@ -57,6 +57,9 @@ int main(int argc, char* argv[]) {
     board.initStandardLayout();
     // Ensure the first move is by Black.
     board.nextToMove = Occupant::BLACK;
+
+    AbaloneAI preloadAI(aiDepth, timeLimitMs);
+    preloadAI.transpositionTable.loadTableFromFile("transposition_table.txt");
 
     // Create files for visualization
     std::ofstream initialPositionFile("initial_position.txt");
@@ -102,8 +105,10 @@ int main(int argc, char* argv[]) {
             // Determine move selection based on the configuration mode.
             if (mode == "ai") {
                 // Both sides use AI.
-                AbaloneAI aiMove(aiDepth, timeLimitMs);
-                auto result = aiMove.findBestMoveIterativeDeepening(board, aiDepth);
+                // AbaloneAI aiMove(aiDepth, timeLimitMs);
+                // auto result = aiMove.findBestMoveIterativeDeepening(board, aiDepth);
+                auto result = preloadAI.findBestMoveIterativeDeepening(board, aiDepth);
+
                 chosenMove = result.first;
                 std::cout << (board.nextToMove == Occupant::BLACK ? "Black" : "White")
                     << " (AI) chooses move: "
@@ -120,8 +125,10 @@ int main(int argc, char* argv[]) {
             else if (mode == "ai_vs_random") {
                 // Black uses AI; White chooses randomly.
                 if (board.nextToMove == Occupant::BLACK) {
-                    AbaloneAI aiMove(aiDepth, timeLimitMs);
-                    auto result = aiMove.findBestMoveIterativeDeepening(board, aiDepth);
+                    // AbaloneAI aiMove(aiDepth, timeLimitMs);
+                    // auto result = aiMove.findBestMoveIterativeDeepening(board, aiDepth);
+                    auto result = preloadAI.findBestMoveIterativeDeepening(board, aiDepth);
+
                     chosenMove = result.first;
                     std::cout << "Black (AI) chooses move: "
                         << Board::moveToNotation(chosenMove, board.nextToMove) << "\n";
@@ -162,6 +169,9 @@ int main(int argc, char* argv[]) {
     system(("./board_visualizer initial_position.txt moves_made.txt " + std::string(board.nextToMove == Occupant::BLACK ? "w" : "b")).c_str());
 
     std::cout << "Board visualization complete. Check visualizer_output.txt for results.\n";
+
+    // End of game
+    preloadAI.transpositionTable.saveTableToFile("transposition_table.txt");
 
     return 0;
 }

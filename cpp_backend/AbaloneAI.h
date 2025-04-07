@@ -21,8 +21,6 @@ private:
     // Indicates if search was terminated due to time limit
     bool timeoutOccurred;
 
-    TranspositionTable transpositionTable;
-
     // Piece value
     static const int MARBLE_VALUE = 100;
 
@@ -68,6 +66,7 @@ private:
     void orderMoves(std::vector<Move>& moves, const Board& board, Occupant side, const Move& ttMove);
 
 public:
+    TranspositionTable transpositionTable;
     // Constructor with default parameters.
     AbaloneAI(int depth = 4, int timeLimitMs = 5000, size_t ttSizeInMB = 64);
 

@@ -27,6 +27,55 @@ namespace std {
 
 using namespace std;
 
+// Implementation of Move::serialize and Move::deserialize
+// Place this in a source file like Board.cpp or a new Move.cpp if you modularize further
+
+
+// Serialize the Move into a string
+std::string Move::serialize() const {
+    std::ostringstream oss;
+    oss << direction << "," << pushCount << "," << isInline << "," << marbleIndices.size();
+    for (int idx : marbleIndices) {
+        oss << "," << idx;
+    }
+    return oss.str();
+}
+
+// Deserialize a Move from a string
+Move Move::deserialize(const std::string& str) {
+    Move move;
+    std::istringstream iss(str);
+    std::string token;
+
+    std::getline(iss, token, ',');
+    move.direction = std::stoi(token);
+
+    std::getline(iss, token, ',');
+    move.pushCount = std::stoi(token);
+
+    std::getline(iss, token, ',');
+    move.isInline = std::stoi(token);
+
+    std::getline(iss, token, ',');
+    int numIndices = std::stoi(token);
+
+    for (int i = 0; i < numIndices; ++i) {
+        std::getline(iss, token, ',');
+        move.marbleIndices.push_back(std::stoi(token));
+    }
+
+    return move;
+}
+
+// Equality operator for Move
+bool Move::operator==(const Move& other) const {
+    return direction == other.direction &&
+           pushCount == other.pushCount &&
+           isInline == other.isInline &&
+           marbleIndices == other.marbleIndices;
+}
+
+
 // Helper: Convert occupant enum to a string.
 static string occupantToString(Occupant occ) {
     switch (occ) {
