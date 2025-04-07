@@ -5,6 +5,7 @@ An interactive implementation of the **Abalone board game** with an AI opponent 
 ## 🖼️ Game UI Preview
 
 ![Abalone Game UI](public/resources/AbaloneAIMenu.png)
+![Abalone Game UI](public/resources/AbaloneAISettings.png)
 ---
 
 ## 🧠 Introduction
