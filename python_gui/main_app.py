@@ -70,7 +70,7 @@ class MainApp(QtWidgets.QMainWindow):
         self.game_view.set_config(game_config)
         self.show_screen("Game View")
 
-    def on_quit_game(self):
+    def on_quit_game(self, _=None):
         self.show_screen("Intro")
 
 if __name__ == "__main__":
