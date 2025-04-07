@@ -5,6 +5,8 @@
 #include "TranspositionTable.h"
 #include <chrono>
 #include <utility>
+#include <mutex>
+
 
 class AbaloneAI {
 private:
@@ -43,7 +45,7 @@ private:
     // Helper function to check if a move is a killer move
     bool isKillerMove(const Move& move, int depth) const;
 
-    void getDynamicWeights(float gameProgress, int& marbleValue, int& centerValue, 
+    void getDynamicWeights(float gameProgress, int& marbleValue, int& centerValue,
         int& cohesionValue, int& edgeValue, int& threatValue,
         int& blackMarbles, int& whiteMarbles, Occupant currentPlayer);
 
@@ -89,7 +91,7 @@ private:
 public:
     // Default parameters are specified only here.
     AbaloneAI(int depth = 4, int timeLimitMs = 5000, size_t ttSizeInMB = 64);
-    
+
     /**
      * Finds the best move for the given board position.
      * Returns the best move and its evaluation score.

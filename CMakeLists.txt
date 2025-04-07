@@ -14,7 +14,7 @@ pybind11_add_module(abalone_ai
     cpp_backend/AbaloneAI.cpp
     cpp_backend/Board.cpp
     cpp_backend/TranspositionTable.cpp
-    cpp_backend/AbaloneAIPybindWrapper.cpp
+    cpp_backend/AbaloneAiPybindWrapper.cpp
 )
 
 # Explicitly link against Python3 (from Python3_EXECUTABLE)
