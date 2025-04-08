@@ -105,6 +105,60 @@ public:
     // Apply a move to *this* board (modifies occupant[]).
     void applyMove(const Move& m);
 
+    bool isMarbleInDanger(int index, Occupant player) const {
+        Occupant opponent = (player == Occupant::BLACK) ? Occupant::WHITE : Occupant::BLACK;
+        
+        // First check if the marble is on the edge
+        bool isOnEdge = false;
+        for (int dir = 0; dir < NUM_DIRECTIONS; ++dir) {
+            if (neighbors[index][dir] == -1) {
+                isOnEdge = true;
+                break;
+            }
+        }
+        
+        // If not on edge, it's not in immediate danger of being pushed off
+        if (!isOnEdge) {
+            return false;
+        }
+        
+        // Now check if there's a threatening group of opponent marbles
+        for (int dir = 0; dir < NUM_DIRECTIONS; ++dir) {
+            int prev = neighbors[index][(dir + 3) % 6];  // Opposite direction (pusher's side)
+            int next = neighbors[index][dir];  // Direction toward edge
+            
+            // Skip if there's no opponent marble in the pushing position
+            if (prev == -1 || occupant[prev] != opponent)
+                continue;
+            
+            // Count opponent marbles in a line that could push
+            int opponentCount = 1;
+            int curr = prev;
+            while (opponentCount < 3) {
+                curr = neighbors[curr][(dir + 3) % 6];
+                if (curr == -1 || occupant[curr] != opponent)
+                    break;
+                opponentCount++;
+            }
+            
+            // Count friendly marbles in the same line (including our target marble)
+            int friendlyCount = 1;  // Start with 1 for the marble we're checking
+            curr = neighbors[index][dir];
+            while (curr != -1 && occupant[curr] == player) {
+                friendlyCount++;
+                curr = neighbors[curr][dir];
+            }
+            
+            // A marble is in danger if opponent has more marbles than friendly group
+            if (opponentCount >= friendlyCount && next == -1) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+
     bool isPushMove(const Move& move, Occupant player) const {
         if (!move.isInline || move.marbleIndices.empty())
             return false;
