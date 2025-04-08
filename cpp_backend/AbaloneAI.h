@@ -4,6 +4,7 @@
 #include "Board.h"
 #include "TranspositionTable.h"
 #include <chrono>
+#include <mutex>
 #include <utility>
 
 class AbaloneAI {
@@ -27,8 +28,6 @@ private:
 
     // Piece value
     static const int MARBLE_VALUE = 100;
-
-    TranspositionTable transpositionTable;
 
     //count the number of times pruning occurs
     int pruningCount = 0;
@@ -63,6 +62,7 @@ private:
      */
     int calculateEdgeDanger(const Board& board, Occupant side);
 
+
     /**
      * Calculate threat potential
      */
@@ -89,7 +89,8 @@ private:
 public:
     // Default parameters are specified only here.
     AbaloneAI(int depth = 4, int timeLimitMs = 5000, size_t ttSizeInMB = 64);
-    
+
+    TranspositionTable transpositionTable;
     /**
      * Finds the best move for the given board position.
      * Returns the best move and its evaluation score.

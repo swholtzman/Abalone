@@ -4,6 +4,7 @@
 #include <iostream>
 #include <cstring>
 #include <cstring>
+#include <fstream>
 
 // Zobrist key initialization
 bool TranspositionTable::s_zobristInitialized = false;
@@ -27,26 +28,75 @@ double TranspositionTable::getHitRate() {
     return (m_probes > 0) ? ((double)m_hits / m_probes * 100.0) : 0.0;
 }
 
-void TranspositionTable::initZobristKeys() {
-    // Initialize only once
-    if (s_zobristInitialized) return;
-
-
-    // Initialize with random values using a good random number generator
-    std::mt19937_64 rng(std::chrono::steady_clock::now().time_since_epoch().count());
-    std::uniform_int_distribution<uint64_t> dist;
-
+void TranspositionTable::saveZobristKeysTxt(const std::string& filename) {
+    std::ofstream outFile(filename);
+    if (!outFile) {
+        std::cerr << "[Zobrist] Failed to open file for writing: " << filename << "\n";
+        return;
+    }
 
     for (int i = 0; i < Board::NUM_CELLS; ++i) {
-        for (int j = 0; j < 3; ++j) { // 3 = EMPTY, BLACK, WHITE
-            s_zobristKeys[i][j] = dist(rng);
+        for (int j = 0; j < 3; ++j) {
+            outFile << s_zobristKeys[i][j] << " ";
+        }
+        outFile << "\n";
+    }
+
+    outFile << m_sideToMoveKey << "\n";
+
+    std::cout << "[Zobrist] Keys saved to " << filename << "\n";
+}
+
+
+bool TranspositionTable::loadZobristKeysTxt(const std::string& filename) {
+    std::ifstream inFile(filename);
+    if (!inFile) {
+        std::cerr << "[Zobrist] Failed to open file for reading: " << filename << "\n";
+        return false;
+    }
+
+    for (int i = 0; i < Board::NUM_CELLS; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            if (!(inFile >> s_zobristKeys[i][j])) {
+                std::cerr << "[Zobrist] Failed to read key at [" << i << "][" << j << "]\n";
+                return false;
+            }
         }
     }
 
+    if (!(inFile >> m_sideToMoveKey)) {
+        std::cerr << "[Zobrist] Failed to read m_sideToMoveKey\n";
+        return false;
+    }
 
-    // Additional key for the side to move
-    m_sideToMoveKey = dist(rng);
+    std::cout << "[Zobrist] Keys loaded from " << filename << "\n";
+    return true;
+}
 
+
+void TranspositionTable::initZobristKeys() {
+    if (s_zobristInitialized) return;
+
+    const std::string zobristFile = "zobrist_keys.txt";
+
+    if (loadZobristKeysTxt(zobristFile)) {
+        // Loaded from file
+    } else {
+        std::cout << "[Zobrist] Generating new Zobrist keys...\n";
+
+        std::mt19937_64 rng(std::chrono::steady_clock::now().time_since_epoch().count());
+        std::uniform_int_distribution<uint64_t> dist;
+
+        for (int i = 0; i < Board::NUM_CELLS; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                s_zobristKeys[i][j] = dist(rng);
+            }
+        }
+
+        m_sideToMoveKey = dist(rng);
+
+        saveZobristKeysTxt(zobristFile);
+    }
 
     s_zobristInitialized = true;
 }
@@ -57,6 +107,60 @@ void TranspositionTable::clearTable() {
         entry = TTEntry();
     }
 }
+
+
+bool TranspositionTable::loadTableFromFile(const std::string& filename) {
+    std::ifstream inFile(filename);
+    if (!inFile) {
+        std::cerr << "[TT] Failed to open file for reading: " << filename << "\n";
+        return false;
+    }
+
+    clearTable();  // Start fresh
+
+    uint64_t key;
+    int depth, score, typeInt, age;
+    std::string moveStr;
+
+    while (inFile >> key >> depth >> score >> typeInt >> moveStr >> age) {
+        TTEntry entry;
+        entry.key = key;
+        entry.depth = depth;
+        entry.score = score;
+        entry.type = static_cast<MoveType>(typeInt);
+        entry.bestMove = Move::deserialize(moveStr);  // You'll need to implement this
+        entry.age = age;
+        entry.isOccupied = true;
+
+        size_t index = key % m_table.size();
+        m_table[index] = entry;
+    }
+
+    std::cout << "[TT] Transposition table loaded from " << filename << "\n";
+    return true;
+}
+
+void TranspositionTable::saveTableToFile(const std::string& filename) {
+    std::ofstream outFile(filename);
+    if (!outFile) {
+        std::cerr << "[TT] Failed to open file for writing: " << filename << "\n";
+        return;
+    }
+
+    for (const auto& entry : m_table) {
+        if (!entry.isOccupied) continue;
+
+        outFile << entry.key << " "
+                << entry.depth << " "
+                << entry.score << " "
+                << static_cast<int>(entry.type) << " "
+                << entry.bestMove.serialize() << " "  // You'll need to implement this
+                << entry.age << "\n";
+    }
+
+    std::cout << "[TT] Transposition table saved to " << filename << "\n";
+}
+
 
 // Compute Zobrist hash for a given board position
 uint64_t TranspositionTable::computeHash(const Board& board) {

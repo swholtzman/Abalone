@@ -64,6 +64,9 @@ int main(int argc, char* argv[]) {
 
     initialPositionFile << board.toBoardString() << std::endl;
 
+    AbaloneAI preloadAI(aiDepth, timeLimitMs);
+    preloadAI.transpositionTable.loadTableFromFile("transposition_table.txt");
+
     int moveCount = 0;
     while (true) {
         std::cout << "\nBoard state: " << board.toBoardString() << "\n";
@@ -102,8 +105,9 @@ int main(int argc, char* argv[]) {
             // Determine move selection based on the configuration mode.
             if (mode == "ai") {
                 // Both sides use AI.
-                AbaloneAI aiMove(aiDepth, timeLimitMs);
-                auto result = aiMove.findBestMoveIterativeDeepening(board, aiDepth);
+                // AbaloneAI aiMove(aiDepth, timeLimitMs);
+                // auto result = aiMove.findBestMoveIterativeDeepening(board, aiDepth);
+                auto result = preloadAI.findBestMoveIterativeDeepening(board, aiDepth);
                 chosenMove = result.first;
                 std::cout << (board.nextToMove == Occupant::BLACK ? "Black" : "White")
                     << " (AI) chooses move: "
@@ -120,8 +124,10 @@ int main(int argc, char* argv[]) {
             else if (mode == "ai_vs_random") {
                 // Black uses AI; White chooses randomly.
                 if (board.nextToMove == Occupant::BLACK) {
-                    AbaloneAI aiMove(aiDepth, timeLimitMs);
-                    auto result = aiMove.findBestMoveIterativeDeepening(board, aiDepth);
+                    // AbaloneAI aiMove(aiDepth, timeLimitMs);
+                    // auto result = aiMove.findBestMoveIterativeDeepening(board, aiDepth);
+
+                    auto result = preloadAI.findBestMoveIterativeDeepening(board, aiDepth);
                     chosenMove = result.first;
                     std::cout << "Black (AI) chooses move: "
                         << Board::moveToNotation(chosenMove, board.nextToMove) << "\n";
@@ -162,6 +168,7 @@ int main(int argc, char* argv[]) {
     system(("./board_visualizer initial_position.txt moves_made.txt " + std::string(board.nextToMove == Occupant::BLACK ? "w" : "b")).c_str());
 
     std::cout << "Board visualization complete. Check visualizer_output.txt for results.\n";
+    preloadAI.transpositionTable.saveTableToFile("transposition_table.txt");
 
     return 0;
 }

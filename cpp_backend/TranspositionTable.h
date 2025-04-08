@@ -33,7 +33,11 @@ public:
     
     // Clear the table
     void clearTable();
-    
+
+    bool loadTableFromFile(const std::string &filename);
+
+    void saveTableToFile(const std::string &filename);
+
     // Store a position in the transposition table
     void storeEntry(const Board& board, int depth, int score, MoveType moveType, const Move& bestMove);
     
@@ -53,6 +57,10 @@ public:
 
 
     double getHitRate();
+
+    void saveZobristKeysTxt(const std::string &filename);
+
+    bool loadZobristKeysTxt(const std::string &filename);
 
 private:
     // Initialize Zobrist keys
