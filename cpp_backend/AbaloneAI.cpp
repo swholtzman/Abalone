@@ -50,7 +50,7 @@ int AbaloneAI::evaluatePosition(const Board& board, float gameProgress) {
 
     // Adjust weights based on game phase
     int marbleValue = MARBLE_VALUE;
-    int centerValue = 10;
+    int centerValue = 15;
     int cohesionValue = 5;
     int edgeValue = 15;
     int threatValue = 10;
@@ -497,6 +497,39 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board, float gameProgress) {
             whiteMarbles++;
     }
 
+    // Calculate if scores are roughly tied
+    bool scoresTied = blackMarbles == whiteMarbles;
+
+    // Check if we're near the end of the game (high game progress)
+    bool endgameNear = gameProgress >= 0.9f;
+
+    bool closeToWin = false;
+    if (maximizingPlayer) {
+        closeToWin = (whiteMarbles - 1) == ENDGAME;
+    }
+    else {
+        closeToWin = (blackMarbles - 1) == ENDGAME;
+    }
+
+    bool isLosing = false;
+    if (maximizingPlayer) {
+        isLosing = blackMarbles < whiteMarbles;
+    }
+    else {
+        isLosing = whiteMarbles < blackMarbles;
+    }
+
+    bool isCloseToLosing = false;
+    if (maximizingPlayer) {
+        isCloseToLosing = (blackMarbles - 1) == ENDGAME;
+    }
+    else {
+        isCloseToLosing = (whiteMarbles - 1) == ENDGAME;
+    }
+
+    std::cout << "Evaluating position: Black marbles: " << blackMarbles << ", White marbles: " << whiteMarbles << std::endl;
+    std::cout << "Close to losing: " << isCloseToLosing << ", Losing: " << isLosing << std::endl;
+
     std::vector<Move> possibleMoves = board.generateMoves(currentPlayer);
 
     if (possibleMoves.empty()) {
@@ -533,9 +566,9 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board, float gameProgress) {
                 if (!stillInDanger) {
                     // Give bonus points for defensive moves that rescue pieces
                     if (currentPlayer == Occupant::BLACK) {
-                        tempScore += 50; // Defensive bonus
+                        tempScore += 500; // Defensive bonus
                     } else {
-                        tempScore -= 50; // Defensive bonus (for WHITE lower is better)
+                        tempScore -= 500; // Defensive bonus (for WHITE lower is better)
                     }
                     
                     bool isBetter = (currentPlayer == Occupant::BLACK && tempScore > bestTempScore) || 
@@ -546,6 +579,11 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board, float gameProgress) {
                         bestTempMove = move;
                         foundBestMove = true;
                         std::cout << "Found defensive move, score: " << tempScore << std::endl;
+                    }
+
+                    if (isCloseToLosing && foundBestMove) {
+                        std::cout << "Close to losing: Returning best defensive move\n";
+                        return std::make_pair(bestTempMove, bestTempScore);
                     }
                 }
             }
@@ -608,28 +646,6 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board, float gameProgress) {
 
     std::cout << "Regular move evaluation" << std::endl;
 
-    // Calculate if scores are roughly tied
-    bool scoresTied = blackMarbles == whiteMarbles;
-
-    // Check if we're near the end of the game (high game progress)
-    bool endgameNear = gameProgress >= 0.9f;
-
-    bool closeToWin = false;
-    if (maximizingPlayer) {
-        closeToWin = (whiteMarbles - 1) == ENDGAME;
-    }
-    else {
-        closeToWin = (blackMarbles - 1) == ENDGAME;
-    }
-
-    bool isLosing = false;
-    if (maximizingPlayer) {
-        isLosing = blackMarbles < whiteMarbles && endgameNear;
-    }
-    else {
-        isLosing = whiteMarbles < blackMarbles && endgameNear;
-    }
-
     // If we're in endgame with tied scores, prioritize pushing moves immediately
     if (scoresTied && endgameNear || closeToWin && endgameNear || isLosing && endgameNear) {
         if (isLosing) {
@@ -646,9 +662,16 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board, float gameProgress) {
                 // Calculate rough score for logging purposes
                 Board tempBoard = board;
                 tempBoard.applyMove(move);
-                int score = evaluatePosition(tempBoard, gameProgress);
-    
-                return std::make_pair(move, score);
+                int tempScore = evaluatePosition(tempBoard, gameProgress);
+                int currentScore = evaluatePosition(board, gameProgress);
+                
+                if (currentPlayer == Occupant::BLACK && tempScore > currentScore ||
+                    currentPlayer == Occupant::WHITE && tempScore < currentScore) {
+                    std::cout << "Comparing push move score: " << tempScore << std::endl;
+                    // If the move is beneficial, return it
+                    std::cout << "Selected push move with score: " << tempScore << std::endl;
+                    return std::make_pair(move, tempScore);
+                }
             }
         }
     }
