@@ -29,3 +29,5 @@ Info.plist
 *.dylib
 *.a
 *.out
+*.dll
+*.pyd
