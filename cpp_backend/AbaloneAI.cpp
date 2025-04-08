@@ -28,7 +28,8 @@ int AbaloneAI::evaluatePosition(const Board& board, float gameProgress) {
 
     // Check if we're in endgame with tied scores
     bool scoresTied = blackMarbles == whiteMarbles;
-    bool endgameNear = gameProgress > 0.9f;
+    bool endgameNear = gameProgress >= 0.85f;
+    bool midGame = gameProgress >= 0.3f;
 
     bool closeToWin = false;
     if (board.nextToMove == Occupant::BLACK) {
@@ -53,20 +54,6 @@ int AbaloneAI::evaluatePosition(const Board& board, float gameProgress) {
     int cohesionValue = 5;
     int edgeValue = 15;
     int threatValue = 10;
-
-    // if (gameProgress < 0.2f) {
-    //     // Early game: focus on mobility and center control
-    //     centerValue = 15;
-    //     edgeValue = 10;
-    // } else if (gameProgress >= 0.2f && gameProgress < 0.8f) {
-    //     // Mid game: balance between mobility and group cohesion
-    //     cohesionValue = 10;
-    // } else {
-    //     // Late game: focus on group cohesion and edge danger
-    //     cohesionValue = 8;
-    //     edgeValue = 20;
-    //     threatValue = 15;
-    // }
 
     // Center control
     int blackCenterControl = 0;
@@ -156,7 +143,7 @@ int AbaloneAI::evaluateMove(const Board& board, const Move& move, Occupant side)
     // Prioritize group-forming moves
     int beforeCohesion = calculateCohesion(board, side);
     int afterCohesion = calculateCohesion(tempBoard, side);
-    score += (afterCohesion - beforeCohesion) * 10;
+    score += (afterCohesion - beforeCohesion) * 5;
 
     // Penalize moves that put marbles in danger
     int beforeDanger = calculateEdgeDanger(board, side);
@@ -499,6 +486,25 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board, float gameProgress) {
         return std::make_pair(Move(), 0);
     }
 
+    for (const auto& move : possibleMoves) {
+        if (board.isPushMove(move, currentPlayer)) {
+            // Evaluate the move by simulating it first
+            Board tempBoard = board;
+            tempBoard.applyMove(move);
+            int score = evaluatePosition(tempBoard, gameProgress);
+            int currentScore = evaluatePosition(board, gameProgress);
+            
+            // Only directly select the push move if it improves position
+            if (currentPlayer == Occupant::BLACK && score > currentScore || 
+                currentPlayer == Occupant::WHITE && score < currentScore) {
+                std::cout << "Directly selecting beneficial push move" << std::endl;
+                return std::make_pair(move, score);
+            } else {
+                std::cout << "Found push move but it's not beneficial" << std::endl;
+            }
+        }
+    }
+
     // Check if we're in endgame with tied scores
     int blackMarbles = 0;
     int whiteMarbles = 0;
@@ -513,28 +519,42 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board, float gameProgress) {
     bool scoresTied = blackMarbles == whiteMarbles;
 
     // Check if we're near the end of the game (high game progress)
-    bool endgameNear = gameProgress > 0.9f;
+    bool endgameNear = gameProgress >= 0.85f;
 
     bool closeToWin = false;
-    if (board.nextToMove == Occupant::BLACK) {
+    if (maximizingPlayer) {
         closeToWin = (whiteMarbles - 1) == ENDGAME;
     }
     else {
         closeToWin = (blackMarbles - 1) == ENDGAME;
     }
 
+    bool isLosing = false;
+    if (maximizingPlayer) {
+        isLosing = blackMarbles < whiteMarbles && endgameNear;
+    }
+    else {
+        isLosing = whiteMarbles < blackMarbles && endgameNear;
+    }
+
     // If we're in endgame with tied scores, prioritize pushing moves immediately
-    if (scoresTied && endgameNear || closeToWin && endgameNear) {
-        std::cout << "Endgame with tied scores: Prioritizing push moves" << std::endl;
+    if (scoresTied && endgameNear || closeToWin && endgameNear || isLosing && endgameNear) {
+        if (isLosing) {
+            std::cout << "Endgame with losing scores: Prioritizing push moves" << std::endl;
+        } else if (closeToWin) {
+            std::cout << "Endgame with winning scores: Prioritizing push moves" << std::endl;
+        } else {
+            std::cout << "Endgame with tied scores: Prioritizing push moves" << std::endl;
+        }
         // Look for pushing moves
-        for (const Move& move : possibleMoves) {
-            if (move.pushCount > 0) {
-                std::cout << "Endgame with tied scores: Directly selecting push move" << std::endl;
+        for (const auto& move : possibleMoves) {
+            if (board.isPushMove(move, currentPlayer)) {
+                std::cout << "Directly selecting push move" << std::endl;
                 // Calculate rough score for logging purposes
                 Board tempBoard = board;
                 tempBoard.applyMove(move);
                 int score = evaluatePosition(tempBoard, gameProgress);
-
+    
                 return std::make_pair(move, score);
             }
         }

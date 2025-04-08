@@ -105,6 +105,57 @@ public:
     // Apply a move to *this* board (modifies occupant[]).
     void applyMove(const Move& m);
 
+    bool isPushMove(const Move& move, Occupant player) const {
+        if (!move.isInline || move.marbleIndices.empty())
+            return false;
+    
+        int front = getFrontCell(move.marbleIndices, move.direction);
+        int neighbor = neighbors[front][move.direction];
+    
+        if (neighbor == -1)
+            return false;
+    
+        Occupant opp = (player == Occupant::BLACK) ? Occupant::WHITE : Occupant::BLACK;
+        int pushableCount = 0;
+        int curr = neighbor;
+    
+        // Count opponent marbles in the push direction
+        while (curr != -1 && occupant[curr] == opp && pushableCount < 3) {
+            pushableCount++;
+            curr = neighbors[curr][move.direction];
+        }
+    
+        // Our group must be stronger than the number of opponent marbles
+        if (pushableCount == 0 || move.marbleIndices.size() <= pushableCount)
+            return false;
+    
+        // Condition 1: Are we pushing a marble off the board?
+        bool pushesOffBoard = (curr == -1);
+    
+        // Condition 2: Is the last cell empty (so push succeeds)?
+        bool safePush = (curr != -1 && occupant[curr] == Occupant::EMPTY);
+    
+        // Optional Condition 3: Directional preference (e.g. center control)
+        // We'll assume we prefer not to push toward edges unless gaining an advantage
+    
+        // Evaluate based on push target
+        if (pushesOffBoard)
+            return true;  // Always take the opportunity to eliminate a marble
+    
+        if (safePush) {
+            if (pushableCount == 1)
+                return true;  // Low-risk positional gain
+            else {
+                // Avoid risky trades unless we outnumber clearly
+                return move.marbleIndices.size() >= 3 && pushableCount == 2;
+            }
+        }
+    
+        // If we end up pushing into a blocked position or cannot gain from it, avoid it
+        return false;
+    }    
+    
+
     // Returns the index of the marble in 'group' that is furthest in the given direction.
     // Uses the dot product with the direction offset to decide which marble is the "front."
     int getFrontCell(const std::vector<int>& group, int direction) const;
