@@ -53,7 +53,7 @@ Pop-Location
 
 # 4.5. Copy the built module from the build directory to the python_gui folder
 Write-Host "Copying built module to python_gui folder..."
-Copy-Item -Path "build\abalone_ai.cp311-win_amd64.pyd" -Destination "python_gui\abalone_ai.cp311-win_amd64.pyd" -Force
+Copy-Item -Path "build\abalone_ai.cp312-win_amd64.pyd" -Destination "python_gui\abalone_ai.cp312-win_amd64.pyd" -Force
 
 # 4.6. Copy necessary runtime DLLs to the python_gui folder
 $mingwBin = "C:\ProgramData\mingw64\mingw64\bin"
