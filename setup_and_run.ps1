@@ -9,21 +9,21 @@ if (Test-Path "venv") {
 
 # 2. Create a new virtual environment using python3.12
 Write-Host "Creating new virtual environment..."
-python3.12 -m venv venv
+python -m venv venv
 
 # Activate the virtual environment
 . .\venv\Scripts\Activate.ps1
 
 # Ensure the venv has a python3.12 command by copying python.exe
-Copy-Item -Path .\venv\Scripts\python.exe -Destination .\venv\Scripts\python3.12.exe -Force
+# Copy-Item -Path .\venv\Scripts\python.exe -Destination .\venv\Scripts\python.exe -Force
 
 # 3. Upgrade pip and install dependencies
 Write-Host "Installing dependencies: pyqt5, pillow, pybind11, and cmake..."
-python3.12 -m pip install --upgrade pip
-python3.12 -m pip install pyqt5 pillow pybind11 cmake nuitka
+python -m pip install --upgrade pip
+python -m pip install pyqt5 pillow pybind11 cmake nuitka
 
 # Retrieve the pybind11 CMake directory from the installed package
-$pybind11CmakeDir = & python3.12 -m pybind11 --cmakedir
+$pybind11CmakeDir = & python -m pybind11 --cmakedir
 Write-Host "Using pybind11 CMake directory: $pybind11CmakeDir"
 
 # 4. Clean and build the project
@@ -36,7 +36,7 @@ New-Item -ItemType Directory -Path build | Out-Null
 Push-Location build
 
 # Dynamically find the Python executable from the venv
-$pythonExec = (Get-Command python3.12).Source
+$pythonExec = (Get-Command python).Source
 Write-Host "Using Python executable: $pythonExec"
 
 # Run CMake with the MinGW Makefiles generator and explicit compiler paths.
@@ -53,7 +53,7 @@ Pop-Location
 
 # 4.5. Copy the built module from the build directory to the python_gui folder
 Write-Host "Copying built module to python_gui folder..."
-Copy-Item -Path "build\abalone_ai.cp312-win_amd64.pyd" -Destination "python_gui\abalone_ai.cp312-win_amd64.pyd" -Force
+Copy-Item -Path "build\abalone_ai.cp311-win_amd64.pyd" -Destination "python_gui\abalone_ai.cp311-win_amd64.pyd" -Force
 
 # 4.6. Copy necessary runtime DLLs to the python_gui folder
 $mingwBin = "C:\ProgramData\mingw64\mingw64\bin"
@@ -65,12 +65,12 @@ Copy-Item -Path "$mingwBin\libwinpthread-1.dll" -Destination "python_gui\" -Forc
 # 4.7. Copy Python 3.12 DLL to the python_gui folder
 # Determine the Python DLL path from the python executable location.
 $pythonDir = Split-Path $pythonExec
-$pythonDllPath = Join-Path $pythonDir "python3.12.dll"
+$pythonDllPath = Join-Path $pythonDir "python.dll"
 if (Test-Path $pythonDllPath) {
-    Write-Host "Copying Python 3.12 DLL from $pythonDllPath to python_gui folder..."
+    Write-Host "Copying Python DLL from $pythonDllPath to python_gui folder..."
     Copy-Item -Path $pythonDllPath -Destination "python_gui\" -Force
 } else {
-    Write-Host "WARNING: Python 3.12 DLL not found at $pythonDllPath. Please update the path if needed."
+    Write-Host "WARNING: Python DLL not found at $pythonDllPath. Please update the path if needed."
 }
 
 # 5. Run the Python GUI for testing
@@ -78,5 +78,5 @@ if (Test-Path $pythonDllPath) {
 $env:Path = "$mingwBin;" + $env:Path
 Write-Host "Running the Python GUI..."
 Push-Location python_gui
-python3.12 main_app.py
+python main_app.py
 Pop-Location

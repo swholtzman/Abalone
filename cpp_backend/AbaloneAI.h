@@ -6,6 +6,11 @@
 #include <chrono>
 #include <utility>
 #include <mutex>
+#include <thread>
+#include <mutex>
+#include <chrono>
+#include <vector>
+#include <array>
 
 
 class AbaloneAI {

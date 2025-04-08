@@ -6,6 +6,7 @@
 #include <iostream>
 #include <thread>
 #include <future>
+#include <random>
 
 int STARTING_MARBLES = 14; // Number of marbles each player starts with
 int WIN_THRESHOLD = 6; // Number of marbles pushed off to win
@@ -32,13 +33,14 @@ int AbaloneAI::evaluatePosition(const Board& board, float gameProgress) {
     bool closeToWin = false;
     if (board.nextToMove == Occupant::BLACK) {
         closeToWin = (whiteMarbles - 1) == ENDGAME;
-    } else {
+    }
+    else {
         closeToWin = (blackMarbles - 1) == ENDGAME;
     }
 
     // Base marble count evaluation
     int score = (blackMarbles - whiteMarbles) * MARBLE_VALUE;
-    
+
     // If we're in endgame with tied scores, dramatically increase the value of having fewer marbles
     // (which means we've pushed more off)
     if (scoresTied && endgameNear || closeToWin && endgameNear) {
@@ -51,7 +53,7 @@ int AbaloneAI::evaluatePosition(const Board& board, float gameProgress) {
     int cohesionValue = 5;
     int edgeValue = 15;
     int threatValue = 10;
-    
+
     // if (gameProgress < 0.2f) {
     //     // Early game: focus on mobility and center control
     //     centerValue = 15;
@@ -248,12 +250,12 @@ bool AbaloneAI::isTimeUp() {
     auto now = std::chrono::high_resolution_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count();
     bool result = elapsed >= timeLimit;
-    
+
     if (result) {
         std::lock_guard<std::mutex> lock(timeoutMutex);
         timeoutOccurred = true;
     }
-    
+
     return result;
 }
 
@@ -336,7 +338,7 @@ void AbaloneAI::orderMoves(std::vector<Move>& moves, const Board& board, Occupan
 }
 
 int AbaloneAI::minimax(Board& board, int depth, int alpha, int beta, bool maximizingPlayer, float gameProgress) {
-    
+
     {
         std::lock_guard<std::mutex> lock(timeoutMutex);
         if (timeoutOccurred) {
@@ -344,7 +346,7 @@ int AbaloneAI::minimax(Board& board, int depth, int alpha, int beta, bool maximi
             return evaluatePosition(board, gameProgress);
         }
     }
-    
+
     {
         std::lock_guard<std::mutex> lock(pruningMutex);
         if (depth == 0) {
@@ -478,6 +480,19 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board, float gameProgress) {
 
     Occupant currentPlayer = board.nextToMove;
     bool maximizingPlayer = (currentPlayer == Occupant::BLACK);
+
+    if (gameProgress == 0.0f && currentPlayer == Occupant::BLACK) {
+        std::vector<Move> allMoves = board.generateMoves(currentPlayer);
+        if (!allMoves.empty()) {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_int_distribution<int> dist(0, static_cast<int>(allMoves.size() - 1));
+            int randomIndex = dist(gen);
+            Move randomMove = allMoves[randomIndex];
+            return std::make_pair(randomMove, 0);
+        }
+    }
+
     std::vector<Move> possibleMoves = board.generateMoves(currentPlayer);
 
     if (possibleMoves.empty()) {
@@ -493,20 +508,21 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board, float gameProgress) {
         else if (board.occupant[i] == Occupant::WHITE)
             whiteMarbles++;
     }
-        
+
     // Calculate if scores are roughly tied
     bool scoresTied = blackMarbles == whiteMarbles;
-    
+
     // Check if we're near the end of the game (high game progress)
     bool endgameNear = gameProgress > 0.9f;
 
     bool closeToWin = false;
     if (board.nextToMove == Occupant::BLACK) {
         closeToWin = (whiteMarbles - 1) == ENDGAME;
-    } else {
+    }
+    else {
         closeToWin = (blackMarbles - 1) == ENDGAME;
     }
-    
+
     // If we're in endgame with tied scores, prioritize pushing moves immediately
     if (scoresTied && endgameNear || closeToWin && endgameNear) {
         std::cout << "Endgame with tied scores: Prioritizing push moves" << std::endl;
@@ -518,7 +534,7 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board, float gameProgress) {
                 Board tempBoard = board;
                 tempBoard.applyMove(move);
                 int score = evaluatePosition(tempBoard, gameProgress);
-                
+
                 return std::make_pair(move, score);
             }
         }
@@ -531,44 +547,44 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board, float gameProgress) {
     Move bestMove = possibleMoves[0];
     int bestScore = maximizingPlayer ? std::numeric_limits<int>::min() : std::numeric_limits<int>::max();
 
-// Sets thread count to 8 
-// ======================
-// WARNING!!! THIS IS SYSTEM SPECIFIC
-// ======================
+    // Sets thread count to 8 
+    // ======================
+    // WARNING!!! THIS IS SYSTEM SPECIFIC
+    // ======================
     int threadCount = std::min(8, (int)possibleMoves.size());
     std::vector<std::future<std::pair<int, Move>>> futures;
-    
+
     for (int i = 0; i < threadCount; ++i) {
         futures.push_back(std::async(std::launch::async, [&, i]() {
             if (timeoutOccurred) return std::make_pair(0, Move()); // Stop early
-            
+
             const Move& move = possibleMoves[i];
             Board tempBoard = board;
             tempBoard.applyMove(move);
             int score = this->minimax(tempBoard, maxDepth - 1,
-                                      std::numeric_limits<int>::min(),
-                                      std::numeric_limits<int>::max(),
-                                      !maximizingPlayer,
-                                      gameProgress);
+                std::numeric_limits<int>::min(),
+                std::numeric_limits<int>::max(),
+                !maximizingPlayer,
+                gameProgress);
             return std::make_pair(score, move);
-        }));
+            }));
     }
 
-//  // Changes thread count
-//     std::vector<std::future<std::pair<int, Move>>> futures;
-//     int threadCount = std::min((int)possibleMoves.size(), static_cast<int>(std::thread::hardware_concurrency()));
-    
-//     for (const Move& move : possibleMoves) {
-//         futures.push_back(std::async(std::launch::async, [&board, move, this, maximizingPlayer]() {
-//             Board tempBoard = board;
-//             tempBoard.applyMove(move);
-//             int score = this->minimax(tempBoard, maxDepth - 1,
-//                                       std::numeric_limits<int>::min(),
-//                                       std::numeric_limits<int>::max(),
-//                                       !maximizingPlayer);
-//             return std::make_pair(score, move);
-//         }));
-//     }
+    //  // Changes thread count
+    //     std::vector<std::future<std::pair<int, Move>>> futures;
+    //     int threadCount = std::min((int)possibleMoves.size(), static_cast<int>(std::thread::hardware_concurrency()));
+
+    //     for (const Move& move : possibleMoves) {
+    //         futures.push_back(std::async(std::launch::async, [&board, move, this, maximizingPlayer]() {
+    //             Board tempBoard = board;
+    //             tempBoard.applyMove(move);
+    //             int score = this->minimax(tempBoard, maxDepth - 1,
+    //                                       std::numeric_limits<int>::min(),
+    //                                       std::numeric_limits<int>::max(),
+    //                                       !maximizingPlayer);
+    //             return std::make_pair(score, move);
+    //         }));
+    //     }
 
     for (auto& f : futures) {
         if (isTimeUp()) {
@@ -645,7 +661,8 @@ std::pair<Move, int> AbaloneAI::findBestMoveIterativeDeepening(Board& board, int
             bestScore = result.second;
             foundMove = true;
             std::cout << "Completed depth " << depth << std::endl;
-        } else {
+        }
+        else {
             std::cout << "Timeout at depth " << depth << ", using previous result" << std::endl;
             break;
         }
