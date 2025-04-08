@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
     int winningThreshold = 6;
     int aiDepth = 4;
     int timeLimitMs = 6000;
-    int maxMoves = 50; // Maximum number of moves to simulate
+    int maxMoves = 40; // Maximum number of moves to simulate
     std::string mode = "ai_vs_ai2"; // Options: "ai", "random", or "ai_vs_random"
 
     // Optional command line arguments override defaults:
@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
 
     // Set up the board using the standard starting layout.
     Board board;
-    board.initGermanDaisyLayout(); // Use the German Daisy layout for the game.
+    board.initStandardLayout();
     // Ensure the first move is by Black.
     board.nextToMove = Occupant::BLACK;
 

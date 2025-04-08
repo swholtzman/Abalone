@@ -63,6 +63,11 @@ private:
      */
     int calculateEdgeDanger(const Board& board, Occupant side);
 
+    /**
+     * Calculate threat potential
+     */
+    int calculatePushability(const Board& board, Occupant side);
+
     int calculateThreatPotential(const Board& board, Occupant side);
 
     /**

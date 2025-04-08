@@ -27,7 +27,7 @@ int AbaloneAI::evaluatePosition(const Board& board, float gameProgress) {
 
     // Check if we're in endgame with tied scores
     bool scoresTied = blackMarbles == whiteMarbles;
-    bool endgameNear = gameProgress >= 0.85f;
+    bool endgameNear = gameProgress > 0.9f;
 
     bool closeToWin = false;
     if (board.nextToMove == Occupant::BLACK) {
@@ -47,15 +47,24 @@ int AbaloneAI::evaluatePosition(const Board& board, float gameProgress) {
 
     // Adjust weights based on game phase
     int marbleValue = MARBLE_VALUE;
-    int centerValue = gameProgress <= 0.2f ? 15 : 10;
-    int cohesionValue = 8;
+    int centerValue = 10;
+    int cohesionValue = 5;
     int edgeValue = 15;
-    int threatValue = gameProgress <= 0.2f ? 8 : 10;
-
-    if (gameProgress >= 0.5) {
-        edgeValue = 18; // Increase edge value in late game
-    }
-
+    int threatValue = 10;
+    
+    // if (gameProgress < 0.2f) {
+    //     // Early game: focus on mobility and center control
+    //     centerValue = 15;
+    //     edgeValue = 10;
+    // } else if (gameProgress >= 0.2f && gameProgress < 0.8f) {
+    //     // Mid game: balance between mobility and group cohesion
+    //     cohesionValue = 10;
+    // } else {
+    //     // Late game: focus on group cohesion and edge danger
+    //     cohesionValue = 8;
+    //     edgeValue = 20;
+    //     threatValue = 15;
+    // }
 
     // Center control
     int blackCenterControl = 0;
@@ -519,40 +528,22 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board, float gameProgress) {
     bool scoresTied = blackMarbles == whiteMarbles;
     
     // Check if we're near the end of the game (high game progress)
-    bool endgameNear = gameProgress >= 0.85f;
-
-    // Check if we're close to losing
-    bool isLosing = false;
-    if (maximizingPlayer) {
-        isLosing = blackMarbles < whiteMarbles && endgameNear;
-    } else {
-        isLosing = whiteMarbles > blackMarbles && endgameNear;
-    }
+    bool endgameNear = gameProgress > 0.9f;
 
     bool closeToWin = false;
-    if (maximizingPlayer) {
-        // Check if we're close to winning
+    if (board.nextToMove == Occupant::BLACK) {
         closeToWin = (whiteMarbles - 1) == ENDGAME;
     } else {
         closeToWin = (blackMarbles - 1) == ENDGAME;
     }
     
     // If we're in endgame with tied scores, prioritize pushing moves immediately
-    if (scoresTied && endgameNear || closeToWin && endgameNear || isLosing) {
-        // Check if we're close to losing
-        if (isLosing) {
-            std::cout << "Endgame with losing position: Prioritizing push moves" << std::endl;
-        }
-        // Check if we're close to winning
-        else if (closeToWin) {
-            std::cout << "Endgame with winning position: Prioritizing push moves" << std::endl;
-        } else {
-            // Otherwise, just a regular endgame with tied scores
-            std::cout << "Endgame with tied scores: Prioritizing push moves" << std::endl;
-        }
+    if (scoresTied && endgameNear || closeToWin && endgameNear) {
+        std::cout << "Endgame with tied scores: Prioritizing push moves" << std::endl;
         // Look for pushing moves
         for (const Move& move : possibleMoves) {
             if (move.pushCount > 0) {
+                std::cout << "Endgame with tied scores: Directly selecting push move" << std::endl;
                 // Calculate rough score for logging purposes
                 Board tempBoard = board;
                 tempBoard.applyMove(move);
