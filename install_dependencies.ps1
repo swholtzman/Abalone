@@ -3,6 +3,7 @@
 # Install Chocolatey (if not already installed)
 # If you want to remove it: Remove-Item C:\ProgramData\chocolatey -Recurse -Force
 
+Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 Set-ExecutionPolicy Bypass -Scope Process -Force
 iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
 
