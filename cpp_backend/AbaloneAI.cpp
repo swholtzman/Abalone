@@ -580,15 +580,15 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board, float gameProgress) {
                         foundBestMove = true;
                         std::cout << "Found defensive move, score: " << tempScore << std::endl;
                     }
-
-                    if (isCloseToLosing && foundBestMove) {
-                        std::cout << "Close to losing: Returning best defensive move\n";
-                        return std::make_pair(bestTempMove, bestTempScore);
-                    }
                 }
             }
         }
-    }    
+    }
+
+    if (isCloseToLosing && foundBestMove) {
+        std::cout << "Close to losing: Returning best defensive move\n";
+        return std::make_pair(bestTempMove, bestTempScore);
+    }
 
     for (const auto& move : possibleMoves) {
         if (board.isPushMove(move, currentPlayer)) {
