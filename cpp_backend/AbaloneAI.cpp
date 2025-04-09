@@ -527,9 +527,6 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board, float gameProgress) {
         isCloseToLosing = (whiteMarbles - 1) == ENDGAME;
     }
 
-    std::cout << "Evaluating position: Black marbles: " << blackMarbles << ", White marbles: " << whiteMarbles << std::endl;
-    std::cout << "Close to losing: " << isCloseToLosing << ", Losing: " << isLosing << std::endl;
-
     std::vector<Move> possibleMoves = board.generateMoves(currentPlayer);
 
     if (possibleMoves.empty()) {
@@ -559,13 +556,11 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board, float gameProgress) {
                 bool stillInDanger = false;
                 for (int marble : move.marbleIndices) {
                     if (tempBoard.isMarbleInDanger(marble, currentPlayer)) {
-                        std::cout << "Is Marble In Danger" << std::endl;
                         stillInDanger = true;
                         break;
                     }
                 }
                 if (!stillInDanger) {
-                    std::cout << "Not in danger anymore" << std::endl;
                     // Give bonus points for defensive moves that rescue pieces
                     if (currentPlayer == Occupant::BLACK) {
                         tempScore += 500; // Defensive bonus
@@ -582,8 +577,6 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board, float gameProgress) {
                         bestTempMove = move;
                         foundBestMove = true;
                         std::cout << "Found defensive move, score: " << tempScore << std::endl;
-                    } else {
-                        std::cout << "Defensive move not better, score: " << tempScore << std::endl;
                     }
                 }
             }
