@@ -574,13 +574,14 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board, float gameProgress) {
         }
     }
 
+    int currentScore = evaluatePosition(board, gameProgress);
+
     for (const auto& move : possibleMoves) {
         for (int idx : move.marbleIndices) {
             if (endangeredMarbles.count(idx)) {
                 // Simulate the move
                 Board tempBoard = board;
                 tempBoard.applyMove(move);
-                int currentScore = evaluatePosition(board, gameProgress);
                 int tempScore = evaluatePosition(tempBoard, gameProgress);
                 // Check if the marble is now safer
                 bool stillInDanger = false;
@@ -616,7 +617,6 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board, float gameProgress) {
                             bestTempScore = tempScore;
                             bestTempMove = move;
                             foundBestMove = true;
-                            std::cout << "Found defensive move, score: " << tempScore << std::endl;
                         }
                     }
                 }
@@ -635,7 +635,6 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board, float gameProgress) {
             Board tempBoard = board;
             tempBoard.applyMove(move);
             int tempScore = evaluatePosition(tempBoard, gameProgress);
-            int currentScore = evaluatePosition(board, gameProgress);
 
             int tempBlackMarbles = 0;
             int tempWhiteMarbles = 0;
@@ -649,11 +648,9 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board, float gameProgress) {
             bool isScoringMove = false;
             // Check if the move is beneficial
             if (currentPlayer == Occupant::BLACK && tempWhiteMarbles < whiteMarbles) {
-                std::cout << "Black player pushing opponent marbles off" << std::endl;
                 isScoringMove = true;
             }
             else if (currentPlayer == Occupant::WHITE && tempBlackMarbles < blackMarbles) {
-                std::cout << "White player pushing opponent marbles off" << std::endl;
                 isScoringMove = true;
             }
             
@@ -672,7 +669,6 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board, float gameProgress) {
                     foundBestMove = true;
                     std::cout << "Found better push move, score: " << tempScore << std::endl;
                 }
-                
             }
         }
     }
@@ -713,11 +709,9 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board, float gameProgress) {
                 bool isScoringMove = false;
                 // Check if the move is beneficial
                 if (currentPlayer == Occupant::BLACK && tempWhiteMarbles < whiteMarbles) {
-                    std::cout << "Black player pushing opponent marbles off" << std::endl;
                     isScoringMove = true;
                 }
                 else if (currentPlayer == Occupant::WHITE && tempBlackMarbles < blackMarbles) {
-                    std::cout << "White player pushing opponent marbles off" << std::endl;
                     isScoringMove = true;
                 }
                 
@@ -869,8 +863,8 @@ std::pair<Move, int> AbaloneAI::findBestMoveIterativeDeepening(Board& board, int
     }
 
     std::cout << "Transposition table usage: " << transpositionTable.getUsage() << "%" << std::endl;
-    std::cout << "TT hit rate: " << transpositionTable.getHitRate() << "%" << std::endl;
-    std::cout << "Pruning count: " << pruningCount << std::endl;
+    // std::cout << "TT hit rate: " << transpositionTable.getHitRate() << "%" << std::endl;
+    // std::cout << "Pruning count: " << pruningCount << std::endl;
     std::cout << "Game progress: " << gameProgress << std::endl;
 
     return std::make_pair(bestMove, bestScore);
