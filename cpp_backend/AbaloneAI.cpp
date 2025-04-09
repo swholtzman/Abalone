@@ -540,16 +540,16 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board, float gameProgress) {
     int bestTempScore = maximizingPlayer ? std::numeric_limits<int>::min() : std::numeric_limits<int>::max();
     bool foundBestMove = false;
 
-    std::vector<int> endangeredMarbles;
+    std::unordered_set<int> endangeredMarbles;
     for (int i = 0; i < 61; ++i) {
         if (board.occupant[i] == currentPlayer && board.isMarbleInDanger(i, currentPlayer)) {
-            endangeredMarbles.push_back(i);
+            endangeredMarbles.insert(i);
         }
     }
 
     for (const auto& move : possibleMoves) {
         for (int idx : move.marbleIndices) {
-            if (std::find(endangeredMarbles.begin(), endangeredMarbles.end(), idx) != endangeredMarbles.end()) {
+            if (endangeredMarbles.count(idx)) {
                 // Simulate the move
                 Board tempBoard = board;
                 tempBoard.applyMove(move);
@@ -559,11 +559,13 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board, float gameProgress) {
                 bool stillInDanger = false;
                 for (int marble : move.marbleIndices) {
                     if (tempBoard.isMarbleInDanger(marble, currentPlayer)) {
+                        std::cout << "Is Marble In Danger" << std::endl;
                         stillInDanger = true;
                         break;
                     }
                 }
                 if (!stillInDanger) {
+                    std::cout << "Not in danger anymore" << std::endl;
                     // Give bonus points for defensive moves that rescue pieces
                     if (currentPlayer == Occupant::BLACK) {
                         tempScore += 500; // Defensive bonus
@@ -571,14 +573,17 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board, float gameProgress) {
                         tempScore -= 500; // Defensive bonus (for WHITE lower is better)
                     }
                     
-                    bool isBetter = (currentPlayer == Occupant::BLACK && tempScore > bestTempScore) || 
-                                   (currentPlayer == Occupant::WHITE && tempScore < bestTempScore);
+                    bool isBetter = (currentPlayer == Occupant::BLACK && tempScore > currentScore) || 
+                                   (currentPlayer == Occupant::WHITE && tempScore < currentScore);
                                    
                     if (isBetter) {
+                        std::cout << "Comparing defensive move score: " << tempScore << std::endl;
                         bestTempScore = tempScore;
                         bestTempMove = move;
                         foundBestMove = true;
                         std::cout << "Found defensive move, score: " << tempScore << std::endl;
+                    } else {
+                        std::cout << "Defensive move not better, score: " << tempScore << std::endl;
                     }
                 }
             }
@@ -658,18 +663,35 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board, float gameProgress) {
         // Look for pushing moves
         for (const auto& move : possibleMoves) {
             if (board.isPushMove(move, currentPlayer)) {
-                std::cout << "Directly selecting push move" << std::endl;
                 // Calculate rough score for logging purposes
                 Board tempBoard = board;
                 tempBoard.applyMove(move);
                 int tempScore = evaluatePosition(tempBoard, gameProgress);
                 int currentScore = evaluatePosition(board, gameProgress);
+
+                int tempBlackMarbles = 0;
+                int tempWhiteMarbles = 0;
+                for (int i = 0; i < Board::NUM_CELLS; i++) {
+                    if (tempBoard.occupant[i] == Occupant::BLACK)
+                        tempBlackMarbles++;
+                    else if (tempBoard.occupant[i] == Occupant::WHITE)
+                        tempWhiteMarbles++;
+                }
+
+                bool isScoringMove = false;
+                // Check if the move is beneficial
+                if (currentPlayer == Occupant::BLACK && tempWhiteMarbles < whiteMarbles) {
+                    std::cout << "Black player pushing opponent marbles off" << std::endl;
+                    isScoringMove = true;
+                }
+                else if (currentPlayer == Occupant::WHITE && tempBlackMarbles < blackMarbles) {
+                    std::cout << "White player pushing opponent marbles off" << std::endl;
+                    isScoringMove = true;
+                }
                 
-                if (currentPlayer == Occupant::BLACK && tempScore > currentScore ||
-                    currentPlayer == Occupant::WHITE && tempScore < currentScore) {
-                    std::cout << "Comparing push move score: " << tempScore << std::endl;
-                    // If the move is beneficial, return it
-                    std::cout << "Selected push move with score: " << tempScore << std::endl;
+                if (currentPlayer == Occupant::BLACK && tempScore > currentScore && isScoringMove 
+                    || currentPlayer == Occupant::WHITE && tempScore < currentScore && isScoringMove) {
+                    std::cout << "Directly selecting push move with score: " << tempScore << std::endl;
                     return std::make_pair(move, tempScore);
                 }
             }
