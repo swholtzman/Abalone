@@ -130,14 +130,44 @@ int AbaloneAI::evaluateMove(const Board& board, const Move& move, Occupant side)
                 std::abs(beforeCoord.second - centerCoord.second);
             beforeCentralization += distBefore;
 
-            // Calculate where this marble ended up (approximately)
-            // This is a simplification, as the exact end position depends on the move mechanics
-            int endIdx = board.neighbors[idx][move.direction];
-            if (endIdx >= 0) {
-                auto afterCoord = board.s_indexToCoord[endIdx];
-                int distAfter = std::abs(afterCoord.first - centerCoord.first) +
-                    std::abs(afterCoord.second - centerCoord.second);
-                afterCentralization += distAfter;
+            // Calculate where this marble ended up more accurately
+            // Follow the marble through to its final position after the move
+            int endIdx = idx;
+            // First, find where this specific marble will end up in the move direction
+            if (std::find(move.marbleIndices.begin(), move.marbleIndices.end(), idx) != move.marbleIndices.end()) {
+                // Count how many marbles are ahead of this one in the move direction
+                int marblesAhead = 0;
+                int currentIdx = idx;
+                for (int i = 0; i < move.marbleIndices.size(); i++) {
+                    int nextIdx = board.neighbors[currentIdx][move.direction];
+                    if (nextIdx >= 0 && std::find(move.marbleIndices.begin(), move.marbleIndices.end(), nextIdx) != move.marbleIndices.end()) {
+                        marblesAhead++;
+                        currentIdx = nextIdx;
+                    } else {
+                        break;
+                    }
+                }
+                
+                // Trace the path to the final position, accounting for any pushed marbles
+                endIdx = idx;
+                for (int i = 0; i <= marblesAhead; i++) {
+                    int nextIdx = board.neighbors[endIdx][move.direction];
+                    if (nextIdx >= 0) {
+                        endIdx = nextIdx;
+                    } else {
+                        // If we hit the edge, the marble stays at its current position
+                        // (or gets pushed off, but that's handled by the Board::applyMove)
+                        break;
+                    }
+                }
+                
+                // Only evaluate distance if the marble is still on the board
+                if (endIdx >= 0 && endIdx < Board::NUM_CELLS) {
+                    auto afterCoord = board.s_indexToCoord[endIdx];
+                    int distAfter = std::abs(afterCoord.first - centerCoord.first) +
+                        std::abs(afterCoord.second - centerCoord.second);
+                    afterCentralization += distAfter;
+                }
             }
         }
     }
@@ -573,10 +603,21 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board, float gameProgress) {
                                    
                     if (isBetter) {
                         std::cout << "Comparing defensive move score: " << tempScore << std::endl;
-                        bestTempScore = tempScore;
-                        bestTempMove = move;
-                        foundBestMove = true;
-                        std::cout << "Found defensive move, score: " << tempScore << std::endl;
+                        if (foundBestMove) {
+                            bool isBest = (currentPlayer == Occupant::BLACK && tempScore > bestTempScore) || 
+                                           (currentPlayer == Occupant::WHITE && tempScore < bestTempScore);
+                            if (isBest) {
+                                std::cout << "Found better defensive move, score: " << tempScore << std::endl;
+                                bestTempScore = tempScore;
+                                bestTempMove = move;
+                            }
+                        } else {
+                            std::cout << "Found first defensive move, score: " << tempScore << std::endl;
+                            bestTempScore = tempScore;
+                            bestTempMove = move;
+                            foundBestMove = true;
+                            std::cout << "Found defensive move, score: " << tempScore << std::endl;
+                        }
                     }
                 }
             }
@@ -642,8 +683,6 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board, float gameProgress) {
         return std::make_pair(bestTempMove, bestTempScore);
     }
 
-    std::cout << "Regular move evaluation" << std::endl;
-
     // If we're in endgame with tied scores, prioritize pushing moves immediately
     if (scoresTied && endgameNear || closeToWin && endgameNear || isLosing && endgameNear) {
         if (isLosing) {
@@ -682,14 +721,15 @@ std::pair<Move, int> AbaloneAI::findBestMove(Board& board, float gameProgress) {
                     isScoringMove = true;
                 }
                 
-                if (currentPlayer == Occupant::BLACK && tempScore > currentScore && isScoringMove 
-                    || currentPlayer == Occupant::WHITE && tempScore < currentScore && isScoringMove) {
+                if (isScoringMove) {
                     std::cout << "Directly selecting push move with score: " << tempScore << std::endl;
                     return std::make_pair(move, tempScore);
                 }
             }
         }
     }
+
+    std::cout << "Regular move evaluation" << std::endl;
 
     Move ttBestMove;
     bool hasTTMove = transpositionTable.getBestMove(board, ttBestMove);
