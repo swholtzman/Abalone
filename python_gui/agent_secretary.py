@@ -5,7 +5,7 @@ from pathlib import Path
 from PyQt5 import QtWidgets
 
 # Uncomment for macOS
-# sys.path.insert(0, "../build")
+sys.path.insert(0, "../build")
 
 import abalone_ai
 print(abalone_ai.__file__)

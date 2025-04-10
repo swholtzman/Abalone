@@ -118,19 +118,18 @@ class GameBoard:
         overall_offset = (680 - board_cluster_size) / 2  # For a scene of 680x680.
         return x + overall_offset, y + overall_offset
 
-    def set_layout(self, layout_name, host_color, opponent_color):
+    def set_layout(self, layout_name):
         """
         Called by GameView once the user picks a layout, e.g. 'Standard' or 'Belgian Daisy'.
         We set occupant states in the tile models accordingly.
         """
         if layout_name.lower() == "standard":
-            self._set_standard_layout(host_color, opponent_color)
+            self._set_standard_layout()
         elif layout_name.lower() == "belgian daisy":
-            self._set_belgian_daisy_layout(host_color, opponent_color)
+            self._set_belgian_daisy_layout()
         elif layout_name.lower() == "german daisy":
-            self._set_german_daisy_layout(host_color, opponent_color)
+            self._set_german_daisy_layout()
         else:
-            # Default or fallback
             self._clear_occupants()
 
     def _clear_occupants(self):
@@ -149,75 +148,55 @@ class GameBoard:
                 tile_model.player_color = player_colour
                 tile_view.refresh()
 
-    def _set_standard_layout(self, host_color, opponent_color):
+    def _set_standard_layout(self):
         """
         For 'Standard' layout, place host marbles in certain
         coordinates, opponent marbles in others.
         The rest remain unoccupied.
         """
         self._clear_occupants()
-
-        opponent_coords = [
+        white_coords = [
             (5, 9), (6, 9), (7, 9), (4, 8), (5, 8), (6, 8), (8, 9),
             (7, 8), (8, 8), (9, 8), (5, 7), (6, 7), (7, 7), (9, 9)
         ]
-
-        host_coords = [
+        black_coords = [
             (1, 2), (2, 2), (3, 2), (4, 2), (5, 2), (6, 2), (1, 1),
             (2, 1), (3, 1), (4, 1), (5, 1), (3, 3), (4, 3), (5, 3)
         ]
+        self._fill_layout(white_coords, "White")
+        self._fill_layout(black_coords, "Black")
 
-        self._fill_layout(opponent_coords, opponent_color)
-        self._fill_layout(host_coords, host_color)
-
-    def _set_belgian_daisy_layout(self, host_color, opponent_color):
+    def _set_belgian_daisy_layout(self):
         """
         Another example layout. Populate occupant states accordingly.
         """
         self._clear_occupants()
-
-        # opponent_coords = [
-        #     (5,9),(6,9),(8,9),(9,9),(4,8),(5,8),(6,8),
-        #     (7,8),(8,8),(9,8),(4,7),(5,7),(7,7),(8,7)
-        # ]
-        #
-        # host_coords = [
-        #     (2,3),(3,3),(5,3),(6,3),(1,2),(2,2),(3,2),
-        #     (4,2),(5,2),(6,2),(1,1),(2,1),(4,1),(5,1)
-        # ]
-
-        opponent_coords = [
+        white_coords = [
             (5, 9), (6, 9), (4, 8), (5, 8), (6, 8), (4, 7), (5, 7),
             (5, 3), (6, 3), (4, 2), (5, 2), (6, 2), (4, 1), (5, 1)
         ]
-
-        host_coords = [
+        black_coords = [
             (8, 9), (9, 9), (7, 8), (8, 8), (9, 8), (7, 7), (8, 7),
             (2, 3), (3, 3), (1, 2), (2, 2), (3, 2), (1, 1), (2, 1)
         ]
+        self._fill_layout(white_coords, "White")
+        self._fill_layout(black_coords, "Black")
 
-        self._fill_layout(opponent_coords, opponent_color)
-        self._fill_layout(host_coords, host_color)
-
-    def _set_german_daisy_layout(self, host_color, opponent_color):
+    def _set_german_daisy_layout(self):
         """
         Another example layout. Populate occupant states accordingly.
         """
         self._clear_occupants()
-
-        opponent_coords = [
+        white_coords = [
             (4, 8), (5, 8), (3, 7), (4, 7), (5, 7), (3, 6), (4, 6),
             (6, 4), (7, 4), (5, 3), (6, 3), (7, 3), (5, 2), (6, 2)
         ]
-
-        host_coords = [
+        black_coords = [
             (8, 8), (9, 8), (7, 7), (8, 7), (9, 7), (7, 6), (8, 6),
             (2, 4), (3, 4), (1, 3), (2, 3), (3, 3), (1, 2), (2, 2)
-
         ]
-
-        self._fill_layout(opponent_coords, opponent_color)
-        self._fill_layout(host_coords, host_color)
+        self._fill_layout(white_coords, "White")
+        self._fill_layout(black_coords, "Black")
 
 # MOVE LOGIC IN PROGRESS
 

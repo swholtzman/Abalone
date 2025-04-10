@@ -106,6 +106,10 @@ class ScoreboardView(QWidget):
 
         self.refresh()
 
+    @property
+    def timer(self):
+        return self._timer
+
     def refresh(self):
         """Updates scoreboard labels and triggers shadow animation based on active state."""
         self.player_label.setText(self.model.player)

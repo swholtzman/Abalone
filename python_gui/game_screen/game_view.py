@@ -1,8 +1,9 @@
 from pathlib import Path
-from PyQt5 import QtWidgets, QtGui, QtCore
+from PyQt5 import QtWidgets, QtCore
 
 from python_gui.agent_secretary import AgentSecretary
 from python_gui.factories.scoreboard_factory import ScoreboardFactory
+from python_gui.game_screen.components.PausePopup import PausePopup
 from python_gui.game_screen.components.implementations.pause_button import PauseButton
 from python_gui.game_screen.components.implementations.quit_button import QuitButton
 from python_gui.game_screen.components.implementations.restart_button import RestartButton
@@ -92,6 +93,13 @@ class GameView(QtWidgets.QWidget):
         self.restart_button = RestartButton(self)
         self.quit_button = QuitButton(self)
 
+        # Add pause popup and state
+        self.pause_popup = PausePopup(self)
+        self.is_paused = False
+
+        # Connect the resume button signal
+        self.pause_popup.resume_button.clicked.connect(self.resume_game)
+
         # Connect button signals.
         self.pause_button.clicked.connect(self.pause_game)
         self.undo_button.clicked.connect(self.undo_move)
@@ -119,7 +127,29 @@ class GameView(QtWidgets.QWidget):
         self.match_type = "Human vs Human"  # Default match type.
 
     def pause_game(self):
-        self.pause_button.on_click()
+        if not self.is_paused:
+            self.is_paused = True
+            self.pause_popup.show()
+            self.pause_popup.raise_()  # Bring the popup to the front
+            # Stop the active player's clock
+            if self.black_scoreboard_model.is_active:
+                self.black_scoreboard_view.timer.stop()
+            elif self.white_scoreboard_model.is_active:
+                self.white_scoreboard_view.timer.stop()
+            # Optionally log the pause
+            self.move_history_model.add_move("Game paused")
+
+    def resume_game(self):
+        if self.is_paused:
+            self.is_paused = False
+            self.pause_popup.hide()
+            # Resume the active player's clock
+            if self.black_scoreboard_model.is_active:
+                self.black_scoreboard_view.timer.start()
+            elif self.white_scoreboard_model.is_active:
+                self.white_scoreboard_view.timer.start()
+            # Optionally log the resume
+            self.move_history_model.add_move("Game resumed")
 
     def undo_move(self):
         self.undo_button.on_click()
@@ -134,6 +164,8 @@ class GameView(QtWidgets.QWidget):
         super().resizeEvent(event)
         if hasattr(self, 'win_screen'):
             self.win_screen.setGeometry(0, 0, self.width(), self.height())
+        if hasattr(self, 'pause_popup'):
+            self.pause_popup.setGeometry(0, 0, self.width(), self.height())
 
     def on_win_screen_clicked(self):
         self.reset_game()
@@ -194,7 +226,7 @@ class GameView(QtWidgets.QWidget):
         """Called when the user finalizes the game configuration."""
         self._config = config_data
         board_layout = config_data.board_layout
-        host_colour = config_data.host_colour
+        # host_colour = config_data.host_colour
         time_limit_black = config_data.time_limit_black
         time_limit_white = config_data.time_limit_white
         self.match_type = config_data.match_type  # e.g., "Human vs Human", "Human vs Computer", etc.
@@ -215,8 +247,7 @@ class GameView(QtWidgets.QWidget):
         self.move_history_model.clear()
         self.game_board.current_player = "Black"
 
-        opponent_color = "White" if host_colour.lower() == "black" else "Black"
-        self.game_board.set_layout(board_layout, host_color=host_colour, opponent_color=opponent_color)
+        self.game_board.set_layout(board_layout)
 
         # For AI matches, trigger an initial AI update after a delay.
         initial_board_state = self.game_board.get_board_state()
